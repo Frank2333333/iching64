@@ -1,73 +1,128 @@
-# React + TypeScript + Vite
+# IChing64 - 易经六十四卦学习平台
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Try Me
+https://g6r5jz6a2sbj2.ok.kimi.link/
 
-Currently, two official plugins are available:
+## 核心功能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- ✨ **六十四卦完整数据**: 包含所有卦象的卦辞、彖传、大象传、爻辞、小象传
+- 🎨 **交互式卦象展示**: 可视化卦画、阴阳爻、上下卦结构
+- 🔍 **智能搜索**: 支持按卦名、拼音、中文名搜索
+- 🔄 **卦变关系**: 展示对卦(错卦)、综卦(覆卦)、互卦等关系
+- 🌟 **五行属性**: 每个卦象都有对应的五行属性展示
+- 📱 **响应式设计**: 支持桌面端和移动端访问
 
-## React Compiler
+## 技术栈
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **前端框架**: React 19 + TypeScript
+- **构建工具**: Vite
+- **样式方案**: Tailwind CSS + shadcn/ui
+- **图标库**: Lucide React
+- **状态管理**: React Hooks
+- **路由**: React Router
 
-## Expanding the ESLint configuration
+## 快速开始
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 前置要求
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- Node.js 20+
+- npm 或 pnpm
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### 安装依赖
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 开发服务器
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+启动本地开发服务器，默认地址: http://localhost:5173
+
+### 构建生产版本
+
+```bash
+npm run build
+```
+
+生成优化后的生产环境构建文件到 `dist/` 目录
+
+### 预览生产构建
+
+```bash
+npm run preview
+```
+
+### 代码检查
+
+```bash
+npm run lint
+```
+
+## 项目结构
+
+```
+src/
+├── components/          # React 组件
+│   ├── GuaCard.tsx     # 卦象卡片组件
+│   ├── GuaDetail.tsx   # 卦象详情页面
+│   └── ui/             # shadcn/ui 组件库
+├── data/
+│   └── guaxiang.ts     # 六十四卦完整数据
+├── hooks/              # 自定义 Hooks
+├── lib/                # 工具函数
+│   └── utils.ts        # 通用工具
+├── App.tsx             # 主应用组件
+├── main.tsx            # 应用入口
+└── index.css           # 全局样式
+```
+
+## 使用说明
+
+### 浏览卦象
+
+1. 打开应用后，可以看到所有六十四卦的卡片展示
+2. 每个卡片显示卦序号、五行标识、卦画、卦名和上下卦信息
+3. 点击任意卦象卡片进入详情页面
+
+### 查看卦象详情
+
+在详情页面可以查看：
+- 卦象基本信息（卦画、卦名、五行、上下卦）
+- 卦辞、彖传、大象传
+- 六爻详情（爻辞、小象传、当位情况）
+- 时位属性分析
+- 卦变关系（对卦、综卦、互卦）
+- 卦变列表
+- 点击相关卦象可跳转到对应详情页
+
+### 搜索功能
+
+在顶部搜索框中输入：
+- 卦名（如："乾为天"）
+- 中文名（如："乾"）
+- 拼音（如："qian"）
+
+## 样式主题
+
+- **主色调**: 琥珀色系（amber）- 体现传统文化特色
+- **背景**: 渐变暖色调（amber-50, orange-50, yellow-50）
+- **五行颜色**:
+  - 金: amber-500
+  - 木: emerald-500
+  - 水: blue-500
+  - 火: red-500
+  - 土: stone-500
+
+
+## 许可证
+
+本项目基于现有开源技术构建，具体许可证请参考 package.json 中的配置。
+
+---
+
+*最后更新: 2026-02-26*
+*项目版本: 0.0.0*
