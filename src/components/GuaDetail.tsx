@@ -30,10 +30,10 @@ export default function GuaDetail({ gua, onBack, onSelectGua }: GuaDetailProps) 
           {/* 卦画 */}
           <div className="flex flex-col items-center">
             <div className="bg-white rounded-xl p-6 shadow-inner">
-              <div className="flex flex-col space-y-2">
-                {gua.yaos.slice().reverse().map((yao, index) => (
+              <div className="flex flex-col-reverse space-y-2 space-y-reverse">
+                {gua.yaos.map((yao) => (
                   <div
-                    key={index}
+                    key={yao.position}
                     className={`h-3 rounded-full ${
                       yao.yinYang === 'yang'
                         ? 'w-20 bg-amber-800'
@@ -121,17 +121,22 @@ export default function GuaDetail({ gua, onBack, onSelectGua }: GuaDetailProps) 
           <h2 className="text-2xl font-bold text-amber-900">六爻</h2>
         </div>
         <div className="space-y-4">
-          {gua.yaos.slice().reverse().map((yao, index) => {
-            const position = 6 - index;
-            const positionName = ['初', '二', '三', '四', '五', '上'][index];
+          {gua.yaos.map((yao) => {
+            const positionNames = ['初', '二', '三', '四', '五', '上'];
+            const positionName = positionNames[yao.position - 1];
             const yaoName = yao.yinYang === 'yang' ? '九' : '六';
-            const fullName = position === 1 || position === 6 
+            const fullName = yao.position === 1 || yao.position === 6 
               ? `${positionName}${yaoName}` 
               : `${yaoName}${positionName}`;
             
+            // 当位判断：阳爻在奇数位(1,3,5)当位，阴爻在偶数位(2,4,6)当位
+            const isDangWei = yao.yinYang === 'yang' 
+              ? yao.position % 2 === 1  // 阳爻在奇数位当位
+              : yao.position % 2 === 0; // 阴爻在偶数位当位
+            
             return (
               <div 
-                key={position} 
+                key={yao.position} 
                 className={`p-4 rounded-lg border ${
                   yao.yinYang === 'yang' 
                     ? 'bg-amber-50 border-amber-200' 
@@ -148,11 +153,11 @@ export default function GuaDetail({ gua, onBack, onSelectGua }: GuaDetailProps) 
                   </div>
                   <span className="font-bold text-amber-900">{fullName}</span>
                   <span className={`text-xs px-2 py-1 rounded ${
-                    gua.shiWei.dangWei[position - 1] 
+                    isDangWei 
                       ? 'bg-green-100 text-green-700' 
                       : 'bg-gray-100 text-gray-500'
                   }`}>
-                    {gua.shiWei.dangWei[position - 1] ? '当位' : '不当位'}
+                    {isDangWei ? '当位' : '不当位'}
                   </span>
                 </div>
                 <p className="text-amber-800 font-medium mb-1">{yao.text}</p>

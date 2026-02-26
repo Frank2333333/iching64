@@ -25,11 +25,11 @@ export default function GuaCard({ gua, onClick }: GuaCardProps) {
         {gua.wuxing}
       </div>
 
-      {/* 卦画 */}
-      <div className="flex flex-col items-center justify-center py-4 space-y-1">
-        {gua.yaos.slice().reverse().map((yao, index) => (
+      {/* 卦画 - 初爻在下，上爻在上 */}
+      <div className="flex flex-col-reverse items-center justify-center py-4 space-y-1 space-y-reverse">
+        {gua.yaos.map((yao) => (
           <div
-            key={index}
+            key={yao.position}
             className={`h-2 rounded-full ${
               yao.yinYang === 'yang'
                 ? 'w-12 bg-amber-800'

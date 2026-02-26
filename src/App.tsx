@@ -1,11 +1,14 @@
 import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { liuShiSiGua, type Gua } from './data/guaxiang';
 import GuaCard from './components/GuaCard';
 import GuaDetail from './components/GuaDetail';
-import { Search, BookOpen, Menu, X } from 'lucide-react';
+import Divination from './pages/Divination';
+import { Search, BookOpen, Menu, X, Calculator } from 'lucide-react';
 import './App.css';
 
-function App() {
+// 主页组件
+function HomePage() {
   const [selectedGua, setSelectedGua] = useState<Gua | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -27,7 +30,7 @@ function App() {
               <h1 className="text-2xl font-bold tracking-wider">易经六十四卦</h1>
             </div>
             
-            {/* Desktop Search */}
+            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-amber-300" />
@@ -39,6 +42,13 @@ function App() {
                   className="pl-10 pr-4 py-2 bg-amber-800/50 border border-amber-600 rounded-lg text-amber-100 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 w-64"
                 />
               </div>
+              <Link
+                to="/divination"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 rounded-lg transition-colors"
+              >
+                <Calculator className="w-5 h-5" />
+                <span>数字起卦</span>
+              </Link>
             </div>
 
             {/* Mobile Menu Button */}
@@ -64,6 +74,14 @@ function App() {
                 className="w-full pl-10 pr-4 py-2 bg-amber-800/50 border border-amber-600 rounded-lg text-amber-100 placeholder-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
+            <Link
+              to="/divination"
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 rounded-lg transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Calculator className="w-5 h-5" />
+              <span>数字起卦</span>
+            </Link>
           </div>
         )}
       </header>
@@ -133,6 +151,17 @@ function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/divination" element={<Divination />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
