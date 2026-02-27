@@ -4,7 +4,8 @@ import { liuShiSiGua, type Gua } from './data/guaxiang';
 import GuaCard from './components/GuaCard';
 import GuaDetail from './components/GuaDetail';
 import Divination from './pages/Divination';
-import { Search, BookOpen, Menu, X, Calculator } from 'lucide-react';
+import { useVisitCounter } from './hooks/useVisitCounter';
+import { Search, BookOpen, Menu, X, Calculator, Users } from 'lucide-react';
 import './App.css';
 
 // 主页组件
@@ -12,6 +13,7 @@ function HomePage() {
   const [selectedGua, setSelectedGua] = useState<Gua | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { count: visitCount } = useVisitCounter();
 
   const filteredGua = liuShiSiGua.filter(gua => 
     gua.name.includes(searchTerm) || 
@@ -145,9 +147,17 @@ function HomePage() {
 
       {/* Footer */}
       <footer className="bg-amber-900 text-amber-200 py-8 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="mb-2">易经六十四卦学习网站</p>
-          <p className="text-sm text-amber-400">传承中华传统文化，探索易经智慧</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="text-center md:text-left mb-4 md:mb-0">
+              <p className="mb-2">易经六十四卦学习网站</p>
+              <p className="text-sm text-amber-400">传承中华传统文化，探索易经智慧</p>
+            </div>
+            <div className="flex items-center space-x-2 bg-amber-800/50 px-4 py-2 rounded-lg">
+              <Users className="w-5 h-5 text-amber-300" />
+              <span className="text-amber-100">访问人数: <span className="font-bold text-amber-300">{visitCount}</span></span>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
