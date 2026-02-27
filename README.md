@@ -1,7 +1,7 @@
 # IChing64 - 易经六十四卦学习平台
 
 ## Try Me
-https://g6r5jz6a2sbj2.ok.kimi.link/
+https://www.iching64.fun/
 
 ## 核心功能
 
