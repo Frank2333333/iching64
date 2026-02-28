@@ -48,15 +48,15 @@ export default function Divination() {
       return;
     }
 
-    // 第一个数字除8取余得上卦
-    const shangRemainder = n1 % 8;
-    const shangGuaNum = shangRemainder === 0 ? 8 : shangRemainder;
-    const shangGuaName = baGuaMap[shangGuaNum];
-
-    // 第二个数字除8取余得下卦
-    const xiaRemainder = n2 % 8;
+    // 第一个数字除8取余得下卦
+    const xiaRemainder = n1 % 8;
     const xiaGuaNum = xiaRemainder === 0 ? 8 : xiaRemainder;
     const xiaGuaName = baGuaMap[xiaGuaNum];
+
+    // 第二个数字除8取余得上卦
+    const shangRemainder = n2 % 8;
+    const shangGuaNum = shangRemainder === 0 ? 8 : shangRemainder;
+    const shangGuaName = baGuaMap[shangGuaNum];
 
     // 第三个数字除6取余得动爻
     const yaoRemainder = n3 % 6;
@@ -141,8 +141,8 @@ export default function Divination() {
               </div>
               <div className="space-y-2 text-amber-700">
                 <p>1. 输入三个三位数字</p>
-                <p>2. 第一个数字 ÷ 8 取余数 → 上卦（1乾、2兑、3离、4震、5巽、6坎、7艮、8坤）</p>
-                <p>3. 第二个数字 ÷ 8 取余数 → 下卦（同上）</p>
+                <p>2. 第一个数字 ÷ 8 取余数 → 下卦（1乾、2兑、3离、4震、5巽、6坎、7艮、8坤）</p>
+                <p>3. 第二个数字 ÷ 8 取余数 → 上卦（同上）</p>
                 <p>4. 第三个数字 ÷ 6 取余数 → 动爻（1初爻、2二爻、3三爻、4四爻、5五爻、6上爻）</p>
               </div>
             </div>
@@ -152,7 +152,7 @@ export default function Divination() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-amber-700 mb-2">
-                    第一个数字（上卦）
+                    第一个数字（下卦）
                   </label>
                   <input
                     type="number"
@@ -164,7 +164,7 @@ export default function Divination() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-amber-700 mb-2">
-                    第二个数字（下卦）
+                    第二个数字（上卦）
                   </label>
                   <input
                     type="number"
@@ -203,14 +203,14 @@ export default function Divination() {
                   <h3 className="text-lg font-bold text-amber-900 mb-4">起卦过程</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                     <div className="bg-amber-50 rounded-lg p-4">
-                      <p className="text-sm text-amber-600 mb-1">上卦计算</p>
-                      <p className="text-lg font-mono text-amber-900">{num1} ÷ 8 = 余{result.shangGuaNum}</p>
-                      <p className="text-xl font-bold text-amber-800 mt-2">{result.shangGuaName} {baGua[result.shangGuaName]?.symbol}</p>
+                      <p className="text-sm text-amber-600 mb-1">下卦计算</p>
+                      <p className="text-lg font-mono text-amber-900">{num1} ÷ 8 = 余{result.xiaGuaNum}</p>
+                      <p className="text-xl font-bold text-amber-800 mt-2">{result.xiaGuaName} {baGua[result.xiaGuaName]?.symbol}</p>
                     </div>
                     <div className="bg-amber-50 rounded-lg p-4">
-                      <p className="text-sm text-amber-600 mb-1">下卦计算</p>
-                      <p className="text-lg font-mono text-amber-900">{num2} ÷ 8 = 余{result.xiaGuaNum}</p>
-                      <p className="text-xl font-bold text-amber-800 mt-2">{result.xiaGuaName} {baGua[result.xiaGuaName]?.symbol}</p>
+                      <p className="text-sm text-amber-600 mb-1">上卦计算</p>
+                      <p className="text-lg font-mono text-amber-900">{num2} ÷ 8 = 余{result.shangGuaNum}</p>
+                      <p className="text-xl font-bold text-amber-800 mt-2">{result.shangGuaName} {baGua[result.shangGuaName]?.symbol}</p>
                     </div>
                     <div className="bg-amber-50 rounded-lg p-4">
                       <p className="text-sm text-amber-600 mb-1">动爻计算</p>
