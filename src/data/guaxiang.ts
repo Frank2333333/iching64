@@ -858,7 +858,7 @@ export const liuShiSiGua: Gua[] = [
     tuanZhuan: '柔以时升，巽而顺，刚中而应，是以大亨。用见大人，勿恤，有庆也。南征吉，志行也。',
     daXiangZhuan: '地中生木，升；君子以顺德，积小以高大。',
     yaos: [
-      { position: 1, yinYang: 'yang', text: '允升，大吉。', xiangZhuan: '允升大吉，上合志也。' },
+      { position: 1, yinYang: 'yin', text: '允升，大吉。', xiangZhuan: '允升大吉，上合志也。' },
       { position: 2, yinYang: 'yang', text: '孚乃利用禴，无咎。', xiangZhuan: '九二之孚，有喜也。' },
       { position: 3, yinYang: 'yang', text: '升虚邑。', xiangZhuan: '升虚邑，无所疑也。' },
       { position: 4, yinYang: 'yin', text: '王用亨于岐山，吉无咎。', xiangZhuan: '王用亨于岐山，顺事也。' },
