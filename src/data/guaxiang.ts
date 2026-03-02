@@ -23,7 +23,6 @@ export interface Gua {
   guaBian: number[];
   shiWei: {
     zhong: boolean;
-    dangWei: boolean[];
     description: string;
   };
   symbol: string;
@@ -58,7 +57,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '乾', xiaGua: '乾', duiGua: 2, zongGua: 1, huGua: 1,
     guaBian: [44, 33, 12, 20, 23, 1],
-    shiWei: { zhong: true, dangWei: [true, true, true, true, true, true], description: '乾卦六爻皆阳，纯阳之卦。九五得中得正，为君位，最为吉利。' },
+    shiWei: { zhong: true, description: '乾卦六爻皆阳，纯阳之卦。九五得中得正，为君位，最为吉利。' },
     symbol: '☰☰', meaning: '乾为天，象征刚健、创造、主动。天行健，君子以自强不息。', wuxing: '金'
   },
   {
@@ -76,7 +75,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坤', xiaGua: '坤', duiGua: 1, zongGua: 2, huGua: 2,
     guaBian: [24, 19, 11, 34, 43, 2],
-    shiWei: { zhong: true, dangWei: [true, true, true, true, true, true], description: '坤卦六爻皆阴，纯阴之卦。六二得中得正，为臣位，柔顺守正。' },
+    shiWei: { zhong: true, description: '坤卦六爻皆阴，纯阴之卦。六二得中得正，为臣位，柔顺守正。' },
     symbol: '☷☷', meaning: '坤为地，象征柔顺、承载、被动。地势坤，君子以厚德载物。', wuxing: '土'
   },
   {
@@ -94,7 +93,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坎', xiaGua: '震', duiGua: 50, zongGua: 4, huGua: 63,
     guaBian: [17, 42, 24, 27, 51, 3],
-    shiWei: { zhong: false, dangWei: [true, true, false, false, true, true], description: '屯卦初九得正，六二得正，九五得正。卦处始生之难，宜守正待时。' },
+    shiWei: { zhong: false, description: '屯卦初九得正，六二得正，九五得正。卦处始生之难，宜守正待时。' },
     symbol: '☵☳', meaning: '屯象征万物始生之难，如草木初生，艰难萌生。', wuxing: '水'
   },
   {
@@ -112,7 +111,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '艮', xiaGua: '坎', duiGua: 49, zongGua: 3, huGua: 60,
     guaBian: [41, 23, 8, 13, 52, 4],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, false, true], description: '蒙卦九二得中得正，为治蒙之主。卦处蒙昧之时，宜启蒙教化。' },
+    shiWei: { zhong: true, description: '蒙卦九二得中得正，为治蒙之主。卦处蒙昧之时，宜启蒙教化。' },
     symbol: '☶☵', meaning: '蒙象征蒙昧无知，如山下有泉，需要启蒙教化。', wuxing: '土'
   },
   {
@@ -130,7 +129,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坎', xiaGua: '乾', duiGua: 35, zongGua: 6, huGua: 57,
     guaBian: [48, 28, 60, 63, 5, 5],
-    shiWei: { zhong: true, dangWei: [true, true, true, false, true, false], description: '需卦九五得中得正，为需待之主。卦处需待之时，宜守正待时。' },
+    shiWei: { zhong: true, description: '需卦九五得中得正，为需待之主。卦处需待之时，宜守正待时。' },
     symbol: '☵☰', meaning: '需象征等待，云上于天，待时而降。', wuxing: '水'
   },
   {
@@ -148,7 +147,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '乾', xiaGua: '坎', duiGua: 36, zongGua: 5, huGua: 58,
     guaBian: [44, 33, 12, 20, 6, 6],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, true], description: '讼卦九二、九五皆得中。卦处争讼之时，宜止讼息争。' },
+    shiWei: { zhong: true, description: '讼卦九二、九五皆得中。卦处争讼之时，宜止讼息争。' },
     symbol: '☰☵', meaning: '讼象征争讼，天与水违行，意见相违。', wuxing: '金'
   },
   {
@@ -166,7 +165,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坤', xiaGua: '坎', duiGua: 13, zongGua: 8, huGua: 24,
     guaBian: [19, 11, 45, 46, 7, 7],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, false, false], description: '师卦九二得中，为统师之主。卦处行师之时，宜用老将。' },
+    shiWei: { zhong: true, description: '师卦九二得中，为统师之主。卦处行师之时，宜用老将。' },
     symbol: '☷☵', meaning: '师象征军队，地中有水，聚众之象。', wuxing: '土'
   },
   {
@@ -184,7 +183,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坎', xiaGua: '坤', duiGua: 14, zongGua: 7, huGua: 39,
     guaBian: [48, 3, 20, 35, 8, 8],
-    shiWei: { zhong: true, dangWei: [false, false, false, false, true, false], description: '比卦九五得中得正，为亲比之主。卦处亲比之时，宜择善而附。' },
+    shiWei: { zhong: true, description: '比卦九五得中得正，为亲比之主。卦处亲比之时，宜择善而附。' },
     symbol: '☵☷', meaning: '比象征亲比，地上有水，水亲比于地。', wuxing: '水'
   },
   {
@@ -202,7 +201,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '巽', xiaGua: '乾', duiGua: 34, zongGua: 10, huGua: 57,
     guaBian: [44, 33, 26, 41, 9, 9],
-    shiWei: { zhong: false, dangWei: [true, true, true, true, true, false], description: '小畜卦六四得正，为畜聚之主。卦处小有蓄积之时，宜文德修养。' },
+    shiWei: { zhong: false, description: '小畜卦六四得正，为畜聚之主。卦处小有蓄积之时，宜文德修养。' },
     symbol: '☴☰', meaning: '小畜象征小有蓄积，风行天上，密云不雨。', wuxing: '木'
   },
   {
@@ -220,7 +219,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '乾', xiaGua: '兑', duiGua: 43, zongGua: 9, huGua: 58,
     guaBian: [1, 33, 12, 20, 10, 10],
-    shiWei: { zhong: true, dangWei: [true, true, false, true, true, true], description: '履卦九二、九五皆得中。卦处践履之时，宜谨慎行事。' },
+    shiWei: { zhong: true, description: '履卦九二、九五皆得中。卦处践履之时，宜谨慎行事。' },
     symbol: '☰☱', meaning: '履象征践履，上天下泽，辨上下之分。', wuxing: '金'
   },
   {
@@ -238,7 +237,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坤', xiaGua: '乾', duiGua: 12, zongGua: 12, huGua: 55,
     guaBian: [19, 34, 26, 35, 11, 11],
-    shiWei: { zhong: true, dangWei: [true, true, true, false, false, false], description: '泰卦九二、九五皆得中。卦处通泰之时，天地交而万物通。' },
+    shiWei: { zhong: true, description: '泰卦九二、九五皆得中。卦处通泰之时，天地交而万物通。' },
     symbol: '☷☰', meaning: '泰象征通泰，天地交合，万物亨通。', wuxing: '土'
   },
   {
@@ -256,7 +255,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '乾', xiaGua: '坤', duiGua: 11, zongGua: 11, huGua: 44,
     guaBian: [1, 33, 45, 43, 12, 12],
-    shiWei: { zhong: true, dangWei: [false, false, false, true, true, true], description: '否卦九四、九五皆得中。卦处否塞之时，天地不交，宜俭德辟难。' },
+    shiWei: { zhong: true, description: '否卦九四、九五皆得中。卦处否塞之时，天地不交，宜俭德辟难。' },
     symbol: '☰☷', meaning: '否象征否塞，天地不交，万物不通。', wuxing: '金'
   },
   {
@@ -274,7 +273,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '乾', xiaGua: '离', duiGua: 7, zongGua: 13, huGua: 57,
     guaBian: [1, 49, 30, 14, 13, 13],
-    shiWei: { zhong: true, dangWei: [true, true, true, false, true, true], description: '同人卦六二得中得正，为和同之主。卦处和同之时，宜类族辨物。' },
+    shiWei: { zhong: true, description: '同人卦六二得中得正，为和同之主。卦处和同之时，宜类族辨物。' },
     symbol: '☰☲', meaning: '同人象征和同于人，天与火同明，志同则合。', wuxing: '金'
   },
   {
@@ -292,7 +291,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '离', xiaGua: '乾', duiGua: 8, zongGua: 14, huGua: 58,
     guaBian: [50, 30, 38, 49, 14, 14],
-    shiWei: { zhong: true, dangWei: [true, true, true, true, false, true], description: '大有卦六五得中，为富有之主。卦处大有之时，宜遏恶扬善。' },
+    shiWei: { zhong: true, description: '大有卦六五得中，为富有之主。卦处大有之时，宜遏恶扬善。' },
     symbol: '☲☰', meaning: '大有象征大有所获，火在天上，光明盛大。', wuxing: '火'
   },
   {
@@ -310,7 +309,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坤', xiaGua: '艮', duiGua: 16, zongGua: 15, huGua: 39,
     guaBian: [19, 62, 52, 46, 15, 15],
-    shiWei: { zhong: true, dangWei: [false, true, true, false, false, false], description: '谦卦九三得正，为谦德之主。卦处谦退之时，六爻皆吉。' },
+    shiWei: { zhong: true, description: '谦卦九三得正，为谦德之主。卦处谦退之时，六爻皆吉。' },
     symbol: '☷☶', meaning: '谦象征谦虚，地中有山，内高外卑。', wuxing: '土'
   },
   {
@@ -328,7 +327,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '震', xiaGua: '坤', duiGua: 15, zongGua: 16, huGua: 40,
     guaBian: [24, 45, 51, 35, 16, 16],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, false, false], description: '豫卦六二得中得正，为和乐之主。卦处和乐之时，宜顺以动。' },
+    shiWei: { zhong: true, description: '豫卦六二得中得正，为和乐之主。卦处和乐之时，宜顺以动。' },
     symbol: '☳☷', meaning: '豫象征喜乐，雷出地奋，万物舒畅。', wuxing: '木'
   },
   {
@@ -346,7 +345,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '兑', xiaGua: '震', duiGua: 18, zongGua: 18, huGua: 53,
     guaBian: [58, 45, 3, 51, 17, 17],
-    shiWei: { zhong: true, dangWei: [true, true, false, false, true, false], description: '随卦九五得中得正，为随从之主。卦处随从之时，宜随时而动。' },
+    shiWei: { zhong: true, description: '随卦九五得中得正，为随从之主。卦处随从之时，宜随时而动。' },
     symbol: '☱☳', meaning: '随象征随从，泽中有雷，动而喜悦。', wuxing: '金'
   },
   {
@@ -364,7 +363,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '艮', xiaGua: '巽', duiGua: 17, zongGua: 17, huGua: 52,
     guaBian: [26, 41, 57, 18, 18, 18],
-    shiWei: { zhong: true, dangWei: [true, true, true, false, false, true], description: '蛊卦九二、上九得中。卦处蛊坏之时，宜振民育德。' },
+    shiWei: { zhong: true, description: '蛊卦九二、上九得中。卦处蛊坏之时，宜振民育德。' },
     symbol: '☶☴', meaning: '蛊象征蛊坏，山下有风，物坏虫生。', wuxing: '土'
   },
   {
@@ -382,7 +381,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坤', xiaGua: '兑', duiGua: 20, zongGua: 20, huGua: 24,
     guaBian: [11, 45, 41, 46, 19, 19],
-    shiWei: { zhong: true, dangWei: [true, true, false, false, false, false], description: '临卦九二得中，为临莅之主。卦处临莅之时，宜教思无穷。' },
+    shiWei: { zhong: true, description: '临卦九二得中，为临莅之主。卦处临莅之时，宜教思无穷。' },
     symbol: '☷☱', meaning: '临象征临莅，泽上有地，居高临下。', wuxing: '土'
   },
   {
@@ -400,7 +399,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '巽', xiaGua: '坤', duiGua: 19, zongGua: 19, huGua: 44,
     guaBian: [57, 33, 8, 20, 20, 20],
-    shiWei: { zhong: true, dangWei: [false, false, false, false, true, true], description: '观卦九五得中得正，为观瞻之主。卦处观瞻之时，宜省方观民。' },
+    shiWei: { zhong: true, description: '观卦九五得中得正，为观瞻之主。卦处观瞻之时，宜省方观民。' },
     symbol: '☴☷', meaning: '观象征观瞻，风行地上，遍观万物。', wuxing: '木'
   },
   {
@@ -418,7 +417,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '离', xiaGua: '震', duiGua: 22, zongGua: 22, huGua: 39,
     guaBian: [50, 55, 30, 21, 21, 21],
-    shiWei: { zhong: true, dangWei: [true, true, false, false, false, true], description: '噬嗑卦六五得中，为用刑之主。卦处用刑之时，宜明罚敕法。' },
+    shiWei: { zhong: true, description: '噬嗑卦六五得中，为用刑之主。卦处用刑之时，宜明罚敕法。' },
     symbol: '☲☳', meaning: '噬嗑象征咬合，雷电交加，明罚敕法。', wuxing: '火'
   },
   {
@@ -436,7 +435,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '艮', xiaGua: '离', duiGua: 21, zongGua: 21, huGua: 52,
     guaBian: [26, 30, 56, 22, 22, 22],
-    shiWei: { zhong: false, dangWei: [true, true, true, true, false, true], description: '贲卦六五得中，为文饰之主。卦处文饰之时，宜明庶政。' },
+    shiWei: { zhong: false, description: '贲卦六五得中，为文饰之主。卦处文饰之时，宜明庶政。' },
     symbol: '☶☲', meaning: '贲象征文饰，山下有火，文明以止。', wuxing: '土'
   },
   {
@@ -454,7 +453,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '艮', xiaGua: '坤', duiGua: 24, zongGua: 24, huGua: 8,
     guaBian: [52, 15, 39, 23, 23, 23],
-    shiWei: { zhong: false, dangWei: [false, false, false, false, false, true], description: '剥卦上九得正，为剥落之极。卦处剥落之时，宜厚下安宅。' },
+    shiWei: { zhong: false, description: '剥卦上九得正，为剥落之极。卦处剥落之时，宜厚下安宅。' },
     symbol: '☶☷', meaning: '剥象征剥落，山附于地，阴长阳消。', wuxing: '土'
   },
   {
@@ -472,7 +471,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坤', xiaGua: '震', duiGua: 23, zongGua: 23, huGua: 2,
     guaBian: [11, 16, 3, 24, 24, 24],
-    shiWei: { zhong: false, dangWei: [true, false, false, false, false, false], description: '复卦初九得正，为回复之始。卦处回复之时，一阳来复，宜修身养性。' },
+    shiWei: { zhong: false, description: '复卦初九得正，为回复之始。卦处回复之时，一阳来复，宜修身养性。' },
     symbol: '☷☳', meaning: '复象征回复，雷在地中，一阳来复。', wuxing: '土'
   },
   {
@@ -490,7 +489,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '乾', xiaGua: '震', duiGua: 26, zongGua: 26, huGua: 44,
     guaBian: [1, 17, 21, 25, 25, 25],
-    shiWei: { zhong: true, dangWei: [true, true, false, true, true, false], description: '无妄卦九五、六二皆得中。卦处无妄之时，宜守正不妄。' },
+    shiWei: { zhong: true, description: '无妄卦九五、六二皆得中。卦处无妄之时，宜守正不妄。' },
     symbol: '☰☳', meaning: '无妄象征不妄为，天下雷行，物与无妄。', wuxing: '金'
   },
   {
@@ -508,7 +507,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '艮', xiaGua: '乾', duiGua: 25, zongGua: 25, huGua: 33,
     guaBian: [22, 41, 9, 26, 26, 26],
-    shiWei: { zhong: true, dangWei: [true, true, true, false, false, true], description: '大畜卦九二、六五皆得中。卦处大畜之时，宜畜德养贤。' },
+    shiWei: { zhong: true, description: '大畜卦九二、六五皆得中。卦处大畜之时，宜畜德养贤。' },
     symbol: '☶☰', meaning: '大畜象征大蓄积，天在山中，蓄积深厚。', wuxing: '土'
   },
   {
@@ -526,7 +525,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '艮', xiaGua: '震', duiGua: 28, zongGua: 28, huGua: 2,
     guaBian: [52, 3, 27, 27, 27, 27],
-    shiWei: { zhong: true, dangWei: [true, true, false, false, false, true], description: '颐卦六五得中，为养正之主。卦处颐养之时，宜慎言语节饮食。' },
+    shiWei: { zhong: true, description: '颐卦六五得中，为养正之主。卦处颐养之时，宜慎言语节饮食。' },
     symbol: '☶☳', meaning: '颐象征颐养，山下有雷，动而养正。', wuxing: '土'
   },
   {
@@ -544,7 +543,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '兑', xiaGua: '巽', duiGua: 27, zongGua: 27, huGua: 44,
     guaBian: [58, 9, 28, 28, 28, 28],
-    shiWei: { zhong: true, dangWei: [false, true, true, true, true, false], description: '大过卦九二、九五皆得中。卦处大过之时，宜独立不惧。' },
+    shiWei: { zhong: true, description: '大过卦九二、九五皆得中。卦处大过之时，宜独立不惧。' },
     symbol: '☱☴', meaning: '大过象征大过越，泽灭木，刚过而中。', wuxing: '金'
   },
   {
@@ -562,7 +561,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坎', xiaGua: '坎', duiGua: 30, zongGua: 29, huGua: 29,
     guaBian: [48, 60, 3, 29, 29, 29],
-    shiWei: { zhong: true, dangWei: [false, true, false, true, false, false], description: '坎卦九二、九五皆得中。卦处重险之时，宜常德行习教事。' },
+    shiWei: { zhong: true, description: '坎卦九二、九五皆得中。卦处重险之时，宜常德行习教事。' },
     symbol: '☵☵', meaning: '坎象征险陷，水洊至，重险之象。', wuxing: '水'
   },
   {
@@ -580,7 +579,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '离', xiaGua: '离', duiGua: 29, zongGua: 30, huGua: 30,
     guaBian: [50, 49, 21, 30, 30, 30],
-    shiWei: { zhong: true, dangWei: [true, true, true, true, false, true], description: '离卦六二得中得正，为附丽之主。卦处重明之时，宜继明照四方。' },
+    shiWei: { zhong: true, description: '离卦六二得中得正，为附丽之主。卦处重明之时，宜继明照四方。' },
     symbol: '☲☲', meaning: '离象征附丽，明两作，光明相继。', wuxing: '火'
   },
   {
@@ -598,7 +597,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '兑', xiaGua: '艮', duiGua: 32, zongGua: 32, huGua: 44,
     guaBian: [58, 52, 31, 31, 31, 31],
-    shiWei: { zhong: true, dangWei: [true, true, true, true, true, false], description: '咸卦九三、上六得中。卦处感应之时，宜虚受人。' },
+    shiWei: { zhong: true, description: '咸卦九三、上六得中。卦处感应之时，宜虚受人。' },
     symbol: '☱☶', meaning: '咸象征感应，山上有泽，二气感应。', wuxing: '金'
   },
   {
@@ -616,7 +615,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '震', xiaGua: '巽', duiGua: 31, zongGua: 31, huGua: 40,
     guaBian: [16, 57, 32, 32, 32, 32],
-    shiWei: { zhong: true, dangWei: [false, true, true, true, false, false], description: '恒卦九二得中，为恒久之主。卦处恒久之时，宜立不易方。' },
+    shiWei: { zhong: true, description: '恒卦九二得中，为恒久之主。卦处恒久之时，宜立不易方。' },
     symbol: '☳☴', meaning: '恒象征恒久，雷风相与，长久不变。', wuxing: '木'
   },
   {
@@ -634,7 +633,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '乾', xiaGua: '艮', duiGua: 34, zongGua: 34, huGua: 44,
     guaBian: [13, 12, 44, 44, 44, 44],
-    shiWei: { zhong: true, dangWei: [false, false, true, true, true, true], description: '遁卦九五得中得正，为遁避之主。卦处遁避之时，宜远小人。' },
+    shiWei: { zhong: true, description: '遁卦九五得中得正，为遁避之主。卦处遁避之时，宜远小人。' },
     symbol: '☰☶', meaning: '遁象征退避，天下有山，君子远小人。', wuxing: '金'
   },
   {
@@ -652,7 +651,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '震', xiaGua: '乾', duiGua: 33, zongGua: 33, huGua: 32,
     guaBian: [14, 11, 34, 34, 34, 34],
-    shiWei: { zhong: true, dangWei: [true, true, true, true, false, false], description: '大壮卦九二、九四得中。卦处大壮之时，宜守正不妄动。' },
+    shiWei: { zhong: true, description: '大壮卦九二、九四得中。卦处大壮之时，宜守正不妄动。' },
     symbol: '☳☰', meaning: '大壮象征强盛，雷在天上，声势浩大。', wuxing: '木'
   },
   {
@@ -670,7 +669,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '离', xiaGua: '坤', duiGua: 36, zongGua: 36, huGua: 39,
     guaBian: [56, 21, 35, 35, 35, 35],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '晋卦六二、六五得中，六五得正。卦处晋进之时，宜自昭明德。' },
+    shiWei: { zhong: true, description: '晋卦六二、六五得中，六五得正。卦处晋进之时，宜自昭明德。' },
     symbol: '☲☷', meaning: '晋象征进升，明出地上，光明上进。', wuxing: '火'
   },
   {
@@ -688,7 +687,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坤', xiaGua: '离', duiGua: 35, zongGua: 35, huGua: 40,
     guaBian: [55, 22, 36, 36, 36, 36],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '明夷卦六二、六五得中。卦处明伤之时，宜晦其明。' },
+    shiWei: { zhong: true, description: '明夷卦六二、六五得中。卦处明伤之时，宜晦其明。' },
     symbol: '☷☲', meaning: '明夷象征光明受伤，明入地中，韬光养晦。', wuxing: '火'
   },
   {
@@ -706,7 +705,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '巽', xiaGua: '离', duiGua: 38, zongGua: 38, huGua: 63,
     guaBian: [22, 13, 37, 37, 37, 37],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '家人卦六二、九五得中得正。卦处齐家之时，宜正家道。' },
+    shiWei: { zhong: true, description: '家人卦六二、九五得中得正。卦处齐家之时，宜正家道。' },
     symbol: '☴☲', meaning: '家人象征家庭，风自火出，家道正则天下定。', wuxing: '木'
   },
   {
@@ -724,7 +723,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '离', xiaGua: '兑', duiGua: 37, zongGua: 37, huGua: 64,
     guaBian: [21, 12, 38, 38, 38, 38],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '睽卦六二、六五得中。卦处乖睽之时，宜同而异。' },
+    shiWei: { zhong: true, description: '睽卦六二、六五得中。卦处乖睽之时，宜同而异。' },
     symbol: '☲☱', meaning: '睽象征乖离，上火下泽，二女同居志不同。', wuxing: '火'
   },
   {
@@ -742,7 +741,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坎', xiaGua: '艮', duiGua: 40, zongGua: 40, huGua: 63,
     guaBian: [15, 4, 39, 39, 39, 39],
-    shiWei: { zhong: true, dangWei: [false, false, false, false, true, false], description: '蹇卦九五得中得正。卦处蹇难之时，宜反身修德。' },
+    shiWei: { zhong: true, description: '蹇卦九五得中得正。卦处蹇难之时，宜反身修德。' },
     symbol: '☵☶', meaning: '蹇象征艰难，山上有水，见险而止。', wuxing: '水'
   },
   {
@@ -760,7 +759,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '震', xiaGua: '坎', duiGua: 39, zongGua: 39, huGua: 64,
     guaBian: [16, 3, 40, 40, 40, 40],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '解卦九二得中，为解难之主。卦处解散之时，宜赦过宥罪。' },
+    shiWei: { zhong: true, description: '解卦九二得中，为解难之主。卦处解散之时，宜赦过宥罪。' },
     symbol: '☳☵', meaning: '解象征解脱，雷雨作，险难解散。', wuxing: '木'
   },
   {
@@ -778,7 +777,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '艮', xiaGua: '兑', duiGua: 42, zongGua: 42, huGua: 24,
     guaBian: [19, 26, 41, 41, 41, 41],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '损卦六五得中。卦处减损之时，宜惩忿窒欲。' },
+    shiWei: { zhong: true, description: '损卦六五得中。卦处减损之时，宜惩忿窒欲。' },
     symbol: '☶☱', meaning: '损象征减损，山下有泽，损下益上。', wuxing: '土'
   },
   {
@@ -796,7 +795,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '巽', xiaGua: '震', duiGua: 41, zongGua: 41, huGua: 23,
     guaBian: [20, 25, 42, 42, 42, 42],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '益卦六二、九五得中。卦处增益之时，宜见善则迁。' },
+    shiWei: { zhong: true, description: '益卦六二、九五得中。卦处增益之时，宜见善则迁。' },
     symbol: '☴☳', meaning: '益象征增益，风雷相助，损上益下。', wuxing: '木'
   },
   {
@@ -814,7 +813,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '兑', xiaGua: '乾', duiGua: 44, zongGua: 44, huGua: 34,
     guaBian: [58, 1, 43, 43, 43, 43],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '夬卦九二、九五得中。卦处决断之时，宜施禄及下。' },
+    shiWei: { zhong: true, description: '夬卦九二、九五得中。卦处决断之时，宜施禄及下。' },
     symbol: '☱☰', meaning: '夬象征决断，泽上于天，刚决柔也。', wuxing: '金'
   },
   {
@@ -832,7 +831,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '乾', xiaGua: '巽', duiGua: 43, zongGua: 43, huGua: 33,
     guaBian: [57, 1, 44, 44, 44, 44],
-    shiWei: { zhong: true, dangWei: [false, false, false, false, true, false], description: '姤卦九五得中得正。卦处相遇之时，宜施命诰四方。' },
+    shiWei: { zhong: true, description: '姤卦九五得中得正。卦处相遇之时，宜施命诰四方。' },
     symbol: '☰☴', meaning: '姤象征相遇，天下有风，柔遇刚也。', wuxing: '金'
   },
   {
@@ -850,7 +849,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '兑', xiaGua: '坤', duiGua: 46, zongGua: 46, huGua: 53,
     guaBian: [58, 2, 45, 45, 45, 45],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '萃卦六二、九五得中。卦处聚集之时，宜除戎器戒不虞。' },
+    shiWei: { zhong: true, description: '萃卦六二、九五得中。卦处聚集之时，宜除戎器戒不虞。' },
     symbol: '☱☷', meaning: '萃象征聚集，泽上于地，万物汇聚。', wuxing: '金'
   },
   {
@@ -868,7 +867,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坤', xiaGua: '巽', duiGua: 45, zongGua: 45, huGua: 54,
     guaBian: [57, 2, 46, 46, 46, 46],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '升卦九二、六五得中。卦处上升之时，宜顺德积小高大。' },
+    shiWei: { zhong: true, description: '升卦九二、六五得中，初九得正。卦处上升之时，宜顺德积小高大。' },
     symbol: '☷☴', meaning: '升象征上升，地中生木，积小高大。', wuxing: '木'
   },
   {
@@ -886,7 +885,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '兑', xiaGua: '坎', duiGua: 48, zongGua: 48, huGua: 28,
     guaBian: [58, 29, 47, 47, 47, 47],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '困卦九二、九五得中。卦处困穷之时，宜致命遂志。' },
+    shiWei: { zhong: true, description: '困卦九二、九五得中。卦处困穷之时，宜致命遂志。' },
     symbol: '☱☵', meaning: '困象征困穷，泽无水，君子致命遂志。', wuxing: '水'
   },
   {
@@ -904,7 +903,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坎', xiaGua: '巽', duiGua: 47, zongGua: 47, huGua: 27,
     guaBian: [57, 29, 48, 48, 48, 48],
-    shiWei: { zhong: true, dangWei: [false, false, false, false, true, false], description: '井卦九五得中得正。卦处井养之时，宜劳民劝相。' },
+    shiWei: { zhong: true, description: '井卦九五得中得正。卦处井养之时，宜劳民劝相。' },
     symbol: '☵☴', meaning: '井象征井养，木上有水，养而不穷。', wuxing: '水'
   },
   {
@@ -922,7 +921,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '兑', xiaGua: '离', duiGua: 50, zongGua: 50, huGua: 43,
     guaBian: [58, 30, 49, 49, 49, 49],
-    shiWei: { zhong: true, dangWei: [false, false, false, false, true, false], description: '革卦九五得中得正。卦处变革之时，宜治历明时。' },
+    shiWei: { zhong: true, description: '革卦九五得中得正。卦处变革之时，宜治历明时。' },
     symbol: '☱☲', meaning: '革象征变革，泽中有火，水火相息。', wuxing: '火'
   },
   {
@@ -940,7 +939,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '离', xiaGua: '巽', duiGua: 49, zongGua: 49, huGua: 44,
     guaBian: [57, 30, 50, 50, 50, 50],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '鼎卦六五得中。卦处鼎新之时，宜正位凝命。' },
+    shiWei: { zhong: true, description: '鼎卦六五得中。卦处鼎新之时，宜正位凝命。' },
     symbol: '☲☴', meaning: '鼎象征鼎新，木上有火，亨饪养贤。', wuxing: '火'
   },
   {
@@ -958,7 +957,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '震', xiaGua: '震', duiGua: 52, zongGua: 52, huGua: 51,
     guaBian: [16, 16, 51, 51, 51, 51],
-    shiWei: { zhong: true, dangWei: [false, false, false, false, false, false], description: '震卦无得中者。卦处震动之时，宜恐惧修省。' },
+    shiWei: { zhong: true, description: '震卦无得中者。卦处震动之时，宜恐惧修省。' },
     symbol: '☳☳', meaning: '震象征震动，洊雷震震，君子修省。', wuxing: '木'
   },
   {
@@ -976,7 +975,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '艮', xiaGua: '艮', duiGua: 51, zongGua: 51, huGua: 52,
     guaBian: [52, 52, 52, 52, 52, 52],
-    shiWei: { zhong: true, dangWei: [false, false, false, false, true, false], description: '艮卦六五得中。卦处静止之时，宜思不出位。' },
+    shiWei: { zhong: true, description: '艮卦六五得中。卦处静止之时，宜思不出位。' },
     symbol: '☶☶', meaning: '艮象征静止，兼山艮止，止于其所。', wuxing: '土'
   },
   {
@@ -994,7 +993,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '巽', xiaGua: '艮', duiGua: 54, zongGua: 54, huGua: 57,
     guaBian: [57, 52, 53, 53, 53, 53],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '渐卦六二、九五得中。卦处渐进之时，宜居贤德善俗。' },
+    shiWei: { zhong: true, description: '渐卦六二、九五得中。卦处渐进之时，宜居贤德善俗。' },
     symbol: '☴☶', meaning: '渐象征渐进，山上有木，循序渐进。', wuxing: '木'
   },
   {
@@ -1012,7 +1011,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '震', xiaGua: '兑', duiGua: 53, zongGua: 53, huGua: 58,
     guaBian: [58, 16, 54, 54, 54, 54],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '归妹卦六二、六五得中。卦处嫁娶之时，宜永终知敝。' },
+    shiWei: { zhong: true, description: '归妹卦六二、六五得中。卦处嫁娶之时，宜永终知敝。' },
     symbol: '☳☱', meaning: '归妹象征嫁娶，泽上有雷，少女从长男。', wuxing: '木'
   },
   {
@@ -1030,7 +1029,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '震', xiaGua: '离', duiGua: 56, zongGua: 56, huGua: 48,
     guaBian: [16, 30, 55, 55, 55, 55],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '丰卦六二、六五得中。卦处丰盛之时，宜折狱致刑。' },
+    shiWei: { zhong: true, description: '丰卦六二、六五得中。卦处丰盛之时，宜折狱致刑。' },
     symbol: '☳☲', meaning: '丰象征丰盛，雷电皆至，明以动故丰。', wuxing: '火'
   },
   {
@@ -1048,7 +1047,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '离', xiaGua: '艮', duiGua: 55, zongGua: 55, huGua: 47,
     guaBian: [30, 52, 56, 56, 56, 56],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '旅卦六二、六五得中。卦处行旅之时，宜明慎用刑。' },
+    shiWei: { zhong: true, description: '旅卦六二、六五得中。卦处行旅之时，宜明慎用刑。' },
     symbol: '☲☶', meaning: '旅象征行旅，山上有火，明慎用刑。', wuxing: '火'
   },
   {
@@ -1066,7 +1065,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '巽', xiaGua: '巽', duiGua: 58, zongGua: 58, huGua: 57,
     guaBian: [57, 57, 57, 57, 57, 57],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '巽卦九二、九五得中得正。卦处巽顺之时，宜申命行事。' },
+    shiWei: { zhong: true, description: '巽卦九二、九五得中得正。卦处巽顺之时，宜申命行事。' },
     symbol: '☴☴', meaning: '巽象征顺从，随风巽巽，申命行事。', wuxing: '木'
   },
   {
@@ -1084,7 +1083,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '兑', xiaGua: '兑', duiGua: 57, zongGua: 57, huGua: 58,
     guaBian: [58, 58, 58, 58, 58, 58],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, false, false], description: '兑卦九二得中。卦处喜悦之时，宜朋友讲习。' },
+    shiWei: { zhong: true, description: '兑卦九二得中。卦处喜悦之时，宜朋友讲习。' },
     symbol: '☱☱', meaning: '兑象征喜悦，丽泽兑悦，朋友讲习。', wuxing: '金'
   },
   {
@@ -1102,7 +1101,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '巽', xiaGua: '坎', duiGua: 60, zongGua: 60, huGua: 61,
     guaBian: [57, 29, 59, 59, 59, 59],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '涣卦九二、九五得中。卦处涣散之时，宜享于帝立庙。' },
+    shiWei: { zhong: true, description: '涣卦九二、九五得中。卦处涣散之时，宜享于帝立庙。' },
     symbol: '☴☵', meaning: '涣象征涣散，风行水上，散而不穷。', wuxing: '水'
   },
   {
@@ -1120,7 +1119,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坎', xiaGua: '兑', duiGua: 59, zongGua: 59, huGua: 62,
     guaBian: [58, 29, 60, 60, 60, 60],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '节卦九二、九五得中。卦处节制之时，宜制数度议德行。' },
+    shiWei: { zhong: true, description: '节卦九二、九五得中。卦处节制之时，宜制数度议德行。' },
     symbol: '☵☱', meaning: '节象征节制，泽上有水，以制度节。', wuxing: '水'
   },
   {
@@ -1138,7 +1137,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '巽', xiaGua: '兑', duiGua: 62, zongGua: 62, huGua: 27,
     guaBian: [57, 58, 61, 61, 61, 61],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '中孚卦九二、九五得中。卦处诚信之时，宜议狱缓死。' },
+    shiWei: { zhong: true, description: '中孚卦九二、九五得中。卦处诚信之时，宜议狱缓死。' },
     symbol: '☴☱', meaning: '中孚象征诚信，泽上有风，诚信感物。', wuxing: '金'
   },
   {
@@ -1156,7 +1155,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '震', xiaGua: '艮', duiGua: 61, zongGua: 61, huGua: 28,
     guaBian: [16, 52, 62, 62, 62, 62],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '小过卦六二、六五得中。卦处小过之时，宜行过乎恭。' },
+    shiWei: { zhong: true, description: '小过卦六二、六五得中。卦处小过之时，宜行过乎恭。' },
     symbol: '☳☶', meaning: '小过象征小有过越，山上有雷，过乎恭哀俭。', wuxing: '木'
   },
   {
@@ -1174,7 +1173,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '坎', xiaGua: '离', duiGua: 64, zongGua: 64, huGua: 48,
     guaBian: [29, 30, 63, 63, 63, 63],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '既济卦六二、九五得中，六爻皆当位。卦处既济之时，宜思患预防。' },
+    shiWei: { zhong: true, description: '既济卦六二、九五得中，六爻皆当位。卦处既济之时，宜思患预防。' },
     symbol: '☵☲', meaning: '既济象征已成，水在火上，事成物济。', wuxing: '水'
   },
   {
@@ -1192,7 +1191,7 @@ export const liuShiSiGua: Gua[] = [
     ],
     shangGua: '离', xiaGua: '坎', duiGua: 63, zongGua: 63, huGua: 47,
     guaBian: [30, 29, 64, 64, 64, 64],
-    shiWei: { zhong: true, dangWei: [false, true, false, false, true, false], description: '未济卦六二、六五得中。卦处未济之时，宜慎辨物居方。' },
+    shiWei: { zhong: true, description: '未济卦六二、六五得中。卦处未济之时，宜慎辨物居方。' },
     symbol: '☲☵', meaning: '未济象征未成，火在水上，事未成而待济。', wuxing: '火'
   },
 ];
