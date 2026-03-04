@@ -4,65 +4,97 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    /* Igloo 风格 - 深蓝冰晶主题 */
+    --background: 220 40% 4%;
+    --foreground: 200 20% 95%;
+    --card: 220 35% 8%;
+    --card-foreground: 200 20% 95%;
+    --popover: 220 35% 6%;
+    --popover-foreground: 200 20% 95%;
+    --primary: 190 80% 55%;
+    --primary-foreground: 220 40% 4%;
+    --secondary: 220 30% 12%;
+    --secondary-foreground: 200 20% 95%;
+    --muted: 220 25% 15%;
+    --muted-foreground: 210 20% 60%;
+    --accent: 45 90% 55%;
+    --accent-foreground: 220 40% 4%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.625rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 220 30% 15%;
+    --input: 220 30% 15%;
+    --ring: 190 80% 55%;
+    --radius: 0.75rem;
+    --sidebar-background: 220 35% 6%;
+    --sidebar-foreground: 200 20% 90%;
+    --sidebar-primary: 190 80% 55%;
+    --sidebar-primary-foreground: 220 40% 4%;
+    --sidebar-accent: 220 30% 12%;
+    --sidebar-accent-foreground: 200 20% 95%;
+    --sidebar-border: 220 30% 15%;
+    --sidebar-ring: 190 80% 55%;
+    
+    /* 易经专用色 */
+    --yang-glow: 190 100% 65%;
+    --yin-glow: 220 30% 25%;
+    --ice-blue: 190 90% 55%;
+    --deep-blue: 220 60% 15%;
   }
+}
 
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+@layer base {
+  * {
+    @apply border-border;
   }
+  body {
+    @apply bg-background text-foreground antialiased;
+    background: linear-gradient(135deg, hsl(220 40% 4%) 0%, hsl(220 35% 8%) 50%, hsl(215 40% 6%) 100%);
+    min-height: 100vh;
+  }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(220 40% 8%);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(220 30% 25%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(190 60% 40%);
+}
+
+/* 发光效果 */
+.glow-cyan {
+  box-shadow: 0 0 20px hsl(190 80% 55% / 0.4),
+              0 0 40px hsl(190 80% 55% / 0.2),
+              0 0 60px hsl(190 80% 55% / 0.1);
+}
+
+.glow-text {
+  text-shadow: 0 0 10px hsl(190 80% 55% / 0.5),
+               0 0 20px hsl(190 80% 55% / 0.3),
+               0 0 30px hsl(190 80% 55% / 0.2);
+}
+
+/* 玻璃态效果 */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-hover:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(34, 211, 238, 0.3);
 }
 
 @layer base {

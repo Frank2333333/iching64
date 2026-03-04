@@ -1,3 +1,25 @@
+/* 平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 选中文字样式 - 冰蓝色主题 */
+::selection {
+  background: rgba(34, 211, 238, 0.3);
+  color: #fff;
+}
+
+/* 响应式字体 */
+html {
+  font-size: 16px;
+}
+
+@media (max-width: 640px) {
+  html {
+    font-size: 14px;
+  }
+}
+
 /* 自定义动画 */
 @keyframes fadeIn {
   from {
@@ -14,47 +36,6 @@
   animation: fadeIn 0.5s ease-out;
 }
 
-/* 滚动条样式 */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #fef3c7;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #d97706;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #b45309;
-}
-
-/* 选中文字样式 */
-::selection {
-  background: #fbbf24;
-  color: #78350f;
-}
-
-/* 响应式字体 */
-html {
-  font-size: 16px;
-}
-
-@media (max-width: 640px) {
-  html {
-    font-size: 14px;
-  }
-}
-
-/* 平滑滚动 */
-html {
-  scroll-behavior: smooth;
-}
-
 /* 卦画阴爻样式优化 */
 .yin-yao {
   display: flex;
@@ -67,7 +48,7 @@ html {
   content: '';
   width: 1.25rem;
   height: 0.5rem;
-  background-color: #92400e;
+  background-color: #64748b;
   border-radius: 9999px;
 }
 
@@ -75,6 +56,98 @@ html {
 .yang-yao {
   width: 3rem;
   height: 0.5rem;
-  background-color: #92400e;
+  background: linear-gradient(90deg, #22d3ee, #67e8f9);
   border-radius: 9999px;
+  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+}
+
+/* 玻璃态效果增强 */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(34, 211, 238, 0.2);
+}
+
+/* 发光文字效果 */
+.text-glow {
+  text-shadow: 
+    0 0 10px rgba(34, 211, 238, 0.5),
+    0 0 20px rgba(34, 211, 238, 0.3),
+    0 0 30px rgba(34, 211, 238, 0.2);
+}
+
+/* 渐变边框 */
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.5), rgba(168, 85, 247, 0.5));
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* 脉冲动画 */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(34, 211, 238, 0.5);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* 浮动动画 */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* 闪光动画 */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite;
 }
