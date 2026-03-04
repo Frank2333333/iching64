@@ -14,6 +14,135 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+/* 页面滑入动画 */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 卡片网格错落动画 */
+@keyframes cardStaggerIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.card-stagger {
+  opacity: 0;
+  animation: cardStaggerIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 生成 64 个卡片的错落延迟 */
+.card-stagger:nth-child(1) { animation-delay: 0ms; }
+.card-stagger:nth-child(2) { animation-delay: 20ms; }
+.card-stagger:nth-child(3) { animation-delay: 40ms; }
+.card-stagger:nth-child(4) { animation-delay: 60ms; }
+.card-stagger:nth-child(5) { animation-delay: 80ms; }
+.card-stagger:nth-child(6) { animation-delay: 100ms; }
+.card-stagger:nth-child(7) { animation-delay: 120ms; }
+.card-stagger:nth-child(8) { animation-delay: 140ms; }
+.card-stagger:nth-child(9) { animation-delay: 160ms; }
+.card-stagger:nth-child(10) { animation-delay: 180ms; }
+.card-stagger:nth-child(11) { animation-delay: 200ms; }
+.card-stagger:nth-child(12) { animation-delay: 220ms; }
+.card-stagger:nth-child(13) { animation-delay: 240ms; }
+.card-stagger:nth-child(14) { animation-delay: 260ms; }
+.card-stagger:nth-child(15) { animation-delay: 280ms; }
+.card-stagger:nth-child(16) { animation-delay: 300ms; }
+.card-stagger:nth-child(17) { animation-delay: 320ms; }
+.card-stagger:nth-child(18) { animation-delay: 340ms; }
+.card-stagger:nth-child(19) { animation-delay: 360ms; }
+.card-stagger:nth-child(20) { animation-delay: 380ms; }
+.card-stagger:nth-child(21) { animation-delay: 400ms; }
+.card-stagger:nth-child(22) { animation-delay: 420ms; }
+.card-stagger:nth-child(23) { animation-delay: 440ms; }
+.card-stagger:nth-child(24) { animation-delay: 460ms; }
+.card-stagger:nth-child(25) { animation-delay: 480ms; }
+.card-stagger:nth-child(26) { animation-delay: 500ms; }
+.card-stagger:nth-child(27) { animation-delay: 520ms; }
+.card-stagger:nth-child(28) { animation-delay: 540ms; }
+.card-stagger:nth-child(29) { animation-delay: 560ms; }
+.card-stagger:nth-child(30) { animation-delay: 580ms; }
+.card-stagger:nth-child(31) { animation-delay: 600ms; }
+.card-stagger:nth-child(32) { animation-delay: 620ms; }
+.card-stagger:nth-child(33) { animation-delay: 640ms; }
+.card-stagger:nth-child(34) { animation-delay: 660ms; }
+.card-stagger:nth-child(35) { animation-delay: 680ms; }
+.card-stagger:nth-child(36) { animation-delay: 700ms; }
+.card-stagger:nth-child(37) { animation-delay: 720ms; }
+.card-stagger:nth-child(38) { animation-delay: 740ms; }
+.card-stagger:nth-child(39) { animation-delay: 760ms; }
+.card-stagger:nth-child(40) { animation-delay: 780ms; }
+.card-stagger:nth-child(41) { animation-delay: 800ms; }
+.card-stagger:nth-child(42) { animation-delay: 820ms; }
+.card-stagger:nth-child(43) { animation-delay: 840ms; }
+.card-stagger:nth-child(44) { animation-delay: 860ms; }
+.card-stagger:nth-child(45) { animation-delay: 880ms; }
+.card-stagger:nth-child(46) { animation-delay: 900ms; }
+.card-stagger:nth-child(47) { animation-delay: 920ms; }
+.card-stagger:nth-child(48) { animation-delay: 940ms; }
+.card-stagger:nth-child(49) { animation-delay: 960ms; }
+.card-stagger:nth-child(50) { animation-delay: 980ms; }
+.card-stagger:nth-child(51) { animation-delay: 1000ms; }
+.card-stagger:nth-child(52) { animation-delay: 1020ms; }
+.card-stagger:nth-child(53) { animation-delay: 1040ms; }
+.card-stagger:nth-child(54) { animation-delay: 1060ms; }
+.card-stagger:nth-child(55) { animation-delay: 1080ms; }
+.card-stagger:nth-child(56) { animation-delay: 1100ms; }
+.card-stagger:nth-child(57) { animation-delay: 1120ms; }
+.card-stagger:nth-child(58) { animation-delay: 1140ms; }
+.card-stagger:nth-child(59) { animation-delay: 1160ms; }
+.card-stagger:nth-child(60) { animation-delay: 1180ms; }
+.card-stagger:nth-child(61) { animation-delay: 1200ms; }
+.card-stagger:nth-child(62) { animation-delay: 1220ms; }
+.card-stagger:nth-child(63) { animation-delay: 1240ms; }
+.card-stagger:nth-child(64) { animation-delay: 1260ms; }
+
 /* 滚动条样式 */
 ::-webkit-scrollbar {
   width: 8px;
@@ -21,22 +150,36 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #fef3c7;
+  background: hsl(var(--iching-muted));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d97706;
+  background: hsl(var(--iching-accent));
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #b45309;
+  background: hsl(var(--iching-primary));
+}
+
+/* 深色模式滚动条 */
+.dark ::-webkit-scrollbar-track {
+  background: hsl(var(--iching-muted));
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--iching-primary));
 }
 
 /* 选中文字样式 */
 ::selection {
-  background: #fbbf24;
-  color: #78350f;
+  background: hsl(var(--iching-accent) / 0.3);
+  color: hsl(var(--iching-primary));
+}
+
+.dark ::selection {
+  background: hsl(var(--iching-accent) / 0.4);
+  color: hsl(var(--iching-primary));
 }
 
 /* 响应式字体 */
@@ -77,4 +220,109 @@ html {
   height: 0.5rem;
   background-color: #92400e;
   border-radius: 9999px;
+}
+
+/* 深色模式卦画 */
+.dark .yin-yao::before,
+.dark .yin-yao::after {
+  background-color: #fbbf24;
+}
+
+.dark .yang-yao {
+  background-color: #fbbf24;
+}
+
+/* 按钮点击波纹 */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-ripple:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* 返回按钮动画 */
+.back-btn {
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  transform: translateX(-4px);
+}
+
+/* 详情页卡片悬停效果 */
+.detail-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.detail-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+}
+
+/* 卦变关系卡片特殊效果 */
+.guabian-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.guabian-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.guabian-card:hover::before {
+  left: 100%;
+}
+
+/* 标题渐变动画 */
+@keyframes gradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.title-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 5s ease infinite;
+}
+
+/* 加载动画 */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+.loading-ring {
+  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
