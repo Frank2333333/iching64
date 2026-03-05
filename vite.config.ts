@@ -3,25 +3,38 @@ import react from "@vitejs/plugin-react"
 import { defineConfig, type Plugin } from "vite"
 import { inspectAttr } from 'kimi-plugin-inspect-react'
 
-// 访问计数器插件（仅开发环境使用）
+// 访问计数器插件（开发和预览环境使用）
 function visitCounterPlugin(): Plugin {
   let visitCount = 0;
+  
+  // 计数中间件
+  const countMiddleware = (req: any, _res: any, next: any) => {
+    if (req.url === '/' || req.url === '/index.html' || req.url?.startsWith('/?')) {
+      visitCount++;
+      console.log(`[${new Date().toLocaleString('zh-CN')}] 访问次数: ${visitCount}`);
+    }
+    next();
+  };
+  
+  // API 中间件
+  const apiMiddleware = (req: any, res: any, next: any) => {
+    if (req.url === '/api/visit-count') {
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ count: visitCount }));
+      return;
+    }
+    next();
+  };
+  
   return {
     name: 'visit-counter',
-    apply: 'serve',
     configureServer(server) {
-      server.middlewares.use((req, _res, next) => {
-        if (req.url === '/' || req.url === '/index.html' || req.url?.startsWith('/?')) {
-          visitCount++;
-          console.log(`[${new Date().toLocaleString('zh-CN')}] 访问次数: ${visitCount}`);
-        }
-        next();
-      });
-
-      server.middlewares.use('/api/visit-count', (_req, res) => {
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ count: visitCount }));
-      });
+      server.middlewares.use(countMiddleware);
+      server.middlewares.use(apiMiddleware);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(countMiddleware);
+      server.middlewares.use(apiMiddleware);
     }
   };
 }
@@ -34,7 +47,7 @@ export default defineConfig({
   plugins: [
     react(),
     ...(isProduction ? [] : [inspectAttr()]),
-    ...(isProduction ? [] : [visitCounterPlugin()])
+    visitCounterPlugin()  // 计数器在 dev 和 preview 都启用
   ],
 
   resolve: {
