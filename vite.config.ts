@@ -67,6 +67,7 @@ export default defineConfig({
   preview: {
     host: '0.0.0.0',
     port: 4173,
-    cors: true
+    cors: true,
+    allowedHosts: ['.iching64.fun', 'localhost', '127.0.0.1']
   }
 });
