@@ -46,8 +46,8 @@ import {
   X,
 } from 'lucide-react';
 
-// 管理员密码（简单保护）
-const ADMIN_PASSWORD = 'iching64-admin';
+// 从环境变量读取管理员密码
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'iching64-admin';
 
 const feedbackTypeLabels: Record<FeedbackType, string> = {
   feature: '✨ 功能建议',
