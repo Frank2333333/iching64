@@ -4,9 +4,11 @@ import { liuShiSiGua, type Gua } from './data/guaxiang';
 import GuaCard from './components/GuaCard';
 import GuaDetail from './components/GuaDetail';
 import Divination from './pages/Divination';
+import FeedbackAdmin from './pages/FeedbackAdmin';
 import ThemeToggle from './components/ThemeToggle';
 import { useScrollPosition } from './hooks/useScrollPosition';
 import { Search, BookOpen, Menu, X, Calculator } from 'lucide-react';
+import FeedbackButton from './components/FeedbackButton';
 import './App.css';
 
 // 主页组件
@@ -210,6 +212,9 @@ function HomePage() {
           <p className="text-sm text-amber-400">传承中华传统文化，探索易经智慧</p>
         </div>
       </footer>
+
+      {/* 反馈按钮 */}
+      <FeedbackButton />
     </div>
   );
 }
@@ -242,6 +247,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/divination" element={<Divination />} />
+        <Route path="/admin/feedback" element={<FeedbackAdmin />} />
       </Routes>
     </div>
   );
