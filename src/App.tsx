@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { liuShiSiGua, type Gua } from './data/guaxiang';
 import GuaCard from './components/GuaCard';
 import GuaDetail from './components/GuaDetail';
 import Divination from './pages/Divination';
 import FeedbackAdmin from './pages/FeedbackAdmin';
+import GuaTransformer from './pages/GuaTransformer';
 import ThemeToggle from './components/ThemeToggle';
 import { useScrollPosition } from './hooks/useScrollPosition';
-import { Search, BookOpen, Menu, X, Calculator } from 'lucide-react';
+import { Search, BookOpen, Menu, X, Calculator, Sparkles } from 'lucide-react';
 import FeedbackButton from './components/FeedbackButton';
 import './App.css';
 
@@ -18,9 +19,21 @@ function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
+  const [searchParams] = useSearchParams();
 
   // 记住滚动位置
   useScrollPosition(selectedGua ? 'gua-detail' : 'home');
+  
+  // 从 URL 参数加载卦象
+  useEffect(() => {
+    const guaId = searchParams.get('gua');
+    if (guaId) {
+      const gua = liuShiSiGua.find(g => g.id === parseInt(guaId));
+      if (gua) {
+        setSelectedGua(gua);
+      }
+    }
+  }, [searchParams]);
 
   const filteredGua = liuShiSiGua.filter(gua => 
     gua.name.includes(searchTerm) || 
@@ -81,6 +94,15 @@ function HomePage() {
                 />
               </div>
               <Link
+                to="/transformer"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
+                         rounded-lg transition-all duration-300 hover:scale-105
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>变卦推演</span>
+              </Link>
+              <Link
                 to="/divination"
                 className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
                          rounded-lg transition-all duration-300 hover:scale-105
@@ -122,6 +144,16 @@ function HomePage() {
                          focus:ring-amber-400"
               />
             </div>
+            <Link
+              to="/transformer"
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors mb-3"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>变卦推演</span>
+            </Link>
             <Link
               to="/divination"
               className="flex items-center justify-center space-x-2 px-4 py-2 bg-amber-700 
@@ -247,6 +279,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/divination" element={<Divination />} />
+        <Route path="/transformer" element={<GuaTransformer />} />
         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
       </Routes>
     </div>

@@ -87,7 +87,7 @@ export const liuShiSiGua: Gua[] = [
       { position: 1, yinYang: 'yang', text: '磐桓，利居贞，利建侯。', xiangZhuan: '虽磐桓，志行正也。' },
       { position: 2, yinYang: 'yin', text: '屯如邅如，乘马班如。匪寇婚媾，女子贞不字，十年乃字。', xiangZhuan: '六二之难，乘刚也。' },
       { position: 3, yinYang: 'yin', text: '即鹿无虞，惟入于林中。君子几不如舍，往吝。', xiangZhuan: '即鹿无虞，以从禽也。' },
-      { position: 4, yinYang: 'yang', text: '乘马班如，求婚媾，往吉，无不利。', xiangZhuan: '求而往，明也。' },
+      { position: 4, yinYang: 'yin', text: '乘马班如，求婚媾，往吉，无不利。', xiangZhuan: '求而往，明也。' },
       { position: 5, yinYang: 'yang', text: '屯其膏，小贞吉，大贞凶。', xiangZhuan: '屯其膏，施未光也。' },
       { position: 6, yinYang: 'yin', text: '乘马班如，泣血涟如。', xiangZhuan: '泣血涟如，何可长也。' },
     ],
@@ -197,7 +197,7 @@ export const liuShiSiGua: Gua[] = [
       { position: 3, yinYang: 'yang', text: '舆说辐，夫妻反目。', xiangZhuan: '夫妻反目，不能正室也。' },
       { position: 4, yinYang: 'yin', text: '有孚，血去惕出，无咎。', xiangZhuan: '有孚惕出，上合志也。' },
       { position: 5, yinYang: 'yang', text: '有孚挛如，富以其邻。', xiangZhuan: '有孚挛如，不独富也。' },
-      { position: 6, yinYang: 'yin', text: '既雨既处，尚德载，妇贞厉。月几望，君子征凶。', xiangZhuan: '既雨既处，德积载也。' },
+      { position: 6, yinYang: 'yang', text: '既雨既处，尚德载，妇贞厉。月几望，君子征凶。', xiangZhuan: '既雨既处，德积载也。' },
     ],
     shangGua: '巽', xiaGua: '乾', duiGua: 34, zongGua: 10, huGua: 57,
     guaBian: [44, 33, 26, 41, 9, 9],
@@ -211,7 +211,7 @@ export const liuShiSiGua: Gua[] = [
     daXiangZhuan: '上天下泽，履；君子以辨上下，定民志。',
     yaos: [
       { position: 1, yinYang: 'yang', text: '素履，往无咎。', xiangZhuan: '素履之往，独行愿也。' },
-      { position: 2, yinYang: 'yin', text: '履道坦坦，幽人贞吉。', xiangZhuan: '幽人贞吉，中不自乱也。' },
+      { position: 2, yinYang: 'yang', text: '履道坦坦，幽人贞吉。', xiangZhuan: '幽人贞吉，中不自乱也。' },
       { position: 3, yinYang: 'yin', text: '眇能视，跛能履，履虎尾，咥人，凶。武人为于大君。', xiangZhuan: '咥人之凶，位不当也。' },
       { position: 4, yinYang: 'yang', text: '履虎尾，愬愬，终吉。', xiangZhuan: '愬愬终吉，志行也。' },
       { position: 5, yinYang: 'yang', text: '夬履，贞厉。', xiangZhuan: '夬履贞厉，位正当也。' },
@@ -301,7 +301,7 @@ export const liuShiSiGua: Gua[] = [
     daXiangZhuan: '地中有山，谦；君子以裒多益寡，称物平施。',
     yaos: [
       { position: 1, yinYang: 'yin', text: '谦谦君子，用涉大川，吉。', xiangZhuan: '谦谦君子，卑以自牧也。' },
-      { position: 2, yinYang: 'yang', text: '鸣谦，贞吉。', xiangZhuan: '鸣谦贞吉，中心得也。' },
+      { position: 2, yinYang: 'yin', text: '鸣谦，贞吉。', xiangZhuan: '鸣谦贞吉，中心得也。' },
       { position: 3, yinYang: 'yang', text: '劳谦，君子有终，吉。', xiangZhuan: '劳谦君子，万民服也。' },
       { position: 4, yinYang: 'yin', text: '无不利，撝谦。', xiangZhuan: '无不利，撝谦，不违则也。' },
       { position: 5, yinYang: 'yin', text: '不富以其邻，利用侵伐，无不利。', xiangZhuan: '利用侵伐，征不服也。' },
@@ -354,7 +354,7 @@ export const liuShiSiGua: Gua[] = [
     tuanZhuan: '蛊，刚上而柔下，巽而止，蛊。蛊元亨，而天下治也。利涉大川，往有事也。先甲三日，后甲三日，终则有始，天行也。',
     daXiangZhuan: '山下有风，蛊；君子以振民育德。',
     yaos: [
-      { position: 1, yinYang: 'yang', text: '干父之蛊，有子考无咎，厉终吉。', xiangZhuan: '干父之蛊，意承考也。' },
+      { position: 1, yinYang: 'yin', text: '干父之蛊，有子考无咎，厉终吉。', xiangZhuan: '干父之蛊，意承考也。' },
       { position: 2, yinYang: 'yang', text: '干母之蛊，不可贞。', xiangZhuan: '干母之蛊，得中道也。' },
       { position: 3, yinYang: 'yang', text: '干父之蛊，小有悔，无大咎。', xiangZhuan: '干父之蛊，终无咎也。' },
       { position: 4, yinYang: 'yin', text: '裕父之蛊，往见吝。', xiangZhuan: '裕父之蛊，往未得也。' },
@@ -485,7 +485,7 @@ export const liuShiSiGua: Gua[] = [
       { position: 3, yinYang: 'yin', text: '无妄之灾，或系之牛，行人之得，邑人之灾。', xiangZhuan: '行人得牛，邑人灾也。' },
       { position: 4, yinYang: 'yang', text: '可贞，无咎。', xiangZhuan: '可贞无咎，固有之也。' },
       { position: 5, yinYang: 'yang', text: '无妄之疾，勿药有喜。', xiangZhuan: '无妄之药，不可试也。' },
-      { position: 6, yinYang: 'yin', text: '无妄，行有眚，无攸利。', xiangZhuan: '无妄之行，穷之灾也。' },
+      { position: 6, yinYang: 'yang', text: '无妄，行有眚，无攸利。', xiangZhuan: '无妄之行，穷之灾也。' },
     ],
     shangGua: '乾', xiaGua: '震', duiGua: 26, zongGua: 26, huGua: 44,
     guaBian: [1, 17, 21, 25, 25, 25],
@@ -555,8 +555,8 @@ export const liuShiSiGua: Gua[] = [
       { position: 1, yinYang: 'yin', text: '习坎，入于坎窞，凶。', xiangZhuan: '习坎入坎，失道凶也。' },
       { position: 2, yinYang: 'yang', text: '坎有险，求小得。', xiangZhuan: '求小得，未出中也。' },
       { position: 3, yinYang: 'yin', text: '来之坎坎，险且枕，入于坎窞，勿用。', xiangZhuan: '来之坎坎，终无功也。' },
-      { position: 4, yinYang: 'yang', text: '樽酒簋贰，用缶，纳约自牖，终无咎。', xiangZhuan: '樽酒簋贰，刚柔际也。' },
-      { position: 5, yinYang: 'yin', text: '坎不盈，祗既平，无咎。', xiangZhuan: '坎不盈，中未大也。' },
+      { position: 4, yinYang: 'yin', text: '樽酒簋贰，用缶，纳约自牖，终无咎。', xiangZhuan: '樽酒簋贰，刚柔际也。' },
+      { position: 5, yinYang: 'yang', text: '坎不盈，祗既平，无咎。', xiangZhuan: '坎不盈，中未大也。' },
       { position: 6, yinYang: 'yin', text: '系用徽纆，寘于丛棘，三岁不得，凶。', xiangZhuan: '上六失道，凶三岁也。' },
     ],
     shangGua: '坎', xiaGua: '坎', duiGua: 30, zongGua: 29, huGua: 29,
@@ -588,7 +588,7 @@ export const liuShiSiGua: Gua[] = [
     tuanZhuan: '咸，感也。柔上而刚下，二气感应以相与，止而说，男下女，是以亨利贞，取女吉也。天地感而万物化生，圣人感人心而天下和平。观其所感，而天地万物之情可见矣！',
     daXiangZhuan: '山上有泽，咸；君子以虚受人。',
     yaos: [
-      { position: 1, yinYang: 'yang', text: '咸其拇。', xiangZhuan: '咸其拇，志在外也。' },
+      { position: 1, yinYang: 'yin', text: '咸其拇。', xiangZhuan: '咸其拇，志在外也。' },
       { position: 2, yinYang: 'yin', text: '咸其腓，凶，居吉。', xiangZhuan: '虽凶居吉，顺不害也。' },
       { position: 3, yinYang: 'yang', text: '咸其股，执其随，往吝。', xiangZhuan: '咸其股，亦不处也。' },
       { position: 4, yinYang: 'yang', text: '贞吉悔亡，憧憧往来，朋从尔思。', xiangZhuan: '贞吉悔亡，未感害也。' },
@@ -701,7 +701,7 @@ export const liuShiSiGua: Gua[] = [
       { position: 3, yinYang: 'yang', text: '家人嗃嗃，悔厉吉；妇子嘻嘻，终吝。', xiangZhuan: '家人嗃嗃，未失也。' },
       { position: 4, yinYang: 'yin', text: '富家，大吉。', xiangZhuan: '富家大吉，顺在位也。' },
       { position: 5, yinYang: 'yang', text: '王假有家，勿恤吉。', xiangZhuan: '王假有家，交相爱也。' },
-      { position: 6, yinYang: 'yin', text: '有孚威如，终吉。', xiangZhuan: '威如之吉，反身之谓也。' },
+      { position: 6, yinYang: 'yang', text: '有孚威如，终吉。', xiangZhuan: '威如之吉，反身之谓也。' },
     ],
     shangGua: '巽', xiaGua: '离', duiGua: 38, zongGua: 38, huGua: 63,
     guaBian: [22, 13, 37, 37, 37, 37],
@@ -715,7 +715,7 @@ export const liuShiSiGua: Gua[] = [
     daXiangZhuan: '上火下泽，睽；君子以同而异。',
     yaos: [
       { position: 1, yinYang: 'yang', text: '悔亡，丧马勿逐，自复。见恶人，无咎。', xiangZhuan: '见恶人，以辟咎也。' },
-      { position: 2, yinYang: 'yin', text: '遇主于巷，无咎。', xiangZhuan: '遇主于巷，未失道也。' },
+      { position: 2, yinYang: 'yang', text: '遇主于巷，无咎。', xiangZhuan: '遇主于巷，未失道也。' },
       { position: 3, yinYang: 'yin', text: '见舆曳，其牛掣，其人天且劓，无初有终。', xiangZhuan: '见舆曳，位不当也。' },
       { position: 4, yinYang: 'yang', text: '睽孤，遇元夫，交孚，厉无咎。', xiangZhuan: '交孚无咎，志行也。' },
       { position: 5, yinYang: 'yin', text: '悔亡，厥宗噬肤，往何咎。', xiangZhuan: '厥宗噬肤，往有庆也。' },
@@ -754,7 +754,7 @@ export const liuShiSiGua: Gua[] = [
       { position: 2, yinYang: 'yang', text: '田获三狐，得黄矢，贞吉。', xiangZhuan: '九二贞吉，得中道也。' },
       { position: 3, yinYang: 'yin', text: '负且乘，致寇至，贞吝。', xiangZhuan: '负且乘，亦可丑也。' },
       { position: 4, yinYang: 'yang', text: '解而拇，朋至斯孚。', xiangZhuan: '解而拇，未当位也。' },
-      { position: 5, yinYang: 'yang', text: '君子维有解，吉；有孚于小人。', xiangZhuan: '君子有解，小人退也。' },
+      { position: 5, yinYang: 'yin', text: '君子维有解，吉；有孚于小人。', xiangZhuan: '君子有解，小人退也。' },
       { position: 6, yinYang: 'yin', text: '公用射隼，于高墉之上，获之，无不利。', xiangZhuan: '公用射隼，以解悖也。' },
     ],
     shangGua: '震', xiaGua: '坎', duiGua: 39, zongGua: 39, huGua: 64,
@@ -772,8 +772,8 @@ export const liuShiSiGua: Gua[] = [
       { position: 2, yinYang: 'yang', text: '利贞，征凶，弗损益之。', xiangZhuan: '九二利贞，中以为志也。' },
       { position: 3, yinYang: 'yin', text: '三人行，则损一人；一人行，则得其友。', xiangZhuan: '一人行，三则疑也。' },
       { position: 4, yinYang: 'yin', text: '损其疾，使遄有喜，无咎。', xiangZhuan: '损其疾，亦可喜也。' },
-      { position: 5, yinYang: 'yang', text: '或益之，十朋之龟弗克违，元吉。', xiangZhuan: '六五元吉，自上佑也。' },
-      { position: 6, yinYang: 'yin', text: '弗损益之，无咎，贞吉，利有攸往，得臣无家。', xiangZhuan: '弗损益之，大得志也。' },
+      { position: 5, yinYang: 'yin', text: '或益之，十朋之龟弗克违，元吉。', xiangZhuan: '六五元吉，自上佑也。' },
+      { position: 6, yinYang: 'yang', text: '弗损益之，无咎，贞吉，利有攸往，得臣无家。', xiangZhuan: '弗损益之，大得志也。' },
     ],
     shangGua: '艮', xiaGua: '兑', duiGua: 42, zongGua: 42, huGua: 24,
     guaBian: [19, 26, 41, 41, 41, 41],
@@ -789,8 +789,8 @@ export const liuShiSiGua: Gua[] = [
       { position: 1, yinYang: 'yang', text: '利用为大作，元吉，无咎。', xiangZhuan: '元吉无咎，下不厚事也。' },
       { position: 2, yinYang: 'yin', text: '或益之，十朋之龟弗克违，永贞吉。王用享于帝，吉。', xiangZhuan: '或益之，自外来也。' },
       { position: 3, yinYang: 'yin', text: '益之用凶事，无咎。有孚中行，告公用圭。', xiangZhuan: '益用凶事，固有之也。' },
-      { position: 4, yinYang: 'yang', text: '中行，告公从。利用为依迁国。', xiangZhuan: '告公从，以益志也。' },
-      { position: 5, yinYang: 'yin', text: '有孚惠心，勿问元吉。有孚惠我德。', xiangZhuan: '有孚惠心，勿问之矣。' },
+      { position: 4, yinYang: 'yin', text: '中行，告公从。利用为依迁国。', xiangZhuan: '告公从，以益志也。' },
+      { position: 5, yinYang: 'yang', text: '有孚惠心，勿问元吉。有孚惠我德。', xiangZhuan: '有孚惠心，勿问之矣。' },
       { position: 6, yinYang: 'yang', text: '莫益之，或击之，立心勿恒，凶。', xiangZhuan: '莫益之，偏辞也。' },
     ],
     shangGua: '巽', xiaGua: '震', duiGua: 41, zongGua: 41, huGua: 23,
@@ -970,7 +970,7 @@ export const liuShiSiGua: Gua[] = [
       { position: 2, yinYang: 'yin', text: '艮其腓，不拯其随，其心不快。', xiangZhuan: '不拯其随，未退听也。' },
       { position: 3, yinYang: 'yang', text: '艮其限，列其夤，厉薰心。', xiangZhuan: '艮其限，危薰心也。' },
       { position: 4, yinYang: 'yin', text: '艮其身，无咎。', xiangZhuan: '艮其身，止诸躬也。' },
-      { position: 5, yinYang: 'yang', text: '艮其辅，言有序，悔亡。', xiangZhuan: '艮其辅，以中正也。' },
+      { position: 5, yinYang: 'yin', text: '艮其辅，言有序，悔亡。', xiangZhuan: '艮其辅，以中正也。' },
       { position: 6, yinYang: 'yang', text: '敦艮，吉。', xiangZhuan: '敦艮之吉，以厚终也。' },
     ],
     shangGua: '艮', xiaGua: '艮', duiGua: 51, zongGua: 51, huGua: 52,
@@ -985,7 +985,7 @@ export const liuShiSiGua: Gua[] = [
     daXiangZhuan: '山上有木，渐；君子以居贤德善俗。',
     yaos: [
       { position: 1, yinYang: 'yin', text: '鸿渐于干，小子厉，有言，无咎。', xiangZhuan: '小子之厉，义无咎也。' },
-      { position: 2, yinYang: 'yang', text: '鸿渐于磐，饮食衎衎，吉。', xiangZhuan: '饮食衎衎，不素饱也。' },
+      { position: 2, yinYang: 'yin', text: '鸿渐于磐，饮食衎衎，吉。', xiangZhuan: '饮食衎衎，不素饱也。' },
       { position: 3, yinYang: 'yang', text: '鸿渐于陆，夫征不复，妇孕不育，凶；利御寇。', xiangZhuan: '夫征不复，离群丑也。' },
       { position: 4, yinYang: 'yin', text: '鸿渐于木，或得其桷，无咎。', xiangZhuan: '或得其桷，顺以巽也。' },
       { position: 5, yinYang: 'yang', text: '鸿渐于陵，妇三岁不孕，终莫之胜，吉。', xiangZhuan: '终莫之胜，吉，得所愿也。' },
@@ -1039,7 +1039,7 @@ export const liuShiSiGua: Gua[] = [
     daXiangZhuan: '山上有火，旅；君子以明慎用刑，而不留狱。',
     yaos: [
       { position: 1, yinYang: 'yin', text: '旅琐琐，斯其所取灾。', xiangZhuan: '旅琐琐，志穷灾也。' },
-      { position: 2, yinYang: 'yang', text: '旅即次，怀其资，得童仆贞。', xiangZhuan: '得童仆贞，终无尤也。' },
+      { position: 2, yinYang: 'yin', text: '旅即次，怀其资，得童仆贞。', xiangZhuan: '得童仆贞，终无尤也。' },
       { position: 3, yinYang: 'yang', text: '旅焚其次，丧其童仆，贞厉。', xiangZhuan: '旅焚其次，亦以伤矣。' },
       { position: 4, yinYang: 'yang', text: '旅于处，得其资斧，我心不快。', xiangZhuan: '旅于处，未得位也。' },
       { position: 5, yinYang: 'yin', text: '射雉一矢亡，终以誉命。', xiangZhuan: '终以誉命，上逮也。' },
@@ -1061,7 +1061,7 @@ export const liuShiSiGua: Gua[] = [
       { position: 3, yinYang: 'yang', text: '频巽，吝。', xiangZhuan: '频巽之吝，志穷也。' },
       { position: 4, yinYang: 'yin', text: '悔亡，田获三品。', xiangZhuan: '田获三品，有功也。' },
       { position: 5, yinYang: 'yang', text: '贞吉悔亡，无不利。无初有终，先庚三日，后庚三日，吉。', xiangZhuan: '九五之吉，位正中也。' },
-      { position: 6, yinYang: 'yin', text: '巽在床下，丧其资斧，贞凶。', xiangZhuan: '巽在床下，上穷也。' },
+      { position: 6, yinYang: 'yang', text: '巽在床下，丧其资斧，贞凶。', xiangZhuan: '巽在床下，上穷也。' },
     ],
     shangGua: '巽', xiaGua: '巽', duiGua: 58, zongGua: 58, huGua: 57,
     guaBian: [57, 57, 57, 57, 57, 57],
@@ -1078,7 +1078,7 @@ export const liuShiSiGua: Gua[] = [
       { position: 2, yinYang: 'yang', text: '孚兑，吉，悔亡。', xiangZhuan: '孚兑之吉，信志也。' },
       { position: 3, yinYang: 'yin', text: '来兑，凶。', xiangZhuan: '来兑之凶，位不当也。' },
       { position: 4, yinYang: 'yang', text: '商兑，未宁，介疾有喜。', xiangZhuan: '九四之喜，有庆也。' },
-      { position: 5, yinYang: 'yin', text: '孚于剥，有厉。', xiangZhuan: '孚于剥，位正当也。' },
+      { position: 5, yinYang: 'yang', text: '孚于剥，有厉。', xiangZhuan: '孚于剥，位正当也。' },
       { position: 6, yinYang: 'yin', text: '引兑。', xiangZhuan: '上六引兑，未光也。' },
     ],
     shangGua: '兑', xiaGua: '兑', duiGua: 57, zongGua: 57, huGua: 58,
@@ -1092,12 +1092,12 @@ export const liuShiSiGua: Gua[] = [
     tuanZhuan: '涣，亨。刚来而不穷，柔得位乎外而上同。王假有庙，王乃在中也。利涉大川，乘木有功也。',
     daXiangZhuan: '风行水上，涣；先王以享于帝立庙。',
     yaos: [
-      { position: 1, yinYang: 'yang', text: '用拯马壮，吉。', xiangZhuan: '初六之吉，顺也。' },
+      { position: 1, yinYang: 'yin', text: '用拯马壮，吉。', xiangZhuan: '初六之吉，顺也。' },
       { position: 2, yinYang: 'yang', text: '涣奔其机，悔亡。', xiangZhuan: '涣奔其机，得愿也。' },
       { position: 3, yinYang: 'yin', text: '涣其躬，无悔。', xiangZhuan: '涣其躬，志在外也。' },
-      { position: 4, yinYang: 'yang', text: '涣其群，元吉。涣有丘，匪夷所思。', xiangZhuan: '涣其群，元吉，光大也。' },
+      { position: 4, yinYang: 'yin', text: '涣其群，元吉。涣有丘，匪夷所思。', xiangZhuan: '涣其群，元吉，光大也。' },
       { position: 5, yinYang: 'yang', text: '涣汗其大号，涣王居，无咎。', xiangZhuan: '王居无咎，正位也。' },
-      { position: 6, yinYang: 'yin', text: '涣其血，去逖出，无咎。', xiangZhuan: '涣其血，远害也。' },
+      { position: 6, yinYang: 'yang', text: '涣其血，去逖出，无咎。', xiangZhuan: '涣其血，远害也。' },
     ],
     shangGua: '巽', xiaGua: '坎', duiGua: 60, zongGua: 60, huGua: 61,
     guaBian: [57, 29, 59, 59, 59, 59],
@@ -1113,7 +1113,7 @@ export const liuShiSiGua: Gua[] = [
       { position: 1, yinYang: 'yang', text: '不出户庭，无咎。', xiangZhuan: '不出户庭，知通塞也。' },
       { position: 2, yinYang: 'yang', text: '不出门庭，凶。', xiangZhuan: '不出门庭，失时极也。' },
       { position: 3, yinYang: 'yin', text: '不节若，则嗟若，无咎。', xiangZhuan: '不节之嗟，又谁咎也。' },
-      { position: 4, yinYang: 'yang', text: '安节，亨。', xiangZhuan: '安节之亨，承上道也。' },
+      { position: 4, yinYang: 'yin', text: '安节，亨。', xiangZhuan: '安节之亨，承上道也。' },
       { position: 5, yinYang: 'yang', text: '甘节，吉，往有尚。', xiangZhuan: '甘节之吉，居位中也。' },
       { position: 6, yinYang: 'yin', text: '苦节，贞凶，悔亡。', xiangZhuan: '苦节贞凶，其道穷也。' },
     ],
@@ -1131,9 +1131,9 @@ export const liuShiSiGua: Gua[] = [
       { position: 1, yinYang: 'yang', text: '虞吉，有他不燕。', xiangZhuan: '初九虞吉，志未变也。' },
       { position: 2, yinYang: 'yang', text: '鸣鹤在阴，其子和之，我有好爵，吾与尔靡之。', xiangZhuan: '其子和之，中心愿也。' },
       { position: 3, yinYang: 'yin', text: '得敌，或鼓或罢，或泣或歌。', xiangZhuan: '可鼓或罢，位不当也。' },
-      { position: 4, yinYang: 'yang', text: '月几望，马匹亡，无咎。', xiangZhuan: '马匹亡，绝类上也。' },
+      { position: 4, yinYang: 'yin', text: '月几望，马匹亡，无咎。', xiangZhuan: '马匹亡，绝类上也。' },
       { position: 5, yinYang: 'yang', text: '有孚挛如，无咎。', xiangZhuan: '有孚挛如，位正当也。' },
-      { position: 6, yinYang: 'yin', text: '翰音登于天，贞凶。', xiangZhuan: '翰音登于天，何可长也。' },
+      { position: 6, yinYang: 'yang', text: '翰音登于天，贞凶。', xiangZhuan: '翰音登于天，何可长也。' },
     ],
     shangGua: '巽', xiaGua: '兑', duiGua: 62, zongGua: 62, huGua: 27,
     guaBian: [57, 58, 61, 61, 61, 61],
@@ -1213,6 +1213,24 @@ export function getWuxingColor(wuxing: string): string {
     '土': '#8B4513',
   };
   return colors[wuxing] || '#666';
+}
+
+// 根据6个爻的阴阳属性查找对应的卦象
+// yaos数组从初爻到上爻（从下到上）
+export function getGuaByYaos(yaos: ('yin' | 'yang')[]): Gua | undefined {
+  return liuShiSiGua.find(gua => {
+    return gua.yaos.every((yao, index) => yao.yinYang === yaos[index]);
+  });
+}
+
+// 将爻数组转换为八卦（上卦或下卦）
+// 返回卦名：乾、兑、离、震、巽、坎、艮、坤
+export function getTrigramFromYaos(yaos: ('yin' | 'yang')[]): string {
+  const [yao1, yao2, yao3] = yaos;
+  // 阳=1, 阴=0
+  const code = (yao3 === 'yang' ? 1 : 0) * 4 + (yao2 === 'yang' ? 1 : 0) * 2 + (yao1 === 'yang' ? 1 : 0);
+  const trigrams = ['坤', '艮', '坎', '巽', '震', '离', '兑', '乾'];
+  return trigrams[code];
 }
 
 export default liuShiSiGua;
