@@ -1,11 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  getAllFeedback,
-  clearAllFeedback,
   type FeedbackItem,
   type FeedbackType,
 } from '@/components/FeedbackButton';
+import {
+  getAllFeedback,
+  clearAllFeedback,
+  deleteFeedback,
+} from '@/lib/feedback-api';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -44,6 +47,7 @@ import {
   AlertTriangle,
   Eye,
   X,
+  RefreshCw,
 } from 'lucide-react';
 
 // 从环境变量读取管理员密码
@@ -79,9 +83,14 @@ export default function FeedbackAdmin() {
   // 加载反馈数据
   useEffect(() => {
     if (isAuthenticated) {
-      setFeedbackList(getAllFeedback());
+      loadFeedback();
     }
   }, [isAuthenticated]);
+
+  const loadFeedback = async () => {
+    const feedback = await getAllFeedback();
+    setFeedbackList(feedback);
+  };
 
   // 验证密码
   const handleLogin = () => {
@@ -120,10 +129,19 @@ export default function FeedbackAdmin() {
   };
 
   // 清空反馈
-  const handleClear = () => {
-    clearAllFeedback();
+  const handleClear = async () => {
+    await clearAllFeedback();
     setFeedbackList([]);
     setIsClearDialogOpen(false);
+  };
+
+  // 删除单条反馈
+  const handleDelete = async (id: string) => {
+    const success = await deleteFeedback(id);
+    if (success) {
+      setFeedbackList(prev => prev.filter(f => f.id !== id));
+      setSelectedFeedback(null);
+    }
   };
 
   // 格式化时间
@@ -271,6 +289,17 @@ export default function FeedbackAdmin() {
               {/* 操作按钮 */}
               <Button
                 variant="outline"
+                onClick={loadFeedback}
+                className="border-amber-300 dark:border-yellow-700 
+                         text-amber-700 dark:text-yellow-400
+                         hover:bg-amber-100 dark:hover:bg-yellow-900/30"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                刷新
+              </Button>
+
+              <Button
+                variant="outline"
                 onClick={handleExport}
                 disabled={feedbackList.length === 0}
                 className="border-amber-300 dark:border-yellow-700 
@@ -397,7 +426,16 @@ export default function FeedbackAdmin() {
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => selectedFeedback && handleDelete(selectedFeedback.id)}
+              className="border-red-300 dark:border-red-700 text-red-600 dark:text-red-400
+                       hover:bg-red-100 dark:hover:bg-red-900/30"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              删除
+            </Button>
             <Button
               onClick={() => setSelectedFeedback(null)}
               className="bg-amber-600 hover:bg-amber-700 dark:bg-yellow-600 dark:hover:bg-yellow-700"

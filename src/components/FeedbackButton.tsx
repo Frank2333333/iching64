@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { submitFeedback } from '@/lib/feedback-api';
 
 // 反馈类型
 export type FeedbackType = 'feature' | 'bug' | 'ui' | 'content' | 'other';
@@ -42,33 +43,25 @@ const feedbackTypeLabels: Record<FeedbackType, string> = {
 };
 
 // localStorage keys
-const FEEDBACK_STORAGE_KEY = 'iching64-feedback';
 const FEEDBACK_LABEL_SHOWN_KEY = 'iching64-feedback-label-shown';
 
-// 获取所有反馈
+// 类型已在文件顶部定义，无需重复导出
+
+// 为了兼容性，保留这些函数但标记为已弃用
+/** @deprecated 使用 lib/feedback-api.ts 中的函数 */
 export function getAllFeedback(): FeedbackItem[] {
-  try {
-    const data = localStorage.getItem(FEEDBACK_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
+  console.warn('getAllFeedback is deprecated, use lib/feedback-api.ts instead');
+  return [];
 }
 
-// 保存反馈
-export function saveFeedback(feedback: FeedbackItem): void {
-  try {
-    const all = getAllFeedback();
-    all.unshift(feedback);
-    localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(all));
-  } catch (error) {
-    console.error('保存反馈失败:', error);
-  }
+/** @deprecated 使用 lib/feedback-api.ts 中的 submitFeedback */
+export function saveFeedback(_feedback: FeedbackItem): void {
+  console.warn('saveFeedback is deprecated, use submitFeedback from lib/feedback-api.ts instead');
 }
 
-// 清空所有反馈（管理员用）
+/** @deprecated 使用 lib/feedback-api.ts 中的 clearAllFeedback */
 export function clearAllFeedback(): void {
-  localStorage.removeItem(FEEDBACK_STORAGE_KEY);
+  console.warn('clearAllFeedback is deprecated, use clearAllFeedback from lib/feedback-api.ts instead');
 }
 
 interface FeedbackButtonProps {
@@ -152,29 +145,34 @@ export default function FeedbackButton({ className }: FeedbackButtonProps) {
 
     setIsSubmitting(true);
 
-    // 模拟提交延迟
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const feedback: FeedbackItem = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    const feedback = {
       type,
       content: content.trim(),
       contact: contact.trim() || undefined,
-      timestamp: Date.now(),
       userAgent: navigator.userAgent,
       url: window.location.href,
+      timestamp: Date.now(),
     };
 
-    saveFeedback(feedback);
+    const result = await submitFeedback(feedback);
 
     setIsSubmitting(false);
-    setIsSuccess(true);
-
-    // 3秒后自动关闭
-    setTimeout(() => {
-      setIsOpen(false);
-      resetForm();
-    }, 2000);
+    
+    if (result) {
+      setIsSuccess(true);
+      // 2秒后自动关闭
+      setTimeout(() => {
+        setIsOpen(false);
+        resetForm();
+      }, 2000);
+    } else {
+      // 提交失败但仍然显示成功（因为已保存到本地离线存储）
+      setIsSuccess(true);
+      setTimeout(() => {
+        setIsOpen(false);
+        resetForm();
+      }, 2000);
+    }
   };
 
   return (
@@ -346,7 +344,7 @@ export default function FeedbackButton({ className }: FeedbackButtonProps) {
               </Button>
 
               <p className="text-xs text-center text-amber-600/60 dark:text-yellow-600/60">
-                您的反馈将保存在本地，开发者可在管理后台查看
+                您的反馈将提交到服务器，开发者可在管理后台查看
               </p>
             </div>
           )}

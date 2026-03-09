@@ -61,7 +61,17 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     cors: true,
-    allowedHosts: ['.iching64.fun', 'localhost', '127.0.0.1']
+    allowedHosts: ['.iching64.fun', 'localhost', '127.0.0.1'],
+    proxy: {
+      '/api/feedback': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },  // ← 确保这里有逗号！！！
 
   preview: {
