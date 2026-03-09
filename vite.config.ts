@@ -78,6 +78,16 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 4173,
     cors: true,
-    allowedHosts: ['.iching64.fun', 'localhost', '127.0.0.1']
+    allowedHosts: ['.iching64.fun', 'localhost', '127.0.0.1'],
+    proxy: {
+      '/api/feedback': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   }
 });
