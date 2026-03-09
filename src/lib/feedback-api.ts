@@ -6,8 +6,7 @@
 import type { FeedbackItem } from '@/components/FeedbackButton';
 
 // API基础URL
-// 开发时使用相对路径（通过Vite代理）
-// 生产环境可以通过环境变量配置
+// 优先级：1. 环境变量 2. 生产环境默认值
 const API_BASE_URL = import.meta.env.VITE_FEEDBACK_API_URL || '/api';
 
 // 从localStorage获取离线反馈（用于兼容旧数据）

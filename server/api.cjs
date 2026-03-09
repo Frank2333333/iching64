@@ -10,6 +10,7 @@ const feedbackStore = require('./feedback-store.cjs');
 
 const app = express();
 const PORT = process.env.FEEDBACK_PORT || 3001;
+const HOST = process.env.FEEDBACK_HOST || '0.0.0.0';  // 默认监听所有接口
 
 // 中间件
 app.use(cors());
@@ -111,9 +112,10 @@ app.get('/api/health', (req, res) => {
 
 // 启动服务器
 function startServer() {
-  app.listen(PORT, () => {
+  app.listen(PORT, HOST, () => {
     console.log(`\n✅ 反馈API服务器已启动`);
-    console.log(`📡 接口地址: http://localhost:${PORT}/api/feedback`);
+    console.log(`📡 本地访问: http://localhost:${PORT}/api/feedback`);
+    console.log(`🌐 网络访问: http://${HOST}:${PORT}/api/feedback`);
     console.log(`💾 数据文件: ${path.join(__dirname, '../data/feedback.json')}`);
     console.log(`\n可用接口:`);
     console.log(`  GET    /api/feedback     - 获取所有反馈`);
