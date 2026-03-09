@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { liuShiSiGua, getGuaByYaos, getTrigramFromYaos, getWuxingColor, type Gua } from '../data/guaxiang';
 import { ArrowRight, RotateCcw, Info, ChevronRight } from 'lucide-react';
+import ThemeToggle from '../components/ThemeToggle';
 
 // 爻组件
 interface YaoLineProps {
@@ -126,16 +127,19 @@ export default function GuaTransformer() {
             <div className="flex items-center space-x-3">
               <h1 className="text-2xl font-bold tracking-wider">变卦推演</h1>
             </div>
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg
-                       bg-amber-800/50 hover:bg-amber-700/50 
-                       dark:bg-yellow-600/20 dark:hover:bg-yellow-500/30
-                       transition-all duration-300"
-            >
-              <span>返回首页</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex items-center space-x-3">
+              <ThemeToggle />
+              <button
+                onClick={() => navigate('/')}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg
+                         bg-amber-800/50 hover:bg-amber-700/50 
+                         dark:bg-yellow-600/20 dark:hover:bg-yellow-500/30
+                         transition-all duration-300"
+              >
+                <span>返回首页</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
