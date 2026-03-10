@@ -6,9 +6,10 @@ import GuaDetail from './components/GuaDetail';
 import Divination from './pages/Divination';
 import FeedbackAdmin from './pages/FeedbackAdmin';
 import GuaTransformer from './pages/GuaTransformer';
+import QuestionDivination from './pages/QuestionDivination';
 import ThemeToggle from './components/ThemeToggle';
 import { useScrollPosition } from './hooks/useScrollPosition';
-import { Search, BookOpen, Menu, X, Calculator, Sparkles } from 'lucide-react';
+import { Search, BookOpen, Menu, X, Calculator, Sparkles, HelpCircle } from 'lucide-react';
 import FeedbackButton from './components/FeedbackButton';
 import './App.css';
 
@@ -103,6 +104,15 @@ function HomePage() {
                 <span>变卦推演</span>
               </Link>
               <Link
+                to="/question"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
+                         rounded-lg transition-all duration-300 hover:scale-105
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
+              >
+                <HelpCircle className="w-5 h-5" />
+                <span>问事解卦</span>
+              </Link>
+              <Link
                 to="/divination"
                 className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
                          rounded-lg transition-all duration-300 hover:scale-105
@@ -153,6 +163,16 @@ function HomePage() {
             >
               <Sparkles className="w-5 h-5" />
               <span>变卦推演</span>
+            </Link>
+            <Link
+              to="/question"
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors mb-3"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <HelpCircle className="w-5 h-5" />
+              <span>问事解卦</span>
             </Link>
             <Link
               to="/divination"
@@ -279,6 +299,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/divination" element={<Divination />} />
+        <Route path="/question" element={<QuestionDivination />} />
         <Route path="/transformer" element={<GuaTransformer />} />
         <Route path="/admin/feedback" element={<FeedbackAdmin />} />
       </Routes>
