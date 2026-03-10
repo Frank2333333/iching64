@@ -71,6 +71,10 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      '/api/divination': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
     },
   },  // ← 确保这里有逗号！！！
 
@@ -85,6 +89,10 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/api/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/api/divination': {
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
