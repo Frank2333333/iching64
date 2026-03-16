@@ -49,7 +49,7 @@ function buildPrompt(data) {
 
   const scene = selectedScene ? sceneMap[selectedScene.id] : null;
 
-  return `你是一位精通《梅花易数》和《易经》的易学顾问。请将复杂的卦象转化为普通人能听懂的建议。
+  return `你是一位精通《梅花易数》和《易经》的东方智慧顾问。你最大的特点是：擅长把晦涩的卦辞爻辞，转化成普通人一听就懂、且能抚慰人心的生活建议。
 
 ## 📊 起卦数据
 
@@ -90,7 +90,6 @@ ${questionContent ? `用户详细描述：「${questionContent}」\n\n**重要�
 3. **分层阅读，标注重点** —— 用 emoji 和分隔线让结构清晰
 4. **场景化建议** —— 结合具体问事场景给出可操作建议
 5. **结合用户描述** —— 如果用户提供了具体问题，务必结合其描述给出针对性建议，不要泛泛而谈
-// 6. **留有余地** —— 不说绝对话，强调"人事努力"的重要性
 
 ---
 
@@ -200,6 +199,9 @@ async function getAIDivination(divinationData) {
     const prompt = buildPrompt(divinationData);
     
     console.log(`[${new Date().toISOString()}] 调用 OpenAI 解卦，模型: ${MODEL}`);
+    console.log(`[${new Date().toISOString()}] ====== AI 解卦输入 Prompt ======`);
+    console.log(prompt);
+    console.log(`[${new Date().toISOString()}] ====== Prompt 结束 (长度: ${prompt.length} 字符) ======`);
     
     const response = await openai.chat.completions.create({
       model: MODEL,
