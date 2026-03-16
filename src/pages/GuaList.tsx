@@ -5,7 +5,7 @@ import GuaCard from '../components/GuaCard';
 import GuaDetail from '../components/GuaDetail';
 import ThemeToggle from '../components/ThemeToggle';
 import { useScrollPosition } from '../hooks/useScrollPosition';
-import { Search, BookOpen, Menu, X, Calculator, Sparkles, HelpCircle, ArrowLeft } from 'lucide-react';
+import { Search, BookOpen, Menu, X, Calculator, Sparkles, HelpCircle } from 'lucide-react';
 import FeedbackButton from '../components/FeedbackButton';
 
 export default function GuaList() {
@@ -187,15 +187,6 @@ export default function GuaList() {
         {selectedGua ? (
           <div className={`${isTransitioning ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'} 
                           transition-all duration-500`}>
-            <button
-              onClick={handleBack}
-              className="mb-6 flex items-center gap-2 px-4 py-2 rounded-lg
-                       text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100
-                       hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-all"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>返回卦象列表</span>
-            </button>
             <GuaDetail 
               gua={selectedGua} 
               onBack={handleBack}
