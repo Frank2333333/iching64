@@ -155,6 +155,62 @@ app.post('/api/divination/ai', async (req, res) => {
   }
 });
 
+// AI 对话接口
+app.post('/api/divination/chat', async (req, res) => {
+  try {
+    const { message, divinationData, history } = req.body;
+    
+    // 验证必要字段
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: '消息内容不能为空'
+      });
+    }
+    
+    if (!divinationData || !divinationData.gua) {
+      return res.status(400).json({
+        success: false,
+        error: '解卦数据不完整'
+      });
+    }
+
+    // 检查 OpenAI 配置
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return res.status(503).json({
+        success: false,
+        error: 'AI 对话服务未配置，请在服务器配置 OpenAI API Key'
+      });
+    }
+
+    console.log(`[${new Date().toISOString()}] 收到 AI 对话请求: ${divinationData.gua?.name || 'unknown'}`);
+    console.log(`[${new Date().toISOString()}] 用户消息: ${message.substring(0, 100)}...`);
+    
+    // 调用 OpenAI 对话
+    const aiResult = await divinationAI.chatWithAI({
+      message: message.trim(),
+      divinationData,
+      history: history || []
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        message: aiResult,
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        timestamp: Date.now()
+      }
+    });
+    
+  } catch (error) {
+    console.error('AI 对话失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'AI 对话服务暂时不可用'
+    });
+  }
+});
+
 // ==================== 健康检查 ====================
 
 // 健康检查
@@ -187,6 +243,7 @@ function startServer() {
     console.log(`  GET    /api/feedback           - 获取所有反馈`);
     console.log(`  POST   /api/feedback           - 提交新反馈`);
     console.log(`  POST   /api/divination/ai      - AI 解卦`);
+    console.log(`  POST   /api/divination/chat    - AI 对话`);
     console.log(`  DELETE /api/feedback           - 清空所有反馈`);
     console.log(`  DELETE /api/feedback/:id       - 删除单条反馈`);
     console.log(`  GET    /api/health             - 健康检查\n`);

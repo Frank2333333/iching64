@@ -246,7 +246,143 @@ async function getAIDivination(divinationData) {
   }
 }
 
+/**
+ * 构建对话 prompt
+ * @param {Object} data 对话数据
+ * @returns {string} prompt 文本
+ */
+function buildChatPrompt(data) {
+  const { message, history, divinationData } = data;
+  
+  // 只取最近3轮对话作为上下文，避免太长
+  const recentHistory = history.slice(-6);
+  
+  // 构建对话历史文本（简化版，只保留关键信息）
+  const historyText = recentHistory.map(msg => {
+    // 截取过长的消息
+    const content = msg.content.length > 300 
+      ? msg.content.substring(0, 300) + '...'
+      : msg.content;
+    if (msg.role === 'assistant') {
+      return `AI：${content}`;
+    }
+    return `用户：${content}`;
+  }).join('\n\n');
+
+  // 判断是否是第一轮对话
+  const isFirstChat = !history || history.length === 0;
+
+  return `你是一位精通《梅花易数》的易学顾问。用户正在就之前的解卦内容进行追问。
+
+## 背景卦象（仅供参考，无需重复解释）
+- 本卦：${divinationData.gua?.chineseName}（${divinationData.wuxingDetail?.judgment}）
+- 体用：${divinationData.tiGuaName} vs ${divinationData.yongGuaName}
+- 动爻：第 ${divinationData.dongYao?.position} 爻
+
+## 对话记录
+${historyText || '（首轮对话）'}
+
+## 用户追问
+「${message}」
+
+---
+
+## ⚠️ 重要回答规则
+
+### 禁止做的事（会导致重复）
+1. **禁止重复介绍卦象** —— 不要再说"本卦是XX，体卦XX，用卦XX"
+2. **禁止重复时间框架** —— 不要再次列举"3-5天、月中、月底"等时间节点
+3. **禁止重复吉凶判断** —— 不要再说一遍"大凶/大吉"的整体判断
+4. **禁止复制粘贴之前的回答**
+
+### 必须做的事
+1. **直接回答新问题** —— 用户问什么，直接答什么，不要铺垫
+2. **简洁补充信息** —— 只提供与问题相关的新信息或细节
+3. **引用之前的结论** —— 如果需要提及之前的分析，用"之前说过..."一带而过
+4. **控制字数** —— 回答控制在 100-150 字，最多不超过 200 字
+
+### 示例对比
+
+❌ 错误示范（重复）：
+用户问："能大赚还是小赚？"
+AI答："基于归妹卦的象意...用卦兑克体卦震...就像泽水压制雷鸣...短期内（3-5天）...月中前后...月底..."
+→ 这是重复之前的完整分析！
+
+✅ 正确示范（直接回答）：
+用户问："能大赚还是小赚？"
+AI答："小赚。卦象显示用克体，外部压制明显，难有暴利。动爻在二爻，提示'耐心观察'——这暗示只能赚个零花钱（5-10%左右），别贪心。"
+→ 直接回答，没有重复卦象解释和时间节点！
+
+---
+
+请直接回答用户的追问，不要重复之前的分析内容。`;
+}
+
+/**
+ * 调用 OpenAI 进行对话
+ * @param {Object} data 对话数据
+ * @returns {Promise<string>} AI 回复
+ */
+async function chatWithAI(data) {
+  // 检查 API Key
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+    throw new Error('OpenAI API Key 未配置，请在 .env 文件中设置 OPENAI_API_KEY');
+  }
+
+  try {
+    const prompt = buildChatPrompt(data);
+    
+    console.log(`[${new Date().toISOString()}] 调用 OpenAI 对话，模型: ${MODEL}`);
+    console.log(`[${new Date().toISOString()}] ====== AI 对话输入 Prompt ======`);
+    console.log(prompt);
+    console.log(`[${new Date().toISOString()}] ====== Prompt 结束 (长度: ${prompt.length} 字符) ======`);
+    
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: '你是一位精通《梅花易数》和《易经》的易学大师，擅长将古老的易学智慧与现代生活相结合，为用户提供既有传统深度又有现实指导意义的解卦服务。'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 800,  // 对话回答更简洁，不需要太多 token
+    });
+
+    const result = response.choices[0]?.message?.content;
+    
+    if (!result) {
+      throw new Error('OpenAI 返回结果为空');
+    }
+
+    console.log(`[${new Date().toISOString()}] OpenAI 对话成功，消耗 tokens: ${response.usage?.total_tokens || 'unknown'}`);
+    
+    return result;
+  } catch (error) {
+    console.error('OpenAI 对话失败:', error);
+    
+    // 返回友好的错误信息
+    if (error.code === 'insufficient_quota') {
+      throw new Error('OpenAI API 额度不足，请联系管理员');
+    } else if (error.code === 'invalid_api_key') {
+      throw new Error('OpenAI API Key 无效，请检查配置');
+    } else if (error.code === 'rate_limit_exceeded') {
+      throw new Error('请求过于频繁，请稍后再试');
+    } else if (error.message?.includes('timeout')) {
+      throw new Error('请求超时，请稍后重试');
+    }
+    
+    throw new Error(`对话服务暂时不可用: ${error.message}`);
+  }
+}
+
 module.exports = {
   getAIDivination,
   buildPrompt,
+  chatWithAI,
+  buildChatPrompt,
 };

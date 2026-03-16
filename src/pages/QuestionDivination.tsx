@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useScrollPosition } from '../hooks/useScrollPosition';
 import ThemeToggle from '../components/ThemeToggle';
-import { getAIDivination, checkAIDivinationStatus, type DivinationData } from '../lib/ai-divination-api';
+import { getAIDivination, checkAIDivinationStatus, sendChatMessage, type DivinationData, type ChatMessage } from '../lib/ai-divination-api';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 
 // 问事场景类型
@@ -457,6 +457,12 @@ export default function QuestionDivination() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiAvailable, setAiAvailable] = useState<boolean | null>(null);
+
+  // AI 对话状态
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   // 检查 AI 服务状态
   useEffect(() => {
@@ -918,6 +924,14 @@ export default function QuestionDivination() {
             timestamp: response.data.timestamp,
           },
         });
+        // 将 AI 解卦结果作为第一条对话消息
+        setChatMessages([
+          {
+            role: 'assistant',
+            content: response.data.interpretation,
+            timestamp: response.data.timestamp,
+          },
+        ]);
       } else {
         setAiError(response.error || 'AI 解卦失败');
       }
@@ -925,6 +939,86 @@ export default function QuestionDivination() {
       setAiError(error instanceof Error ? error.message : '请求失败');
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  // 发送对话消息
+  const handleSendChatMessage = async () => {
+    if (!result || !chatInput.trim() || chatLoading) return;
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: chatInput.trim(),
+      timestamp: Date.now(),
+    };
+
+    // 添加用户消息到历史
+    const newMessages = [...chatMessages, userMessage];
+    setChatMessages(newMessages);
+    setChatInput('');
+    setChatLoading(true);
+    setChatError(null);
+
+    try {
+      const divinationData: DivinationData = {
+        gua: result.gua,
+        dongYao: result.dongYao,
+        tiGuaName: result.tiGuaName,
+        yongGuaName: result.yongGuaName,
+        wuxingDetail: result.wuxingDetail,
+        huGua: result.huGua,
+        bianGua: result.bianGua,
+        yingQi: result.yingQi,
+        selectedScene: selectedScene || undefined,
+        questionContent: questionContent || undefined,
+      };
+
+      // 准备历史记录：只取最近3轮，且对初始解卦结果进行摘要
+      const processedHistory = chatMessages.slice(-6).map((msg, idx) => {
+        // 如果是第一条消息（初始解卦结果）且内容很长，进行摘要
+        if (idx === 0 && msg.role === 'assistant' && msg.content.length > 300) {
+          return {
+            ...msg,
+            content: msg.content.substring(0, 300) + '... [以上为初始解卦摘要，后续回答请直接针对新问题，不要重复这些基础分析]'
+          };
+        }
+        return msg;
+      });
+
+      const response = await sendChatMessage({
+        message: userMessage.content,
+        divinationData,
+        history: processedHistory,
+      });
+
+      if (response.success && response.data) {
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: response.data.message,
+          timestamp: response.data.timestamp,
+        };
+        setChatMessages([...newMessages, assistantMessage]);
+      } else {
+        setChatError(response.error || '发送失败');
+        // 恢复用户输入
+        setChatInput(userMessage.content);
+        setChatMessages(chatMessages);
+      }
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : '请求失败');
+      // 恢复用户输入
+      setChatInput(userMessage.content);
+      setChatMessages(chatMessages);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  // 处理回车键发送
+  const handleChatKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendChatMessage();
     }
   };
 
@@ -1479,6 +1573,135 @@ export default function QuestionDivination() {
                     </div>
                   )}
                 </div>
+
+                {/* AI 对话区域 - 在 AI 解卦结果下方 */}
+                {result.aiInterpretation && (
+                  <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 
+                               dark:from-violet-950/20 dark:to-fuchsia-950/20
+                               rounded-2xl p-6 shadow-md 
+                               border-2 border-violet-300 dark:border-violet-700/50">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Bot className="w-6 h-6 text-violet-600 dark:text-violet-400" />
+                      <h3 className="text-xl font-bold text-violet-900 dark:text-violet-100">
+                        💬 继续追问
+                      </h3>
+                      <span className="text-xs px-2 py-1 bg-violet-100 dark:bg-violet-900/50 
+                                     text-violet-700 dark:text-violet-300 rounded-full">
+                        多轮对话
+                      </span>
+                    </div>
+
+                    {/* 对话历史 */}
+                    <div className="space-y-4 max-h-96 overflow-y-auto mb-4 p-2">
+                      {chatMessages.map((msg, index) => (
+                        <div
+                          key={index}
+                          className={`flex ${
+                            msg.role === 'user' ? 'justify-end' : 'justify-start'
+                          }`}
+                        >
+                          <div
+                            className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                              msg.role === 'user'
+                                ? 'bg-violet-600 text-white dark:bg-violet-700'
+                                : 'bg-white dark:bg-neutral-800 border border-violet-200 dark:border-violet-800/30'
+                            }`}
+                          >
+                            {msg.role === 'assistant' && (
+                              <div className="flex items-center gap-2 mb-2">
+                                <Bot className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                                <span className="text-xs font-medium text-violet-600 dark:text-violet-400">
+                                  AI 大师
+                                </span>
+                              </div>
+                            )}
+                            <div
+                              className={`text-sm ${
+                                msg.role === 'user'
+                                  ? 'text-white'
+                                  : 'text-violet-900 dark:text-violet-100'
+                              }`}
+                            >
+                              {msg.role === 'assistant' ? (
+                                <MarkdownRenderer content={msg.content} className="text-sm" />
+                              ) : (
+                                <p>{msg.content}</p>
+                              )}
+                            </div>
+                            <div
+                              className={`text-xs mt-2 ${
+                                msg.role === 'user'
+                                  ? 'text-violet-200'
+                                  : 'text-violet-400 dark:text-violet-500'
+                              }`}
+                            >
+                              {new Date(msg.timestamp).toLocaleTimeString()}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {chatLoading && (
+                        <div className="flex justify-start">
+                          <div className="bg-white dark:bg-neutral-800 border border-violet-200 dark:border-violet-800/30 rounded-2xl px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 text-violet-600 dark:text-violet-400 animate-spin" />
+                              <span className="text-sm text-violet-600 dark:text-violet-400">
+                                AI 思考中...
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 错误提示 */}
+                    {chatError && (
+                      <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800/30">
+                        <p className="text-sm text-red-600 dark:text-red-400">
+                          ❌ {chatError}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 输入框 */}
+                    <div className="flex gap-2">
+                      <textarea
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={handleChatKeyDown}
+                        placeholder="根据解卦内容继续提问，例如：'能再说详细点吗？' 或 '这个时机具体是什么时候？'"
+                        rows={2}
+                        disabled={chatLoading}
+                        className="flex-1 px-4 py-3 border border-violet-300 dark:border-violet-700/50 
+                                 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-500 
+                                 dark:focus:ring-violet-600
+                                 text-violet-900 dark:text-violet-100
+                                 bg-white dark:bg-neutral-900
+                                 transition-colors placeholder:text-violet-400 dark:placeholder:text-violet-700/50
+                                 resize-none disabled:opacity-50"
+                      />
+                      <button
+                        onClick={handleSendChatMessage}
+                        disabled={!chatInput.trim() || chatLoading}
+                        className="px-4 py-2 bg-violet-600 hover:bg-violet-700
+                                 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed
+                                 text-white font-medium rounded-lg 
+                                 transition-all shadow-lg
+                                 hover:shadow-xl
+                                 flex items-center justify-center"
+                      >
+                        {chatLoading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                        ) : (
+                          <span className="text-lg">➤</span>
+                        )}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-xs text-violet-500 dark:text-violet-500">
+                      提示：按 Enter 发送，Shift + Enter 换行。对话基于当前卦象进行。
+                    </p>
+                  </div>
+                )}
 
                 {/* 体用关系展示 - 梅花易数 */}
                 {result && (

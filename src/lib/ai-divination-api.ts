@@ -97,7 +97,7 @@ export async function getAIDivination(data: DivinationData): Promise<AIDivinatio
     let result;
     try {
       result = JSON.parse(responseText);
-    } catch (parseError) {
+    } catch {
       console.error('JSON 解析失败:', responseText.substring(0, 200));
       // 如果返回的是 HTML（通常是 404 或 500 错误页面）
       if (responseText.trim().startsWith('<')) {
@@ -149,5 +149,93 @@ export async function checkAIDivinationStatus(): Promise<boolean> {
   } catch (error) {
     console.error('Health check 失败:', error);
     return false;
+  }
+}
+
+// 对话消息类型
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: number;
+}
+
+// 对话请求数据
+export interface ChatRequestData {
+  message: string;
+  divinationData: DivinationData;
+  history: ChatMessage[];
+}
+
+// 对话响应
+export interface ChatResponse {
+  success: boolean;
+  data?: {
+    message: string;
+    model: string;
+    timestamp: number;
+  };
+  error?: string;
+}
+
+/**
+ * 发送对话消息
+ * @param data 对话请求数据
+ * @returns AI 回复
+ */
+export async function sendChatMessage(data: ChatRequestData): Promise<ChatResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/divination/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    // 获取响应文本
+    const responseText = await response.text();
+    
+    // 检查响应是否为空
+    if (!responseText || responseText.trim() === '') {
+      console.error('API 返回空响应');
+      return {
+        success: false,
+        error: '服务器返回空响应，请检查后端服务是否正常运行',
+      };
+    }
+
+    // 尝试解析 JSON
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      console.error('JSON 解析失败:', responseText.substring(0, 200));
+      // 如果返回的是 HTML（通常是 404 或 500 错误页面）
+      if (responseText.trim().startsWith('<')) {
+        return {
+          success: false,
+          error: `服务器返回 HTML 页面而非 JSON，状态码: ${response.status}。请检查 API 地址配置是否正确`,
+        };
+      }
+      return {
+        success: false,
+        error: `服务器返回无效数据: ${responseText.substring(0, 100)}`,
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: result.error || `请求失败: ${response.status}`,
+      };
+    }
+
+    return result;
+  } catch (error) {
+    console.error('对话请求失败:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '网络请求失败',
+    };
   }
 }
