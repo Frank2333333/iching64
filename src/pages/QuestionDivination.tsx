@@ -4,7 +4,7 @@ import { liuShiSiGua, type Gua, type Yao } from '../data/guaxiang';
 import { 
   ArrowLeft, Sparkles, BookOpen, HelpCircle, Briefcase, Heart, 
   Activity, Coins, GraduationCap, Plane, Scale, Search, Dice5,
-  Lightbulb, Compass, ChevronRight, RotateCcw, Bot, Loader2
+  Lightbulb, Compass, ChevronRight, RotateCcw, Bot, Loader2, Grid3X3, Menu, X
 } from 'lucide-react';
 import { useScrollPosition } from '../hooks/useScrollPosition';
 import ThemeToggle from '../components/ThemeToggle';
@@ -448,6 +448,10 @@ export default function QuestionDivination() {
   const [num3, setNum3] = useState('');
   const [result, setResult] = useState<DivinationResult | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [questionContent, setQuestionContent] = useState(''); // 用户输入的具体问事内容
+  
+  // 移动端菜单状态
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // AI 解卦状态
   const [aiLoading, setAiLoading] = useState(false);
@@ -484,6 +488,7 @@ export default function QuestionDivination() {
     setNum1('');
     setNum2('');
     setNum3('');
+    setQuestionContent('');
   };
 
   // 返回起卦页面
@@ -872,6 +877,7 @@ export default function QuestionDivination() {
     setNum1('');
     setNum2('');
     setNum3('');
+    setQuestionContent('');
     setAiError(null);
   };
 
@@ -898,6 +904,7 @@ export default function QuestionDivination() {
         bianGua: result.bianGua,
         yingQi: result.yingQi,
         selectedScene: selectedScene || undefined,
+        questionContent: questionContent || undefined,
       };
 
       const response = await getAIDivination(divinationData);
@@ -951,24 +958,96 @@ export default function QuestionDivination() {
               <HelpCircle className="w-8 h-8 text-amber-300" />
               <h1 className="text-2xl font-bold tracking-wider">问事解卦</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               <Link
-                to="/"
+                to="/hexagrams"
                 className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
                          rounded-lg transition-all duration-300 hover:scale-105
-                         dark:bg-amber-800 dark:hover:bg-amber-700"
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
               >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="hidden sm:inline">返回</span>
+                <Grid3X3 className="w-5 h-5" />
+                <span>六十四卦</span>
               </Link>
+              <Link
+                to="/transformer"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
+                         rounded-lg transition-all duration-300 hover:scale-105
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>变卦推演</span>
+              </Link>
+              <Link
+                to="/divination"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
+                         rounded-lg transition-all duration-300 hover:scale-105
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
+              >
+                <Dice5 className="w-5 h-5" />
+                <span>数字起卦</span>
+              </Link>
+              <ThemeToggle />
+            </div>
+            {/* Mobile Menu Button */}
+            <div className="flex items-center space-x-2 md:hidden">
+              <ThemeToggle />
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 rounded-lg hover:bg-amber-800/50 transition-colors"
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-amber-900/95 dark:bg-neutral-900/95 border-t border-amber-700 dark:border-yellow-900/50 px-4 py-4 animate-slideInRight">
+            <Link
+              to="/hexagrams"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors mb-3"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Grid3X3 className="w-5 h-5" />
+              <span>六十四卦</span>
+            </Link>
+            <Link
+              to="/transformer"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors mb-3"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>变卦推演</span>
+            </Link>
+            <Link
+              to="/divination"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Dice5 className="w-5 h-5" />
+              <span>数字起卦</span>
+            </Link>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
       <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Slogan */}
+        <div className="text-center mb-8 animate-fadeIn">
+          <p className="text-xl md:text-2xl font-serif text-amber-800 dark:text-yellow-300/90 tracking-wider italic">
+            "观天之道，执天之行，尽矣。"
+          </p>
+        </div>
+
         {/* 步骤指示器 */}
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center space-x-2">
@@ -1071,6 +1150,35 @@ export default function QuestionDivination() {
                 >
                   更换场景
                 </button>
+              </div>
+            </div>
+
+            {/* 问事内容输入 */}
+            <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 mb-6 shadow-md 
+                         border border-amber-200 dark:border-yellow-900/30
+                         dark:hover:border-yellow-800/50 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <Search className="w-6 h-6 text-amber-600 dark:text-yellow-500" />
+                <h2 className="text-xl font-bold text-amber-900 dark:text-yellow-100">具体问事内容</h2>
+              </div>
+              <p className="text-sm text-amber-600 dark:text-yellow-400/70 mb-3">
+                请详细描述您想问的具体事情（选填，有助于 AI 给出更精准的建议）
+              </p>
+              <textarea
+                value={questionContent}
+                onChange={(e) => setQuestionContent(e.target.value)}
+                placeholder={`例如：\n• 我想问最近公司有个晋升机会，我能否成功升职？\n• 我和男朋友最近感情出了点问题，想知道能否和好？\n• 最近在考虑换工作，不知道时机是否合适？`}
+                rows={4}
+                className="w-full px-4 py-3 border border-amber-300 dark:border-yellow-700/50 
+                         rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 
+                         dark:focus:ring-yellow-600
+                         text-amber-900 dark:text-yellow-100
+                         bg-white dark:bg-neutral-900
+                         transition-colors placeholder:text-amber-400 dark:placeholder:text-yellow-700/50
+                         resize-none"
+              />
+              <div className="mt-2 text-right text-xs text-amber-500 dark:text-yellow-600">
+                {questionContent.length}/200 字
               </div>
             </div>
 

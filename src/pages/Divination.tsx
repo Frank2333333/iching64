@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { liuShiSiGua, type Gua, baGua } from '../data/guaxiang';
-import { Calculator, ArrowLeft, Sparkles, BookOpen, Dice5 } from 'lucide-react';
+import { Calculator, ArrowLeft, Sparkles, BookOpen, Dice5, Grid3X3, HelpCircle, Menu, X } from 'lucide-react';
 // import { useTheme } from '../hooks/useTheme';
 import { useScrollPosition } from '../hooks/useScrollPosition';
 import ThemeToggle from '../components/ThemeToggle';
@@ -42,6 +42,7 @@ export default function Divination() {
   const [result, setResult] = useState<DivinationResult | null>(null);
   const [showGuaDetail, setShowGuaDetail] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // 记住滚动位置
   useScrollPosition(showGuaDetail ? 'divination-detail' : 'divination');
@@ -153,20 +154,85 @@ export default function Divination() {
               <Calculator className="w-8 h-8 text-amber-300" />
               <h1 className="text-2xl font-bold tracking-wider">数字起卦</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
               <Link
                 to="/"
                 className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
                          rounded-lg transition-all duration-300 hover:scale-105
-                         dark:bg-amber-800 dark:hover:bg-amber-700"
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
               >
-                <ArrowLeft className="w-5 h-5" />
-                <span className="hidden sm:inline">返回卦象列表</span>
+                <HelpCircle className="w-5 h-5" />
+                <span>问事解卦</span>
               </Link>
+              <Link
+                to="/hexagrams"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
+                         rounded-lg transition-all duration-300 hover:scale-105
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
+              >
+                <Grid3X3 className="w-5 h-5" />
+                <span>六十四卦</span>
+              </Link>
+              <Link
+                to="/transformer"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
+                         rounded-lg transition-all duration-300 hover:scale-105
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span>变卦推演</span>
+              </Link>
+              <ThemeToggle />
+            </div>
+            {/* Mobile Menu Button */}
+            <div className="flex items-center space-x-2 md:hidden">
+              <ThemeToggle />
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 rounded-lg hover:bg-amber-800/50 transition-colors"
+              >
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-amber-900/95 dark:bg-neutral-900/95 border-t border-amber-700 dark:border-yellow-900/50 px-4 py-4 animate-slideInRight">
+            <Link
+              to="/"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors mb-3"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <HelpCircle className="w-5 h-5" />
+              <span>问事解卦</span>
+            </Link>
+            <Link
+              to="/hexagrams"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors mb-3"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Grid3X3 className="w-5 h-5" />
+              <span>六十四卦</span>
+            </Link>
+            <Link
+              to="/transformer"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>变卦推演</span>
+            </Link>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}

@@ -53,6 +53,7 @@ export interface DivinationData {
     name: string;
     description: string;
   } | null;
+  questionContent?: string; // 用户输入的具体问事内容
 }
 
 export interface AIDivinationResponse {

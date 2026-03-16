@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { liuShiSiGua, getGuaByYaos, getTrigramFromYaos, getWuxingColor, type Gua } from '../data/guaxiang';
-import { ArrowRight, RotateCcw, Info, ChevronRight } from 'lucide-react';
+import { RotateCcw, Info, ChevronRight, HelpCircle, Grid3X3, Calculator, Menu, X } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 
 // 爻组件
@@ -67,7 +67,7 @@ function TrigramSymbol({ name }: { name: string }) {
 }
 
 export default function GuaTransformer() {
-  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   // 初始为乾卦（六爻皆阳）
   const [yaos, setYaos] = useState<('yin' | 'yang')[]>(['yang', 'yang', 'yang', 'yang', 'yang', 'yang']);
@@ -127,21 +127,85 @@ export default function GuaTransformer() {
             <div className="flex items-center space-x-3">
               <h1 className="text-2xl font-bold tracking-wider">变卦推演</h1>
             </div>
-            <div className="flex items-center space-x-3">
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
+              <Link
+                to="/"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
+                         rounded-lg transition-all duration-300 hover:scale-105
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
+              >
+                <HelpCircle className="w-5 h-5" />
+                <span>问事解卦</span>
+              </Link>
+              <Link
+                to="/hexagrams"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
+                         rounded-lg transition-all duration-300 hover:scale-105
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
+              >
+                <Grid3X3 className="w-5 h-5" />
+                <span>六十四卦</span>
+              </Link>
+              <Link
+                to="/divination"
+                className="flex items-center space-x-2 px-4 py-2 bg-amber-700 hover:bg-amber-600 
+                         rounded-lg transition-all duration-300 hover:scale-105
+                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
+              >
+                <Calculator className="w-5 h-5" />
+                <span>数字起卦</span>
+              </Link>
+              <ThemeToggle />
+            </div>
+            {/* Mobile Menu Button */}
+            <div className="flex items-center space-x-2 md:hidden">
               <ThemeToggle />
               <button
-                onClick={() => navigate('/')}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg
-                         bg-amber-800/50 hover:bg-amber-700/50 
-                         dark:bg-yellow-600/20 dark:hover:bg-yellow-500/30
-                         transition-all duration-300"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 rounded-lg hover:bg-amber-800/50 transition-colors"
               >
-                <span>返回首页</span>
-                <ArrowRight className="w-4 h-4" />
+                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-amber-900/95 dark:bg-neutral-900/95 border-t border-amber-700 dark:border-yellow-900/50 px-4 py-4 animate-slideInRight">
+            <Link
+              to="/"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors mb-3"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <HelpCircle className="w-5 h-5" />
+              <span>问事解卦</span>
+            </Link>
+            <Link
+              to="/hexagrams"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors mb-3"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Grid3X3 className="w-5 h-5" />
+              <span>六十四卦</span>
+            </Link>
+            <Link
+              to="/divination"
+              className="flex items-center justify-center space-x-2 px-4 py-3 bg-amber-700 
+                       hover:bg-amber-600 dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
+                       rounded-lg transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Calculator className="w-5 h-5" />
+              <span>数字起卦</span>
+            </Link>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
