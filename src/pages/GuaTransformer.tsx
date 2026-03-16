@@ -16,42 +16,63 @@ function YaoLine({ yinYang, position, onClick, isChanging }: YaoLineProps) {
   return (
     <button
       onClick={onClick}
-      className={`relative group w-full py-2 transition-all duration-300 hover:scale-105 active:scale-95
+      className={`relative group w-full py-3 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]
                   ${isChanging ? 'animate-pulse' : ''}`}
     >
-      {/* 爻位标签 */}
-      <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs text-amber-600/60 dark:text-yellow-500/60 
-                       opacity-0 group-hover:opacity-100 transition-opacity">
-        {position === 1 ? '初' : position === 2 ? '二' : position === 3 ? '三' : 
-         position === 4 ? '四' : position === 5 ? '五' : '上'}
-      </span>
+      {/* 背景高亮效果 */}
+      <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 
+                    bg-gradient-to-r from-transparent via-amber-200/30 to-transparent 
+                    dark:via-yellow-500/10 transition-opacity duration-300" />
       
-      {yinYang === 'yang' ? (
-        // 阳爻 - 一条长横线
-        <div className="w-24 h-3 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 
-                       dark:from-yellow-500 dark:via-yellow-400 dark:to-yellow-500
-                       rounded-full shadow-lg shadow-amber-500/30 dark:shadow-yellow-500/30
-                       group-hover:shadow-xl group-hover:shadow-amber-500/50
-                       transition-all duration-300" />
-      ) : (
-        // 阴爻 - 两条短横线
-        <div className="flex justify-between w-24">
-          <div className="w-10 h-3 bg-gradient-to-r from-amber-700 to-amber-600
-                         dark:from-yellow-600 dark:to-yellow-500
-                         rounded-full shadow-md shadow-amber-500/20 dark:shadow-yellow-500/20
-                         group-hover:shadow-lg transition-all duration-300" />
-          <div className="w-10 h-3 bg-gradient-to-r from-amber-600 to-amber-700
-                         dark:from-yellow-500 dark:to-yellow-600
-                         rounded-full shadow-md shadow-amber-500/20 dark:shadow-yellow-500/20
-                         group-hover:shadow-lg transition-all duration-300" />
+      <div className="relative flex items-center justify-center">
+        {/* 左侧：爻位标签 */}
+        <div className="absolute left-2 sm:left-4 flex items-center">
+          <span className="text-xs font-medium text-amber-600/70 dark:text-yellow-500/70
+                         px-2 py-1 rounded-full bg-amber-100/50 dark:bg-yellow-500/10
+                         group-hover:bg-amber-200/70 dark:group-hover:bg-yellow-500/20
+                         transition-colors duration-300">
+            {position === 1 ? '初爻' : position === 2 ? '二爻' : position === 3 ? '三爻' : 
+             position === 4 ? '四爻' : position === 5 ? '五爻' : '上爻'}
+          </span>
         </div>
-      )}
-      
-      {/* 悬停提示 */}
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-8
-                     opacity-0 group-hover:opacity-100 transition-opacity
-                     text-xs text-amber-600 dark:text-yellow-500 whitespace-nowrap">
-        点击变{yinYang === 'yang' ? '阴' : '阳'}
+        
+        {/* 中间：爻线 - 统一居中对齐 */}
+        <div className="flex justify-center items-center">
+          {yinYang === 'yang' ? (
+            // 阳爻 - 一条长横线
+            <div className="w-28 sm:w-32 h-3.5 bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-600 
+                           dark:from-yellow-500 dark:via-yellow-400 dark:to-yellow-500
+                           rounded-full shadow-lg shadow-amber-500/30 dark:shadow-yellow-500/30
+                           group-hover:shadow-xl group-hover:shadow-amber-500/50
+                           group-hover:from-amber-500 group-hover:via-yellow-400 group-hover:to-amber-500
+                           transition-all duration-300" />
+          ) : (
+            // 阴爻 - 两条短横线，左右对称分布
+            <div className="flex justify-center items-center gap-4 sm:gap-5 w-28 sm:w-32">
+              <div className="w-11 sm:w-12 h-3.5 bg-gradient-to-r from-amber-700 to-amber-600
+                             dark:from-yellow-600 dark:to-yellow-500
+                             rounded-full shadow-md shadow-amber-500/20 dark:shadow-yellow-500/20
+                             group-hover:shadow-lg group-hover:shadow-amber-500/40
+                             transition-all duration-300" />
+              <div className="w-11 sm:w-12 h-3.5 bg-gradient-to-r from-amber-600 to-amber-700
+                             dark:from-yellow-500 dark:to-yellow-600
+                             rounded-full shadow-md shadow-amber-500/20 dark:shadow-yellow-500/20
+                             group-hover:shadow-lg group-hover:shadow-amber-500/40
+                             transition-all duration-300" />
+            </div>
+          )}
+        </div>
+        
+        {/* 右侧：悬停提示 */}
+        <div className="absolute right-2 sm:right-4 flex items-center">
+          <span className="text-xs text-amber-600/0 dark:text-yellow-500/0
+                         group-hover:text-amber-600/80 dark:group-hover:text-yellow-500/80
+                         transition-colors duration-300
+                         flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-yellow-500 animate-pulse" />
+            点击变{yinYang === 'yang' ? '阴' : '阳'}
+          </span>
+        </div>
       </div>
     </button>
   );
@@ -252,8 +273,10 @@ export default function GuaTransformer() {
             </div>
             
             {/* 卦象图示 */}
-            <div className="flex flex-col items-center py-8 space-y-3 bg-gradient-to-b 
-                          from-amber-50/50 to-transparent dark:from-yellow-900/10 rounded-xl">
+            <div className="flex flex-col items-center py-6 sm:py-8 space-y-2 sm:space-y-3 
+                          bg-gradient-to-b from-amber-50/50 to-transparent 
+                          dark:from-yellow-900/10 rounded-xl
+                          border border-amber-100/50 dark:border-yellow-900/20">
               {/* 上爻在最上面，所以要反向显示 */}
               {[...yaos].reverse().map((yao, idx) => {
                 const actualPosition = 6 - idx; // 实际爻位（6到1）
