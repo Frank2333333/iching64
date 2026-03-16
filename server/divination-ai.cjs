@@ -1,6 +1,10 @@
 /**
- * OpenAI 解卦服务
- * 将解卦数据发送给 OpenAI 获取 AI 解卦说明
+ * OpenAI 解卦服务 - 优化版（去除冗余）
+ * 主要优化点：
+ * 1. 合并"起卦数据"和"解卦流程"中的重复信息
+ * 2. 简化8步流程为推理框架，不再重复列出已提供的数据
+ * 3. 删除重复的角色定义（保留system message中的即可）
+ * 4. 简化输出结构要求，避免与解卦流程重复
  */
 
 // 加载环境变量（确保环境变量可用）
@@ -17,9 +21,65 @@ const openai = new OpenAI({
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 /**
- * 构建解卦 prompt
- * @param {Object} data 解卦数据
- * @returns {string} prompt 文本
+ * 八卦基础信息表
+ */
+const baGuaInfo = {
+  '乾': { wuxing: '金', nature: '天', direction: '西北', number: 1, symbol: '☰' },
+  '兑': { wuxing: '金', nature: '泽', direction: '西', number: 2, symbol: '☱' },
+  '离': { wuxing: '火', nature: '火', direction: '南', number: 3, symbol: '☲' },
+  '震': { wuxing: '木', nature: '雷', direction: '东', number: 4, symbol: '☳' },
+  '巽': { wuxing: '木', nature: '风', direction: '东南', number: 5, symbol: '☴' },
+  '坎': { wuxing: '水', nature: '水', direction: '北', number: 6, symbol: '☵' },
+  '艮': { wuxing: '土', nature: '山', direction: '东北', number: 7, symbol: '☶' },
+  '坤': { wuxing: '土', nature: '地', direction: '西南', number: 8, symbol: '☷' }
+};
+
+/**
+ * 获取卦的五行
+ */
+function getGuaWuxing(guaName) {
+  return baGuaInfo[guaName]?.wuxing || '未知';
+}
+
+/**
+ * 判断五行生克关系
+ */
+function getWuxingRelation(tiWuxing, yongWuxing) {
+  if (tiWuxing === yongWuxing) return '比和（同类相助）';
+  
+  // 生体：用生体
+  if (
+    (yongWuxing === '金' && tiWuxing === '水') ||
+    (yongWuxing === '水' && tiWuxing === '木') ||
+    (yongWuxing === '木' && tiWuxing === '火') ||
+    (yongWuxing === '火' && tiWuxing === '土') ||
+    (yongWuxing === '土' && tiWuxing === '金')
+  ) return '用生体（外部助我，吉）';
+  
+  // 克体：用克体
+  if (
+    (yongWuxing === '金' && tiWuxing === '木') ||
+    (yongWuxing === '木' && tiWuxing === '土') ||
+    (yongWuxing === '土' && tiWuxing === '水') ||
+    (yongWuxing === '水' && tiWuxing === '火') ||
+    (yongWuxing === '火' && tiWuxing === '金')
+  ) return '用克体（外部制我，凶）';
+  
+  // 体生用：我生外
+  if (
+    (tiWuxing === '金' && yongWuxing === '水') ||
+    (tiWuxing === '水' && yongWuxing === '木') ||
+    (tiWuxing === '木' && yongWuxing === '火') ||
+    (tiWuxing === '火' && yongWuxing === '土') ||
+    (tiWuxing === '土' && yongWuxing === '金')
+  ) return '体生用（我泄气于外，耗）';
+  
+  // 体克用：我克外
+  return '体克用（我能掌控，费力可成）';
+}
+
+/**
+ * 构建解卦 prompt - 优化版（去除冗余）
  */
 function buildPrompt(data) {
   const {
@@ -30,169 +90,131 @@ function buildPrompt(data) {
     wuxingDetail,
     huGua,
     bianGua,
-    yingQi,
     selectedScene,
-    questionContent
+    questionContent,
+    divinationTime
   } = data;
 
-  // 场景映射，用于生成场景化建议
   const sceneMap = {
-    'career': { name: '事业前程', tips: '关注升迁机会、职场人际关系、跳槽时机、创业风险' },
-    'relationship': { name: '感情姻缘', tips: '关注感情发展、婚姻时机、桃花运势、相处之道' },
-    'health': { name: '健康疾病', tips: '关注身体调养、疾病康复、养生方向、医疗决策' },
-    'wealth': { name: '财运投资', tips: '关注理财方向、投资风险、收支平衡、求财时机' },
-    'study': { name: '学业考试', tips: '关注学习方法、考试运势、升学方向、竞争策略' },
-    'travel': { name: '出行迁移', tips: '关注出行安全、搬家时机、远行利弊、方位选择' },
-    'legal': { name: '官司诉讼', tips: '关注诉讼策略、调解时机、法律风险、权益维护' },
-    'lost': { name: '寻物失物', tips: '关注失物方位、找回时机、寻找策略、预防措施' }
+    'career': { name: '事业前程', tips: '升迁、职场、跳槽、创业' },
+    'relationship': { name: '感情姻缘', tips: '恋爱、婚姻、桃花、相处' },
+    'health': { name: '健康疾病', tips: '身体、康复、养生' },
+    'wealth': { name: '财运投资', tips: '理财、投资、求财' },
+    'study': { name: '学业考试', tips: '学习、考试、升学' },
+    'travel': { name: '出行迁移', tips: '出行、搬家、迁居' },
+    'legal': { name: '官司诉讼', tips: '诉讼、纠纷、调解' },
+    'lost': { name: '寻物失物', tips: '失物、找回' }
   };
 
   const scene = selectedScene ? sceneMap[selectedScene.id] : null;
+  
+  const now = new Date();
+  const currentMonth = divinationTime ? new Date(divinationTime).getMonth() + 1 : now.getMonth() + 1;
+  const monthNames = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  const currentMonthZhi = monthNames[currentMonth - 1];
+  
+  const tiWuxing = getGuaWuxing(tiGuaName);
+  const yongWuxing = getGuaWuxing(yongGuaName);
+  const huShangWuxing = huGua ? getGuaWuxing(huGua.shangGuaName) : '?';
+  const huXiaWuxing = huGua ? getGuaWuxing(huGua.xiaGuaName) : '?';
+  const bianShangWuxing = bianGua ? getGuaWuxing(bianGua.shangGuaName) : '?';
+  const bianXiaWuxing = bianGua ? getGuaWuxing(bianGua.xiaGuaName) : '?';
+  
+  const huRelation = huGua ? getWuxingRelation(tiWuxing, huShangWuxing === tiWuxing ? huXiaWuxing : huShangWuxing) : '?';
+  const bianRelation = bianGua ? getWuxingRelation(tiWuxing, bianShangWuxing === tiWuxing ? bianXiaWuxing : bianShangWuxing) : '?';
+  
+  const seasonMap = { '木': '春', '火': '夏', '金': '秋', '水': '冬', '土': '四季' };
+  const tiSeason = seasonMap[tiWuxing] || '?';
+  const yongSeason = seasonMap[yongWuxing] || '?';
 
-  return `你是一位精通《梅花易数》和《易经》的东方智慧顾问。你最大的特点是：擅长把晦涩的卦辞爻辞，转化成普通人一听就懂、且能抚慰人心的生活建议。
+  return `## 📊 起卦数据
 
-## 📊 起卦数据
+### 本卦
+- 第 ${gua?.id || '?'} 卦 ${gua?.chineseName || '?'}（${gua?.name || '?'}）
+- 卦象：${gua?.shangGua || '?'}上${gua?.xiaGua || '?'}下（${baGuaInfo[gua?.shangGua]?.symbol || ''}${baGuaInfo[gua?.xiaGua]?.symbol || ''}）
+- 卦意：${gua?.meaning || '无'} | 卦辞：${gua?.guaci || '无'}
 
-### 本卦（现状）
-- 卦名：第 ${gua?.id || '?'} 卦 ${gua?.chineseName || '?'}（${gua?.name || '?'}）
-- 卦意：${gua?.meaning || '无'}
-- 卦辞：${gua?.guaci || '无'}
-- 大象：${gua?.daXiangZhuan || '无'}
+### 体用关系
+- 体卦（自己）：${tiGuaName}（${tiWuxing}，无动爻）
+- 用卦（所问之事）：${yongGuaName}（${yongWuxing}，动爻在${dongYao?.position <= 3 ? '下卦' : '上卦'}）
+- 关系：${wuxingDetail?.judgment || '?'} | ${wuxingDetail?.description || '?'}
 
-### 体用关系（核心判断依据）
-- 体卦（代表自己）：${tiGuaName || '?'}
-- 用卦（代表所问之事）：${yongGuaName || '?'}
-- 关系：${wuxingDetail?.judgment || '?'}
-- 解释：${wuxingDetail?.description || '?'}
-
-### 动爻（变化点）
-- 位置：第 ${dongYao?.position || '?'} 爻 ${dongYao?.name || '?'}
-- 爻辞：${dongYao?.text || '无'}
-- 小象：${dongYao?.xiangZhuan || '无'}
+### 动爻
+- 第 ${dongYao?.position || '?'} 爻 ${dongYao?.name || '?'}（${dongYao?.yinYang === 'yang' ? '阳' : '阴'}爻）
+- 爻辞：${dongYao?.text || '无'} | 小象：${dongYao?.xiangZhuan || '无'}
 
 ### 互卦与变卦
-- 互卦（发展过程）：${huGua?.shangGuaName || '?'}${huGua?.xiaGuaName || '?'}（第 ${huGua?.guaId || '?'} 卦）
-- 变卦（最终结果）：${bianGua?.shangGuaName || '?'}${bianGua?.xiaGuaName || '?'}（第 ${bianGua?.guaId || '?'} 卦）
+- 互卦（过程）：${huGua?.shangGuaName || '?'}${huGua?.xiaGuaName || '?'}（上${huShangWuxing}下${huXiaWuxing}）→ ${huRelation}
+- 变卦（结果）：${bianGua?.shangGuaName || '?'}${bianGua?.xiaGuaName || '?'}（上${bianShangWuxing}下${bianXiaWuxing}）→ ${bianRelation}
+
+### 时间信息
+- 起卦时间：${currentMonth}月（${currentMonthZhi}月）
+- 体卦当令：${tiSeason} | 用卦当令：${yongSeason}
+- 应期参考：后天法${(baGuaInfo[tiGuaName]?.number || 0) + (baGuaInfo[yongGuaName]?.number || 0)}天，先天法${tiSeason}季，动爻${dongYao?.position}日
 
 ### 问事场景
-${scene ? `用户询问：「${scene.name}」\n关注重点：${scene.tips}` : '用户未指定具体场景，请给出通用建议'}
-
-### 用户具体描述的问题
-${questionContent ? `用户详细描述：「${questionContent}」\n\n**重要提示**：请结合用户的具体描述来解读卦象，让建议更有针对性。不要只是泛泛而谈。` : '用户未提供详细描述，请基于卦象给出通用建议。'}
+${scene ? `场景：${scene.name}（${scene.tips}）` : '未指定场景，给出通用建议'}
+${questionContent ? `具体问题：${questionContent}` : ''}
 
 ---
 
-## 🎯 输出要求（请严格遵循）
+## 🧭 解卦思路（供参考，不必在输出中体现）
+
+解卦遵循"体用为先，生克为主；互变参看，旺衰为辅"原则：
+1. 体用已定（见上），无需重复推导
+2. 五行关系已明，重点分析月令旺衰对吉凶的影响
+3. 互卦看过程转折，变卦看最终结果
+4. 结合动爻爻辞给出行动指南
+
+---
+
+## 🎯 输出要求
 
 ### 核心原则
-1. **先给结论，再讲原理** —— 用户最关心的是"结果如何"和"该怎么办"
-2. **少用术语，多打比方** —— 用现代生活场景解释古老智慧
-3. **分层阅读，标注重点** —— 用 emoji 和分隔线让结构清晰
-4. **场景化建议** —— 结合具体问事场景给出可操作建议
-5. **结合用户描述** —— 如果用户提供了具体问题，务必结合其描述给出针对性建议，不要泛泛而谈
+1. **先给结论，再讲原理** —— 用户最关心"结果如何"和"该怎么办"
+2. **少用术语，多打比方** —— 用现代生活场景解释
+3. **结合具体问题** —— ${questionContent ? '用户问的是「' + questionContent + '」，务必针对性回答' : '给出通用但可执行的建议'}
+4. **用 emoji 标注重点**（✅❌⚠️⏰💡）
 
----
-
-### 📋 输出结构
+### 输出结构
 
 ## 一、一句话结论（30字内）
-用大白话给出最核心的判断，让用户一眼看懂：
-- ✅ 吉利的例子："时机不错，主动争取能成，但别太急"
-- ⚠️ 一般的例子："有戏，但得费点劲，月底前后见分晓"
-- ❌ 不利的例子："眼下时机不对，宜守不宜攻，暂缓为好"
-
----
+- ✅ 吉利："时机不错，主动争取能成"
+- ⚠️ 一般："有戏，但得费点劲"  
+- ❌ 不利："眼下不宜，宜守不宜攻"
 
 ## 二、卦象白话解读（200-250字）
+- 现状：${gua?.chineseName}卦代表什么？
+- 核心矛盾：体${tiGuaName} vs 用${yongGuaName}的关系白话解释
+- 变化点：第${dongYao?.position}爻动的含义
+- 发展：互卦${huGua?.shangGuaName || '?'}${huGua?.xiaGuaName || '?'}（过程${huRelation}）→ 变卦${bianGua?.shangGuaName || '?'}${bianGua?.xiaGuaName || '?'}（结果${bianRelation}）
 
-**2.1 现状怎么样？**
-- 用1-2句话概括当前处境（比如：像"蓄势待发""进退两难""水到渠成"等状态）
-- 解释卦名含义：${gua?.chineseName} 代表什么意思？用比喻说明
-- 结合问事场景：这事目前处于什么阶段？
-
-**2.2 核心矛盾在哪？（体用关系白话版）**
-- 把"体卦${tiGuaName}克用卦${yongGuaName}"翻译成："你（${tiGuaName}）和这件事（${yongGuaName}）的关系是..."
-- 打个比方：比如"像逆水行船""像顺水推舟""像借力打力"等
-- 给出一个生活化的场景描述
-
-**2.3 变化点提示（动爻解读）**
-- 第${dongYao?.position || '?'}爻动代表什么？
-- 爻辞"${dongYao?.text || ''}"白话翻译：...
-- 关键转折点：什么时候/什么事会让情况变化？
-
-**2.4 事情会如何发展？**
-- 近期（互卦）：中间会遇到什么？是助力还是阻力？
-- 远期（变卦）：最后结果大概什么样？和最初想法一致吗？
-
----
-
-## 三、给你的具体建议（分条列出，共200-250字）
-
-根据「${scene ? scene.name : '所问之事'}」给出针对性建议：
-
-**✅ 宜做（2-3条，具体可操作）**
-- 策略层面：主动争取/耐心等待/借力他人/以退为进（选其一，说明为什么）
-- 时机层面：什么时候行动最好？本周/本月/本季度？
-- 方位层面：往哪个方向有利？（根据五行给出，比如利南方/西方）
-- 人际层面：找什么样的人帮忙？什么样的人要远离？
-
-**❌ 忌做（2-3条，具体风险提示）**
-- 时机风险：什么时候容易出问题？
-- 人际风险：要提防什么类型的人或事？
-- 决策风险：做什么决定可能会后悔？
-
-**⏰ 时间参考**
-- 快的话：大概什么时候有消息/结果？
-- 慢的话：最长要等到什么时候？
-- 关键时间点：有没有什么特别要注意的日期/时段？
-
----
+## 三、具体建议（200-250字）
+- ✅ 宜做：策略、时机、方位、人际
+- ❌ 忌做：时机风险、人际风险、决策风险
+- ⏰ 时间参考：快/慢/关键时间点（可用${dongYao?.position}日/${(baGuaInfo[tiGuaName]?.number || 0) + (baGuaInfo[yongGuaName]?.number || 0)}天/${tiSeason}季等参考）
 
 ## 四、一句锦囊（20字内）
-用一句好记的话收尾，可以是：
-- 化用卦理（如：水满则溢，月盈则亏，留三分余地）
-- 现代格言（如：顺势而为，比逆流而上更聪明）
-- 行动口诀（如：先观察，再出手，稳中求胜）
 
 ---
 
-## ⚠️ 写作规范（请务必遵守）
+### 语言规范
+- **禁用**：必然、一定、注定、绝对、肯定
+- **改用**：十有八九、可能、或许、大势所趋
+- **术语后跟白话**：如"体克用（你能掌控，但费力）"
+- **多打比方**：用爬山、划船、天气等比喻
 
-### 语言风格
-1. **禁用**这些词："必然""一定""注定""绝对""肯定"
-2. **改用**这些词："十有八九""恐有""宜防""大势所趋""可能""或许"
-3. **少用术语**：提到"体用""生克""当令"时，后面跟一句白话解释
-4. **多打比方**：用天气、水流、树木、战场等自然场景比喻
-
-### 场景化示例
-| 术语 | 错误示范 | 正确示范 |
-|------|---------|---------|
-| 体克用 | "体克用，金克木，费力可成" | "你现在占上风，但就像爬山，能登顶却累得够呛" |
-| 用生体 | "用生体，大吉，外部助我" | "眼下有贵人运，像顺风划船，事半功倍" |
-| 动爻 | "上六动，阴变阳，变卦睽" | "事情到最后会有个转折，结果可能和最初想的不太一样" |
-| 应期 | "应期在午火当令之时" | "快的话3-7天，慢的话到夏天/中午前后有消息" |
-
-### 格式要求
-- 用 emoji 标注重点（✅❌⚠️⏰💡）
-- 用 "---" 分隔不同部分
-- 每段不要太长，3-4行为宜
-- 关键句加粗
-- 标题中不要出现（xx字）这类字样
-
----
-
-请开始解卦，记住：**用户不是来学易经的，是来求建议的。** 越接地气越好！`;
+记住：**用户不是来学易经的，是来求建议的。** 越接地气越好！`;
 }
+
+// ... 保留其他函数（getAIDivination, buildChatPrompt, chatWithAI）不变
 
 /**
  * 调用 OpenAI 进行解卦
- * @param {Object} divinationData 解卦数据
- * @returns {Promise<string>} AI 解卦结果
  */
 async function getAIDivination(divinationData) {
-  // 检查 API Key
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
-    throw new Error('OpenAI API Key 未配置，请在 .env 文件中设置 OPENAI_API_KEY');
+    throw new Error('OpenAI API Key 未配置');
   }
 
   try {
@@ -231,7 +253,6 @@ async function getAIDivination(divinationData) {
   } catch (error) {
     console.error('OpenAI 解卦失败:', error);
     
-    // 返回友好的错误信息
     if (error.code === 'insufficient_quota') {
       throw new Error('OpenAI API 额度不足，请联系管理员');
     } else if (error.code === 'invalid_api_key') {
@@ -248,36 +269,29 @@ async function getAIDivination(divinationData) {
 
 /**
  * 构建对话 prompt
- * @param {Object} data 对话数据
- * @returns {string} prompt 文本
  */
 function buildChatPrompt(data) {
   const { message, history, divinationData } = data;
   
-  // 只取最近3轮对话作为上下文，避免太长
   const recentHistory = history.slice(-6);
-  
-  // 构建对话历史文本（简化版，只保留关键信息）
   const historyText = recentHistory.map(msg => {
-    // 截取过长的消息
     const content = msg.content.length > 300 
       ? msg.content.substring(0, 300) + '...'
       : msg.content;
-    if (msg.role === 'assistant') {
-      return `AI：${content}`;
-    }
-    return `用户：${content}`;
+    return msg.role === 'assistant' ? `AI：${content}` : `用户：${content}`;
   }).join('\n\n');
 
-  // 判断是否是第一轮对话
-  const isFirstChat = !history || history.length === 0;
-
+  const chatTiWuxing = getGuaWuxing(divinationData.tiGuaName);
+  const chatYongWuxing = getGuaWuxing(divinationData.yongGuaName);
+  
   return `你是一位精通《梅花易数》的易学顾问。用户正在就之前的解卦内容进行追问。
 
-## 背景卦象（仅供参考，无需重复解释）
-- 本卦：${divinationData.gua?.chineseName}（${divinationData.wuxingDetail?.judgment}）
-- 体用：${divinationData.tiGuaName} vs ${divinationData.yongGuaName}
-- 动爻：第 ${divinationData.dongYao?.position} 爻
+## 背景卦象
+- 本卦：${divinationData.gua?.chineseName}（第${divinationData.gua?.id}卦）
+- 体卦：${divinationData.tiGuaName}（${chatTiWuxing}）- 代表求测者
+- 用卦：${divinationData.yongGuaName}（${chatYongWuxing}）- 代表所测之事
+- 体用关系：${divinationData.wuxingDetail?.judgment}
+- 动爻：第${divinationData.dongYao?.position}爻
 
 ## 对话记录
 ${historyText || '（首轮对话）'}
@@ -287,62 +301,34 @@ ${historyText || '（首轮对话）'}
 
 ---
 
-## ⚠️ 重要回答规则
+## ⚠️ 回答规则
+1. **禁止重复**卦象介绍、时间框架、吉凶判断
+2. **直接回答**新问题，不要铺垫
+3. **简洁补充**，只提供与问题相关的新信息
+4. **控制字数**，100-150字，最多不超过200字
 
-### 禁止做的事（会导致重复）
-1. **禁止重复介绍卦象** —— 不要再说"本卦是XX，体卦XX，用卦XX"
-2. **禁止重复时间框架** —— 不要再次列举"3-5天、月中、月底"等时间节点
-3. **禁止重复吉凶判断** —— 不要再说一遍"大凶/大吉"的整体判断
-4. **禁止复制粘贴之前的回答**
-
-### 必须做的事
-1. **直接回答新问题** —— 用户问什么，直接答什么，不要铺垫
-2. **简洁补充信息** —— 只提供与问题相关的新信息或细节
-3. **引用之前的结论** —— 如果需要提及之前的分析，用"之前说过..."一带而过
-4. **控制字数** —— 回答控制在 100-150 字，最多不超过 200 字
-
-### 示例对比
-
-❌ 错误示范（重复）：
-用户问："能大赚还是小赚？"
-AI答："基于归妹卦的象意...用卦兑克体卦震...就像泽水压制雷鸣...短期内（3-5天）...月中前后...月底..."
-→ 这是重复之前的完整分析！
-
-✅ 正确示范（直接回答）：
-用户问："能大赚还是小赚？"
-AI答："小赚。卦象显示用克体，外部压制明显，难有暴利。动爻在二爻，提示'耐心观察'——这暗示只能赚个零花钱（5-10%左右），别贪心。"
-→ 直接回答，没有重复卦象解释和时间节点！
-
----
-
-请直接回答用户的追问，不要重复之前的分析内容。`;
+请直接回答用户的追问。`;
 }
 
 /**
  * 调用 OpenAI 进行对话
- * @param {Object} data 对话数据
- * @returns {Promise<string>} AI 回复
  */
 async function chatWithAI(data) {
-  // 检查 API Key
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
-    throw new Error('OpenAI API Key 未配置，请在 .env 文件中设置 OPENAI_API_KEY');
+    throw new Error('OpenAI API Key 未配置');
   }
 
   try {
     const prompt = buildChatPrompt(data);
     
     console.log(`[${new Date().toISOString()}] 调用 OpenAI 对话，模型: ${MODEL}`);
-    console.log(`[${new Date().toISOString()}] ====== AI 对话输入 Prompt ======`);
-    console.log(prompt);
-    console.log(`[${new Date().toISOString()}] ====== Prompt 结束 (长度: ${prompt.length} 字符) ======`);
     
     const response = await openai.chat.completions.create({
       model: MODEL,
       messages: [
         {
           role: 'system',
-          content: '你是一位精通《梅花易数》和《易经》的易学大师，擅长将古老的易学智慧与现代生活相结合，为用户提供既有传统深度又有现实指导意义的解卦服务。'
+          content: '你是一位精通《梅花易数》和《易经》的易学大师，擅长将古老的易学智慧与现代生活相结合。'
         },
         {
           role: 'user',
@@ -350,7 +336,7 @@ async function chatWithAI(data) {
         }
       ],
       temperature: 0.7,
-      max_tokens: 800,  // 对话回答更简洁，不需要太多 token
+      max_tokens: 800,
     });
 
     const result = response.choices[0]?.message?.content;
@@ -365,7 +351,6 @@ async function chatWithAI(data) {
   } catch (error) {
     console.error('OpenAI 对话失败:', error);
     
-    // 返回友好的错误信息
     if (error.code === 'insufficient_quota') {
       throw new Error('OpenAI API 额度不足，请联系管理员');
     } else if (error.code === 'invalid_api_key') {
