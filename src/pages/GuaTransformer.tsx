@@ -130,8 +130,8 @@ export default function GuaTransformer() {
   // 进入详情页
   const goToDetail = () => {
     if (currentGua) {
-      // 使用 window.location 跳转到主页并打开详情
-      window.location.href = `/#/?gua=${currentGua.id}`;
+      // 跳转到六十四卦页面并打开详情
+      window.location.href = `/#/hexagrams?gua=${currentGua.id}`;
     }
   };
   
