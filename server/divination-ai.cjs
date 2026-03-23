@@ -78,6 +78,208 @@ function getWuxingRelation(tiWuxing, yongWuxing) {
   return '体克用（我能掌控，费力可成）';
 }
 
+function getSceneFollowUpGuidance(selectedScene, questionContent) {
+  const fallback = {
+    sceneName: '通用问事',
+    target: '当前所问之事',
+    keywords: ['当前事情', '进展', '结果', '建议'],
+    focus: '后续追问默认围绕当前所问之事本身作答，而不是泛泛谈整体运势。',
+    dimensions: '走势、阻力、时机、建议',
+    answerChecklist: '先回答这件事本身偏吉还是偏凶，再补充走势、建议和注意点。',
+    avoid: '不要把回答扩展到不相关的其他人生领域。',
+    genericQuestionRule: '如果用户只问“好不好”“是好还是坏”“能不能成”之类模糊问题，默认回答“当前所问之事”的好坏。',
+    switchRule: '只有当用户明确提出新的领域时，才允许切换解释对象。',
+    opener: '对这件事来说'
+  };
+
+  if (!selectedScene?.id) {
+    return fallback;
+  }
+
+  const sceneRules = {
+    career: {
+      sceneName: '事业前程',
+      target: '工作、项目、升迁或职业发展',
+      keywords: ['工作', '项目', '职场', '机会'],
+      focus: '所有追问都默认解释为工作发展、升迁机会、跳槽选择、合作推进和职场阻力。',
+      dimensions: '机会大小、阻力来源、推进时机、行动建议',
+      answerChecklist: '先判断事业层面的利弊，再回答机会大小、行动时机、是否主动推进。',
+      avoid: '不要把回答滑向感情、健康或财运寓意，除非用户明确追问那些方面。',
+      genericQuestionRule: '如果用户只问“好不好”“能不能成”，默认回答工作结果、项目推进或职业发展层面的好坏。',
+      switchRule: '只有当用户明确改问感情、健康、财运等新领域时，才允许切换。',
+      opener: '对事业来说'
+    },
+    relationship: {
+      sceneName: '感情姻缘',
+      target: '这段感情、这段关系或双方互动',
+      keywords: ['感情', '关系', '相处', '对方'],
+      focus: '所有追问都默认解释为感情关系本身的吉凶、靠近或疏远、是否继续推进、是否值得等待、沟通状态和双方态度。',
+      dimensions: '关系走势、双方态度、推进节奏、相处建议',
+      answerChecklist: '先判断这段感情整体偏好还是偏坏，再回答关系是在升温还是受阻，最后给出主动、等待、放缓或止损建议。',
+      avoid: '禁止把回答引到事业、职场、人际泛论或财运上；禁止使用“职场关系”“合作关系”这类偏题类比，除非用户明确要求跨场景解释。',
+      genericQuestionRule: '如果用户只问“好不好”“是好还是坏”“能不能成”之类模糊问题，默认回答“这段感情/这段关系”的好坏，不要回答成整体运势。',
+      switchRule: '只有当用户明确改问事业、财运、健康等新领域时，才允许切换。',
+      opener: '对感情来说'
+    },
+    health: {
+      sceneName: '健康疾病',
+      target: '身体状态、恢复进展或调养效果',
+      keywords: ['身体', '恢复', '调养', '状态'],
+      focus: '所有追问都默认解释为身体状态、恢复节奏、调养方向和风险轻重。',
+      dimensions: '恢复趋势、风险轻重、调养重点、需要避免的行为',
+      answerChecklist: '先判断健康趋势，再回答恢复快慢、重点调养点和应避免的行为。',
+      avoid: '不要转去感情或事业类比，也不要做超出常识边界的医疗断言。',
+      genericQuestionRule: '如果用户只问“好不好”，默认回答恢复趋势和风险程度。',
+      switchRule: '只有当用户明确改问其他领域时，才允许切换。',
+      opener: '对健康来说'
+    },
+    wealth: {
+      sceneName: '财运投资',
+      target: '求财结果、投资收益或资金安排',
+      keywords: ['财运', '收益', '投资', '资金'],
+      focus: '所有追问都默认解释为收益空间、风险大小、资金回笼、投资节奏和求财难度。',
+      dimensions: '收益空间、风险大小、进退时机、风控建议',
+      answerChecklist: '先判断财运是偏进还是偏守，再回答能否进场、收益级别和风控建议。',
+      avoid: '不要把回答偏到感情或职场寓意上。',
+      genericQuestionRule: '如果用户只问“好不好”，默认回答求财或投资层面的好坏。',
+      switchRule: '只有当用户明确改问其他领域时，才允许切换。',
+      opener: '对财运来说'
+    },
+    study: {
+      sceneName: '学业考试',
+      target: '学习状态、考试发挥或升学结果',
+      keywords: ['学习', '考试', '复习', '发挥'],
+      focus: '所有追问都默认解释为学习状态、考试发挥、准备节奏和竞争结果。',
+      dimensions: '发挥趋势、补强重点、冲刺节奏、竞争结果',
+      answerChecklist: '先判断学业走势，再回答能否稳住、哪些环节要补、该主动冲刺还是稳扎稳打。',
+      avoid: '不要滑向事业或感情领域。',
+      genericQuestionRule: '如果用户只问“好不好”，默认回答学业或考试结果层面的好坏。',
+      switchRule: '只有当用户明确改问其他领域时，才允许切换。',
+      opener: '对学业来说'
+    },
+    travel: {
+      sceneName: '出行迁移',
+      target: '出行计划、迁移安排或途中变化',
+      keywords: ['出行', '出差', '行程', '途中'],
+      focus: '所有追问都默认解释为出行顺利度、迁移变化、途中风险和是否适合动身。',
+      dimensions: '顺利程度、时机选择、途中风险、方位建议',
+      answerChecklist: '先判断出行是否顺，再回答时机、方向和风险点。',
+      avoid: '不要转成事业或感情吉凶。',
+      genericQuestionRule: '如果用户只问“好不好”，默认回答出行或迁移层面的好坏。',
+      switchRule: '只有当用户明确改问其他领域时，才允许切换。',
+      opener: '对出行来说'
+    },
+    legal: {
+      sceneName: '官司诉讼',
+      target: '诉讼、纠纷或调解结果',
+      keywords: ['诉讼', '纠纷', '调解', '证据'],
+      focus: '所有追问都默认解释为纠纷走向、胜算大小、调解可能和证据重要性。',
+      dimensions: '胜算高低、局势走向、调解可能、应对重点',
+      answerChecklist: '先判断诉讼或纠纷形势，再回答该强硬还是和解、需要注意什么。',
+      avoid: '不要扯到财运或感情类比。',
+      genericQuestionRule: '如果用户只问“好不好”，默认回答官司或纠纷层面的好坏。',
+      switchRule: '只有当用户明确改问其他领域时，才允许切换。',
+      opener: '对官司这件事来说'
+    },
+    lost: {
+      sceneName: '寻物失物',
+      target: '失物找回结果、寻找方向或时间线索',
+      keywords: ['失物', '寻找', '找回', '线索'],
+      focus: '所有追问都默认解释为失物是否能找回、寻找方向、时间线和阻碍。',
+      dimensions: '找回概率、寻找方向、时间线索、阻碍因素',
+      answerChecklist: '先判断找回概率，再回答方向、位置线索和时间。',
+      avoid: '不要转去感情或事业。',
+      genericQuestionRule: '如果用户只问“好不好”，默认回答失物找回层面的好坏。',
+      switchRule: '只有当用户明确改问其他领域时，才允许切换。',
+      opener: '对寻物这件事来说'
+    }
+  };
+
+  const sceneRule = sceneRules[selectedScene.id] || fallback;
+  const originalQuestion = questionContent ? `用户原始问题是「${questionContent}」` : '用户未补充更具体的问题';
+
+  return {
+    ...sceneRule,
+    originalQuestion,
+  };
+}
+
+function classifyFollowUpIntent(message) {
+  const normalized = (message || '').replace(/\s+/g, '');
+
+  if (!normalized) {
+    return {
+      type: 'judgment',
+      label: '判断类',
+      goal: '回答当前场景对象整体偏好、偏坏还是中性。',
+      answerPattern: '第一句直接下判断；第二句解释原因；第三句补一句建议。',
+      examples: '如“好不好”“是好还是坏”“顺不顺”'
+    };
+  }
+
+  if (/(什么时候|何时|几时|多久|多快|哪天|几天|几个月|啥时候|何时有消息|什么时候行动|什么时候出发|时间|时机)/.test(normalized)) {
+    return {
+      type: 'timing',
+      label: '时间类',
+      goal: '回答当前场景对象何时行动更合适、何时见结果、何时容易有消息。',
+      answerPattern: '第一句给时间判断；第二句说明早晚快慢；第三句给行动时点建议。',
+      examples: '如“什么时候”“多久有结果”“什么时候行动更好”'
+    };
+  }
+
+  if (/(注意什么|需要注意|特别注意|该注意|小心什么|提防|避免|怎么办|怎么做|如何做|要怎么|怎么准备|如何准备|怎么应对|建议|注意事项|要不要|该不该)/.test(normalized)) {
+    return {
+      type: 'advice',
+      label: '建议类',
+      goal: '回答当前场景对象最该注意什么、该做什么、该避免什么。',
+      answerPattern: '第一句点出最重要的注意点；第二句说明风险或关键点；第三句给具体做法。',
+      examples: '如“要注意什么”“该怎么办”“要不要继续”'
+    };
+  }
+
+  if (/(结果|结局|最终|后来|之后|会怎样|能成吗|成不成|能不能成|会不会成功|能否成功|能否成行|最后会怎样|有没有结果|会不会好起来)/.test(normalized)) {
+    return {
+      type: 'outcome',
+      label: '结果类',
+      goal: '回答当前场景对象最终走向、能否达成、会是什么结果。',
+      answerPattern: '第一句说最终倾向；第二句解释中间变化；第三句给应对建议。',
+      examples: '如“最后会怎样”“能不能成”“结果如何”'
+    };
+  }
+
+  if (/(好不好|坏不坏|顺不顺|行不行|有戏吗|有没有戏|吉还是凶|是好还是坏|靠谱吗)/.test(normalized)) {
+    return {
+      type: 'judgment',
+      label: '判断类',
+      goal: '回答当前场景对象整体偏好、偏坏还是中性。',
+      answerPattern: '第一句直接下判断；第二句解释原因；第三句补一句建议。',
+      examples: '如“好不好”“是好还是坏”“顺不顺”'
+    };
+  }
+
+  return {
+    type: 'advice',
+    label: '建议类',
+    goal: '优先回答当前场景中最有行动价值的建议和注意点。',
+    answerPattern: '第一句先回应用户最关心的问题；第二句补充关键原因；第三句给建议。',
+    examples: '默认用于没有明显类型、但需要具体回应的追问'
+  };
+}
+
+function buildUserFollowUpTrack(history) {
+  const recentUserMessages = (history || [])
+    .filter((message) => message.role === 'user' && message.content)
+    .slice(-3);
+
+  if (recentUserMessages.length === 0) {
+    return '（暂无更早的追问记录）';
+  }
+
+  return recentUserMessages
+    .map((message, index) => `${index + 1}. ${message.content}`)
+    .join('\n');
+}
+
 /**
  * 构建解卦 prompt - 优化版（去除冗余）
  */
@@ -271,18 +473,13 @@ async function getAIDivination(divinationData) {
  * 构建对话 prompt
  */
 function buildChatPrompt(data) {
-  const { message, history, divinationData } = data;
+  const { message, history, divinationData, initialInterpretationSummary } = data;
   
-  const recentHistory = history.slice(-6);
-  const historyText = recentHistory.map(msg => {
-    const content = msg.content.length > 300 
-      ? msg.content.substring(0, 300) + '...'
-      : msg.content;
-    return msg.role === 'assistant' ? `AI：${content}` : `用户：${content}`;
-  }).join('\n\n');
-
   const chatTiWuxing = getGuaWuxing(divinationData.tiGuaName);
   const chatYongWuxing = getGuaWuxing(divinationData.yongGuaName);
+  const sceneGuidance = getSceneFollowUpGuidance(divinationData.selectedScene, divinationData.questionContent);
+  const followUpIntent = classifyFollowUpIntent(message);
+  const userFollowUpTrack = buildUserFollowUpTrack(history);
   
   return `你是一位精通《梅花易数》的易学顾问。用户正在就之前的解卦内容进行追问。
 
@@ -293,8 +490,29 @@ function buildChatPrompt(data) {
 - 体用关系：${divinationData.wuxingDetail?.judgment}
 - 动爻：第${divinationData.dongYao?.position}爻
 
-## 对话记录
-${historyText || '（首轮对话）'}
+## 初始解卦摘要
+${initialInterpretationSummary || '未提供初始解卦摘要，回答时以卦象数据为准。'}
+
+## 当前问事场景
+- 场景：${sceneGuidance.sceneName}
+- 当前解读对象：${sceneGuidance.target}
+- 场景重心：${sceneGuidance.focus}
+- 重点维度：${sceneGuidance.dimensions}
+- 回答检查项：${sceneGuidance.answerChecklist}
+- 严禁偏题：${sceneGuidance.avoid}
+- 模糊问题规则：${sceneGuidance.genericQuestionRule}
+- 切换场景规则：${sceneGuidance.switchRule}
+- 回答中请自然使用这些场景词中的1-2个：${sceneGuidance.keywords.join('、')}
+- 原始问题：${sceneGuidance.originalQuestion}
+
+## 本次追问分类
+- 类型：${followUpIntent.label}
+- 回答目标：${followUpIntent.goal}
+- 作答方式：${followUpIntent.answerPattern}
+- 典型问题：${followUpIntent.examples}
+
+## 用户过往追问轨迹
+${userFollowUpTrack}
 
 ## 用户追问
 「${message}」
@@ -302,10 +520,19 @@ ${historyText || '（首轮对话）'}
 ---
 
 ## ⚠️ 回答规则
-1. **禁止重复**卦象介绍、时间框架、吉凶判断
-2. **直接回答**新问题，不要铺垫
-3. **简洁补充**，只提供与问题相关的新信息
-4. **控制字数**，100-150字，最多不超过200字
+1. **优先参考初始解卦摘要**，保持与你之前的判断一致
+2. **锁定当前场景**，除非用户明确提出新领域，否则所有追问都只能解释为“${sceneGuidance.target}”
+3. 用户若只问“好不好”“是好还是坏”“能不能成”“该怎么办”这类模糊问题，默认回答当前场景中的“${sceneGuidance.target}”
+4. **本次必须按“${followUpIntent.label}”作答**，不要把建议类答成结果类，也不要把判断类答成泛泛分析
+5. **禁止重复**完整卦象介绍、时间框架、吉凶判断，除非用户明确要求重新总结
+6. **不要引用其他领域做类比**。例如出行不要类比职场，感情不要类比项目，健康不要类比财运
+7. **直接回答**新问题，不要铺垫
+8. **简洁补充**，只提供与问题相关的新信息
+9. **控制字数**，100-150字，最多不超过200字
+10. 如果用户提到“你刚才说的某个结论”，先对照初始解卦摘要再作答
+11. 回答第一句请直接以“${sceneGuidance.opener}”开头，明确这是在回答当前场景
+12. 回答中至少自然出现一次与当前场景直接相关的词，不要用空泛词代替
+13. 回答结构固定为：一句判断 -> 一句解释 -> 一句建议，不要跳出当前场景
 
 请直接回答用户的追问。`;
 }
@@ -328,14 +555,14 @@ async function chatWithAI(data) {
       messages: [
         {
           role: 'system',
-          content: '你是一位精通《梅花易数》和《易经》的易学大师，擅长将古老的易学智慧与现代生活相结合。'
+          content: '你是一位精通《梅花易数》和《易经》的易学大师，擅长将古老的易学智慧与现代生活相结合。你必须严格围绕用户当前问事场景作答，不得擅自切换到其他场景。'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      temperature: 0.7,
+      temperature: 0.45,
       max_tokens: 800,
     });
 

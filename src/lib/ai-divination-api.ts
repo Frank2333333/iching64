@@ -164,6 +164,7 @@ export interface ChatRequestData {
   message: string;
   divinationData: DivinationData;
   history: ChatMessage[];
+  initialInterpretationSummary?: string;
 }
 
 // 对话响应

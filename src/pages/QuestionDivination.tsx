@@ -437,6 +437,92 @@ interface DivinationResult {
   };
 }
 
+interface ChatContextSummary {
+  initialInterpretationSummary: string;
+  createdAt: number;
+}
+
+function stripMarkdownForSummary(content: string): string {
+  return content
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/[*_~`>|]/g, '')
+    .replace(/\r/g, '')
+    .replace(/\n{2,}/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+}
+
+function extractInterpretationExcerpt(content: string, maxLength = 220): string {
+  const cleaned = stripMarkdownForSummary(content);
+
+  if (!cleaned) {
+    return '';
+  }
+
+  const segments = cleaned
+    .split('\n')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  const excerpt = segments.find((segment) => segment.length >= 18) || segments[0] || cleaned;
+  return excerpt.length > maxLength
+    ? `${excerpt.slice(0, maxLength).trim()}...`
+    : excerpt;
+}
+
+function buildInitialInterpretationSummary(
+  divinationResult: DivinationResult,
+  aiContent: string,
+  selectedScene: QuestionScene | null,
+  questionContent: string
+): string {
+  const summaryLines: string[] = [];
+
+  if (selectedScene) {
+    summaryLines.push(`问事场景：${selectedScene.name}`);
+  }
+
+  if (questionContent.trim()) {
+    summaryLines.push(`具体问题：${questionContent.trim()}`);
+  }
+
+  if (divinationResult.gua) {
+    summaryLines.push(
+      `本卦：${divinationResult.gua.chineseName}（${divinationResult.gua.name}），${divinationResult.gua.meaning}`
+    );
+  }
+
+  if (divinationResult.dongYao) {
+    summaryLines.push(`动爻：${divinationResult.dongYao.name}，爻辞为“${divinationResult.dongYao.text}”`);
+  }
+
+  summaryLines.push(
+    `体用关系：体卦${divinationResult.tiGuaName}，用卦${divinationResult.yongGuaName}，${divinationResult.wuxingDetail.judgment}`
+  );
+
+  if (divinationResult.huGua || divinationResult.bianGua) {
+    summaryLines.push(
+      `变化路径：互卦${divinationResult.huGua?.shangGuaName || '?'}${divinationResult.huGua?.xiaGuaName || '?'}，变卦${divinationResult.bianGua?.shangGuaName || '?'}${divinationResult.bianGua?.xiaGuaName || '?'}`
+    );
+  }
+
+  if (divinationResult.yingQi.description) {
+    summaryLines.push(`应期参考：${divinationResult.yingQi.description}`);
+  }
+
+  const aiExcerpt = extractInterpretationExcerpt(aiContent);
+  if (aiExcerpt) {
+    summaryLines.push(`初始解读重点：${aiExcerpt}`);
+  }
+
+  return summaryLines.join('\n');
+}
+
 export default function QuestionDivination() {
   // 步骤管理: 'select' | 'divinate' | 'result' | 'detail'
   const [step, setStep] = useState<'select' | 'divinate' | 'result' | 'detail'>('select');
@@ -463,6 +549,7 @@ export default function QuestionDivination() {
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [chatContextSummary, setChatContextSummary] = useState<ChatContextSummary | null>(null);
 
   // 检查 AI 服务状态
   useEffect(() => {
@@ -471,6 +558,14 @@ export default function QuestionDivination() {
 
   // 记住滚动位置
   useScrollPosition(`question-divination-${step}`);
+
+  const resetChatContext = () => {
+    setChatMessages([]);
+    setChatInput('');
+    setChatLoading(false);
+    setChatError(null);
+    setChatContextSummary(null);
+  };
 
   // 生成随机数
   const generateRandomNumbers = () => {
@@ -495,12 +590,16 @@ export default function QuestionDivination() {
     setNum2('');
     setNum3('');
     setQuestionContent('');
+    setAiError(null);
+    resetChatContext();
   };
 
   // 返回起卦页面
   const handleBackToDivinate = () => {
     setStep('divinate');
     setResult(null);
+    setAiError(null);
+    resetChatContext();
   };
 
   // 开始起卦计算
@@ -523,6 +622,8 @@ export default function QuestionDivination() {
       return;
     }
 
+    setAiError(null);
+    resetChatContext();
     setIsCalculating(true);
 
     setTimeout(() => {
@@ -885,6 +986,7 @@ export default function QuestionDivination() {
     setNum3('');
     setQuestionContent('');
     setAiError(null);
+    resetChatContext();
   };
 
   // AI 解卦
@@ -916,6 +1018,13 @@ export default function QuestionDivination() {
       const response = await getAIDivination(divinationData);
 
       if (response.success && response.data) {
+        const initialInterpretationSummary = buildInitialInterpretationSummary(
+          result,
+          response.data.interpretation,
+          selectedScene,
+          questionContent
+        );
+
         setResult({
           ...result,
           aiInterpretation: {
@@ -924,14 +1033,13 @@ export default function QuestionDivination() {
             timestamp: response.data.timestamp,
           },
         });
-        // 将 AI 解卦结果作为第一条对话消息
-        setChatMessages([
-          {
-            role: 'assistant',
-            content: response.data.interpretation,
-            timestamp: response.data.timestamp,
-          },
-        ]);
+        setChatContextSummary({
+          initialInterpretationSummary,
+          createdAt: response.data.timestamp,
+        });
+        setChatMessages([]);
+        setChatInput('');
+        setChatError(null);
       } else {
         setAiError(response.error || 'AI 解卦失败');
       }
@@ -973,22 +1081,11 @@ export default function QuestionDivination() {
         questionContent: questionContent || undefined,
       };
 
-      // 准备历史记录：只取最近3轮，且对初始解卦结果进行摘要
-      const processedHistory = chatMessages.slice(-6).map((msg, idx) => {
-        // 如果是第一条消息（初始解卦结果）且内容很长，进行摘要
-        if (idx === 0 && msg.role === 'assistant' && msg.content.length > 300) {
-          return {
-            ...msg,
-            content: msg.content.substring(0, 300) + '... [以上为初始解卦摘要，后续回答请直接针对新问题，不要重复这些基础分析]'
-          };
-        }
-        return msg;
-      });
-
       const response = await sendChatMessage({
         message: userMessage.content,
         divinationData,
-        history: processedHistory,
+        history: chatMessages.slice(-8),
+        initialInterpretationSummary: chatContextSummary?.initialInterpretationSummary,
       });
 
       if (response.success && response.data) {
@@ -1591,8 +1688,36 @@ export default function QuestionDivination() {
                       </span>
                     </div>
 
+                    {chatContextSummary && (
+                      <div className="mb-4 rounded-xl border border-violet-200 bg-white/80 p-4 shadow-sm dark:border-violet-800/30 dark:bg-neutral-900/60">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-violet-900 dark:text-violet-100">
+                              已载入初始解卦摘要
+                            </p>
+                            <p className="text-xs text-violet-600 dark:text-violet-400">
+                              后续追问会优先参考这份摘要和当前卦象，并默认围绕当前问事场景回答。
+                            </p>
+                          </div>
+                          <span className="text-xs text-violet-500 dark:text-violet-500">
+                            {new Date(chatContextSummary.createdAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="mt-3 whitespace-pre-line text-sm text-violet-800 dark:text-violet-200">
+                          {chatContextSummary.initialInterpretationSummary}
+                        </p>
+                      </div>
+                    )}
+
                     {/* 对话历史 */}
                     <div className="space-y-4 max-h-96 overflow-y-auto mb-4 p-2">
+                      {chatMessages.length === 0 && !chatLoading && (
+                        <div className="rounded-xl border border-dashed border-violet-200 bg-violet-50/60 px-4 py-5 text-center dark:border-violet-800/30 dark:bg-violet-950/10">
+                          <p className="text-sm text-violet-700 dark:text-violet-300">
+                            初始解卦正文在上方，下面可以继续追问更具体的问题，系统会默认围绕当前场景作答。
+                          </p>
+                        </div>
+                      )}
                       {chatMessages.map((msg, index) => (
                         <div
                           key={index}
@@ -1669,7 +1794,7 @@ export default function QuestionDivination() {
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyDown={handleChatKeyDown}
-                        placeholder="根据解卦内容继续提问，例如：'能再说详细点吗？' 或 '这个时机具体是什么时候？'"
+                        placeholder={`根据解卦内容继续提问，默认围绕${selectedScene?.name || '当前问事'}作答，例如：'能再说详细点吗？' 或 '这个时机具体是什么时候？'`}
                         rows={2}
                         disabled={chatLoading}
                         className="flex-1 px-4 py-3 border border-violet-300 dark:border-violet-700/50 
