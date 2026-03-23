@@ -9,8 +9,11 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { initServerLogger } = require('./logger.cjs');
 const feedbackStore = require('./feedback-store.cjs');
 const divinationAI = require('./divination-ai.cjs');
+
+const logger = initServerLogger('server');
 
 const app = express();
 const PORT = process.env.FEEDBACK_PORT || 3001;
@@ -233,6 +236,8 @@ function startServer() {
     console.log(`📡 本地访问: http://localhost:${PORT}/api/feedback`);
     console.log(`🌐 网络访问: http://${HOST}:${PORT}/api/feedback`);
     console.log(`💾 数据文件: ${path.join(__dirname, '../data/feedback.json')}`);
+    console.log(`📝 日志文件: ${logger.dailyPath}`);
+    console.log(`📝 最新日志: ${logger.latestPath}`);
     
     // 显示 AI 解卦服务状态
     const aiEnabled = !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here');
