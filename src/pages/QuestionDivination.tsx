@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { liuShiSiGua, type Gua, type Yao } from '../data/guaxiang';
 import { 
   ArrowLeft, Sparkles, BookOpen, HelpCircle, Briefcase, Heart, 
   Activity, Coins, GraduationCap, Plane, Scale, Search, Dice5,
-  Lightbulb, Compass, ChevronRight, RotateCcw, Bot, Loader2, Grid3X3, Menu, X,
+  Lightbulb, Compass, ChevronRight, RotateCcw, Bot, Loader2,
   Download, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useScrollPosition } from '../hooks/useScrollPosition';
-import ThemeToggle from '../components/ThemeToggle';
+import MainHeaderTabs from '../components/MainHeaderTabs';
 import { getAIDivination, checkAIDivinationStatus, sendChatMessage, type DivinationData, type ChatMessage } from '../lib/ai-divination-api';
 import MarkdownRenderer from '../components/MarkdownRenderer';
 
@@ -1188,7 +1187,6 @@ export default function QuestionDivination() {
   const [questionContent, setQuestionContent] = useState(''); // 用户输入的具体问事内容
   
   // 移动端菜单状态
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // AI 解卦状态
   const [aiLoading, setAiLoading] = useState(false);
@@ -1845,94 +1843,26 @@ export default function QuestionDivination() {
                   dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950
                   iching-pattern-bg iching-cloud-bg transition-colors duration-500">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-gradient-to-r from-[#6C5246] via-red-900 to-[#6C5246] 
-                       dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 
-                       text-[#FFFDFC] dark:text-yellow-100 shadow-lg transition-colors duration-500">
+      <header className="sticky top-0 z-50 border-b border-[#E8D7CA]/70 bg-[#FFF8F3]/82 text-[#4B3A33]
+                       shadow-[0_14px_45px_-34px_rgba(107,74,58,0.45)] backdrop-blur-xl transition-colors duration-500
+                       dark:border-white/10 dark:bg-neutral-950/80 dark:text-yellow-50 dark:shadow-[0_18px_48px_-36px_rgba(250,204,21,0.12)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <HelpCircle className="w-8 h-8 text-[#C6AA94]" />
-              <h1 className="text-2xl font-bold tracking-wider">问事解卦</h1>
+          <div className="flex items-center justify-between gap-4 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/76
+                            text-[#C97C6D] shadow-[0_14px_28px_-22px_rgba(146,64,14,0.35)]
+                            dark:border-white/10 dark:bg-neutral-950/65 dark:text-yellow-300 dark:shadow-none">
+                <HelpCircle className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-lg font-semibold tracking-[0.14em] text-[#4B3A33] dark:text-yellow-50 sm:text-xl">
+                  问事解卦
+                </h1>
+              </div>
             </div>
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
-              <Link
-                to="/hexagrams"
-                className="flex items-center space-x-2 px-4 py-2 bg-[#B56F62] hover:bg-[#C97C6D] 
-                         rounded-lg transition-all duration-300 hover:scale-105
-                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
-              >
-                <Grid3X3 className="w-5 h-5" />
-                <span>六十四卦</span>
-              </Link>
-              <Link
-                to="/transformer"
-                className="flex items-center space-x-2 px-4 py-2 bg-[#B56F62] hover:bg-[#C97C6D] 
-                         rounded-lg transition-all duration-300 hover:scale-105
-                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
-              >
-                <Sparkles className="w-5 h-5" />
-                <span>变卦推演</span>
-              </Link>
-              <Link
-                to="/divination"
-                className="flex items-center space-x-2 px-4 py-2 bg-[#B56F62] hover:bg-[#C97C6D] 
-                         rounded-lg transition-all duration-300 hover:scale-105
-                         dark:bg-yellow-600/80 dark:hover:bg-yellow-500 dark:text-neutral-900"
-              >
-                <Dice5 className="w-5 h-5" />
-                <span>数字起卦</span>
-              </Link>
-              <ThemeToggle />
-            </div>
-            {/* Mobile Menu Button */}
-            <div className="flex items-center space-x-2 md:hidden">
-              <ThemeToggle />
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 rounded-lg hover:bg-[#8C6B57]/50 transition-colors"
-              >
-                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
+            <MainHeaderTabs />
           </div>
         </div>
-
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-[#6C5246]/95 dark:bg-neutral-900/95 border-t border-[#B58B72] dark:border-yellow-900/50 px-4 py-4 animate-slideInRight">
-            <Link
-              to="/hexagrams"
-              className="flex items-center justify-center space-x-2 px-4 py-3 bg-[#B56F62] 
-                       hover:bg-[#C97C6D] dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
-                       rounded-lg transition-colors mb-3"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Grid3X3 className="w-5 h-5" />
-              <span>六十四卦</span>
-            </Link>
-            <Link
-              to="/transformer"
-              className="flex items-center justify-center space-x-2 px-4 py-3 bg-[#B56F62] 
-                       hover:bg-[#C97C6D] dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
-                       rounded-lg transition-colors mb-3"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Sparkles className="w-5 h-5" />
-              <span>变卦推演</span>
-            </Link>
-            <Link
-              to="/divination"
-              className="flex items-center justify-center space-x-2 px-4 py-3 bg-[#B56F62] 
-                       hover:bg-[#C97C6D] dark:bg-yellow-600 dark:hover:bg-yellow-500 dark:text-neutral-900
-                       rounded-lg transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              <Dice5 className="w-5 h-5" />
-              <span>数字起卦</span>
-            </Link>
-          </div>
-        )}
       </header>
 
       {/* Main Content */}
