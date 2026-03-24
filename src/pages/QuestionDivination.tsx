@@ -98,6 +98,134 @@ const questionScenes: QuestionScene[] = [
   },
 ];
 
+function getScenePreviewLabel(description: string): string {
+  return description.replace(/^问/, '').split('、').slice(0, 2).join(' · ');
+}
+
+function getSelectSceneCardMood(sceneId: string) {
+  const darkBase = {
+    darkGlow: 'from-slate-400/18 via-indigo-300/10 to-transparent',
+    darkBadge: 'dark:bg-transparent dark:px-0 dark:py-0 dark:text-slate-400 dark:ring-0',
+    darkArrow: 'dark:text-slate-200',
+  };
+
+  const createMood = (config: {
+    glow: string;
+    orb: string;
+    darkOrb: string;
+    badge: string;
+    iconShell: string;
+    darkIcon: string;
+    arrow: string;
+    outline: string;
+  }) => ({
+    ...darkBase,
+    ...config,
+  });
+
+  switch (sceneId) {
+    case 'career':
+      return createMood({
+        glow: 'from-sky-300/26 via-sky-100/6 to-transparent',
+        orb: 'bg-sky-300/22',
+        darkOrb: 'dark:bg-sky-300/14',
+        badge: 'text-sky-700',
+        iconShell: 'text-sky-600',
+        darkIcon: 'dark:bg-[linear-gradient(145deg,rgba(30,41,59,0.86),rgba(17,24,39,0.92))] dark:text-sky-100 dark:ring-1 dark:ring-slate-500/35',
+        arrow: 'text-sky-500',
+        outline: 'hover:border-sky-200/80',
+      });
+    case 'relationship':
+      return createMood({
+        glow: 'from-rose-300/28 via-pink-100/6 to-transparent',
+        orb: 'bg-rose-300/22',
+        darkOrb: 'dark:bg-rose-300/14',
+        badge: 'text-rose-700',
+        iconShell: 'text-rose-600',
+        darkIcon: 'dark:bg-[linear-gradient(145deg,rgba(30,41,59,0.86),rgba(17,24,39,0.92))] dark:text-rose-100 dark:ring-1 dark:ring-slate-500/35',
+        arrow: 'text-rose-500',
+        outline: 'hover:border-rose-200/80',
+      });
+    case 'health':
+      return createMood({
+        glow: 'from-emerald-300/26 via-emerald-100/6 to-transparent',
+        orb: 'bg-emerald-300/22',
+        darkOrb: 'dark:bg-emerald-300/14',
+        badge: 'text-emerald-700',
+        iconShell: 'text-emerald-600',
+        darkIcon: 'dark:bg-[linear-gradient(145deg,rgba(30,41,59,0.86),rgba(17,24,39,0.92))] dark:text-emerald-100 dark:ring-1 dark:ring-slate-500/35',
+        arrow: 'text-emerald-500',
+        outline: 'hover:border-emerald-200/80',
+      });
+    case 'wealth':
+      return createMood({
+        glow: 'from-amber-300/28 via-amber-100/6 to-transparent',
+        orb: 'bg-amber-300/22',
+        darkOrb: 'dark:bg-amber-300/14',
+        badge: 'text-amber-700',
+        iconShell: 'text-amber-600',
+        darkIcon: 'dark:bg-[linear-gradient(145deg,rgba(30,41,59,0.86),rgba(17,24,39,0.92))] dark:text-amber-100 dark:ring-1 dark:ring-slate-500/35',
+        arrow: 'text-amber-500',
+        outline: 'hover:border-amber-200/80',
+      });
+    case 'study':
+      return createMood({
+        glow: 'from-violet-300/28 via-violet-100/6 to-transparent',
+        orb: 'bg-violet-300/22',
+        darkOrb: 'dark:bg-violet-300/14',
+        badge: 'text-violet-700',
+        iconShell: 'text-violet-600',
+        darkIcon: 'dark:bg-[linear-gradient(145deg,rgba(30,41,59,0.86),rgba(17,24,39,0.92))] dark:text-violet-100 dark:ring-1 dark:ring-slate-500/35',
+        arrow: 'text-violet-500',
+        outline: 'hover:border-violet-200/80',
+      });
+    case 'travel':
+      return createMood({
+        glow: 'from-cyan-300/28 via-cyan-100/6 to-transparent',
+        orb: 'bg-cyan-300/22',
+        darkOrb: 'dark:bg-cyan-300/14',
+        badge: 'text-cyan-700',
+        iconShell: 'text-cyan-600',
+        darkIcon: 'dark:bg-[linear-gradient(145deg,rgba(30,41,59,0.86),rgba(17,24,39,0.92))] dark:text-cyan-100 dark:ring-1 dark:ring-slate-500/35',
+        arrow: 'text-cyan-500',
+        outline: 'hover:border-cyan-200/80',
+      });
+    case 'legal':
+      return createMood({
+        glow: 'from-red-300/26 via-red-100/6 to-transparent',
+        orb: 'bg-red-300/22',
+        darkOrb: 'dark:bg-red-300/14',
+        badge: 'text-red-700',
+        iconShell: 'text-red-600',
+        darkIcon: 'dark:bg-[linear-gradient(145deg,rgba(30,41,59,0.86),rgba(17,24,39,0.92))] dark:text-rose-100 dark:ring-1 dark:ring-slate-500/35',
+        arrow: 'text-red-500',
+        outline: 'hover:border-red-200/80',
+      });
+    case 'lost':
+      return createMood({
+        glow: 'from-orange-300/26 via-orange-100/6 to-transparent',
+        orb: 'bg-orange-300/22',
+        darkOrb: 'dark:bg-orange-300/14',
+        badge: 'text-orange-700',
+        iconShell: 'text-orange-600',
+        darkIcon: 'dark:bg-[linear-gradient(145deg,rgba(30,41,59,0.86),rgba(17,24,39,0.92))] dark:text-orange-100 dark:ring-1 dark:ring-slate-500/35',
+        arrow: 'text-orange-500',
+        outline: 'hover:border-orange-200/80',
+      });
+    default:
+      return createMood({
+        glow: 'from-amber-300/26 via-amber-100/6 to-transparent',
+        orb: 'bg-amber-300/22',
+        darkOrb: 'dark:bg-amber-300/14',
+        badge: 'text-amber-700',
+        iconShell: 'text-amber-600',
+        darkIcon: 'dark:bg-[linear-gradient(145deg,rgba(30,41,59,0.86),rgba(17,24,39,0.92))] dark:text-amber-100 dark:ring-1 dark:ring-slate-500/35',
+        arrow: 'text-amber-500',
+        outline: 'hover:border-amber-200/80',
+      });
+  }
+}
+
 // 八卦映射
 // 伏羲先天八卦数（1-8）到卦名的映射（用于数字起卦时的余数映射）
 const baGuaMap: Record<number, string> = {
@@ -1808,7 +1936,9 @@ export default function QuestionDivination() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className={`relative z-10 mx-auto px-4 sm:px-6 lg:px-8 py-8 ${
+        step === 'select' ? 'max-w-5xl' : 'max-w-4xl'
+      }`}>
         {/* Slogan */}
         <div className="text-center mb-8 animate-fadeIn">
           <p className="text-xl md:text-2xl font-serif text-amber-800 dark:text-yellow-300/90 tracking-wider italic">
@@ -1858,40 +1988,101 @@ export default function QuestionDivination() {
 
         {/* 步骤 1: 选择问事场景 */}
         {step === 'select' && (
-          <div className="animate-slideInUp">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-amber-900 dark:text-yellow-100 mb-2">
-                您想询问什么事？
-              </h2>
-              <p className="text-amber-600 dark:text-yellow-400">
-                请选择您的问事场景，以便获得更精准的解卦指引
+          <div className="animate-slideInUp space-y-7">
+            <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/70 px-6 py-8 shadow-[0_30px_80px_-50px_rgba(146,64,14,0.4)] backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900/55 dark:shadow-[0_30px_80px_-50px_rgba(234,179,8,0.2)] sm:px-8 sm:py-10">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.12),_transparent_58%)]" />
+              <div className="absolute -right-12 top-0 h-36 w-36 rounded-full bg-rose-200/40 blur-3xl dark:bg-rose-500/10" />
+              <div className="absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-amber-200/50 blur-3xl dark:bg-amber-400/10" />
+
+              <div className="relative text-center">
+                <span className="inline-flex items-center rounded-full border border-white/70 bg-white/80 px-4 py-1.5 text-xs font-medium tracking-[0.25em] text-amber-700 shadow-sm dark:border-white/10 dark:bg-neutral-950/60 dark:text-yellow-200/85">
+                  轻轻起一念
+                </span>
+                <h2 className="mt-5 text-3xl font-semibold tracking-[0.08em] text-amber-900 dark:text-yellow-50 sm:text-4xl">
+                  把想问的事，轻轻放进卦里
+                </h2>
+                <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-amber-700 dark:text-yellow-100/70 sm:text-base">
+                  不必急着给自己答案，先选一个最贴近此刻心事的场景，
+                  让接下来的解读更温柔，也更贴近你真正想问的那件事。
+                </p>
+
+                <div className="mt-8 grid gap-3 text-left sm:grid-cols-3">
+                  <div className="rounded-2xl border border-white/70 bg-white/72 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-neutral-950/45">
+                    <p className="text-xs tracking-[0.22em] text-amber-500 dark:text-yellow-500/70">01</p>
+                    <p className="mt-2 text-sm leading-6 text-amber-800 dark:text-yellow-50/85">
+                      先想清楚这次最想问的一件事
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/70 bg-white/72 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-neutral-950/45">
+                    <p className="text-xs tracking-[0.22em] text-amber-500 dark:text-yellow-500/70">02</p>
+                    <p className="mt-2 text-sm leading-6 text-amber-800 dark:text-yellow-50/85">
+                      选择一个最接近心事的问事场景
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/70 bg-white/72 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-neutral-950/45">
+                    <p className="text-xs tracking-[0.22em] text-amber-500 dark:text-yellow-500/70">03</p>
+                    <p className="mt-2 text-sm leading-6 text-amber-800 dark:text-yellow-50/85">
+                      再用三个数字，开始这次问事
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center">
+              <p className="text-xs tracking-[0.35em] text-amber-500 dark:text-yellow-600/80">
+                CHOOSE A SCENE
+              </p>
+              <h3 className="mt-3 text-2xl font-semibold text-amber-900 dark:text-yellow-100">
+                从一个最贴近的问题开始
+              </h3>
+              <p className="mt-2 text-sm text-amber-600 dark:text-yellow-200/65">
+                没有完全一样也没关系，选最接近的一项就好。
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {questionScenes.map((scene, index) => (
-                <button
-                  key={scene.id}
-                  onClick={() => handleSelectScene(scene)}
-                  className={`flex items-start p-5 rounded-xl border-2 transition-all duration-300 text-left
-                    ${scene.bgColor}
-                    hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]`}
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className={`p-3 rounded-lg bg-white/80 dark:bg-neutral-800/80 ${scene.color} mr-4`}>
-                    {scene.icon}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className={`font-bold text-lg mb-1 ${scene.color}`}>
-                      {scene.name}
-                    </h3>
-                    <p className="text-sm text-amber-700 dark:text-yellow-200/60">
-                      {scene.description}
-                    </p>
-                  </div>
-                  <ChevronRight className={`w-5 h-5 mt-1 ${scene.color} opacity-50`} />
-                </button>
-              ))}
+            <div className="mx-auto grid w-full max-w-[58rem] grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+              {questionScenes.map((scene, index) => {
+                const mood = getSelectSceneCardMood(scene.id);
+                const previewLabel = getScenePreviewLabel(scene.description);
+
+                return (
+                  <button
+                    key={scene.id}
+                    onClick={() => handleSelectScene(scene)}
+                    className={`group relative min-h-[150px] overflow-hidden rounded-[1.8rem] border border-white/70 bg-white/74 px-5 py-3.5 text-left shadow-[0_26px_62px_-42px_rgba(146,64,14,0.32)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_34px_68px_-44px_rgba(146,64,14,0.32)] active:scale-[0.99] dark:border-white/10 dark:bg-neutral-900/55 dark:shadow-[0_28px_72px_-48px_rgba(234,179,8,0.18)] dark:hover:border-white/15 dark:hover:shadow-[0_34px_78px_-50px_rgba(234,179,8,0.24)] ${mood.outline}`}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.12),_transparent_58%)]" />
+                    <div className={`absolute -right-10 top-0 h-32 w-32 rounded-full blur-3xl ${mood.orb} dark:bg-rose-500/10`} />
+                    <div className="absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-amber-200/45 blur-3xl dark:bg-amber-400/10" />
+                    <div className={`absolute inset-0 bg-gradient-to-br ${mood.glow} opacity-65 dark:opacity-18`} />
+                    <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/90 to-transparent dark:via-white/15" />
+
+                    <div className="relative flex h-full items-center gap-4">
+                      <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/70 bg-white/80 shadow-[0_16px_30px_-22px_rgba(255,255,255,0.82)] dark:border-white/10 dark:bg-neutral-950/58 dark:shadow-none ${mood.iconShell} ${mood.darkIcon} dark:ring-0`}>
+                        {scene.icon}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <span className={`inline-flex rounded-full border border-white/70 bg-white/78 px-3 py-1 text-xs font-medium tracking-[0.18em] text-amber-700 dark:border-white/10 dark:bg-neutral-950/58 dark:text-yellow-100/82 ${mood.badge} ${mood.darkBadge} dark:ring-0`}>
+                          {previewLabel}
+                        </span>
+                        <h3 className="mt-3 text-xl font-semibold text-amber-950 dark:text-yellow-50">
+                          {scene.name}
+                        </h3>
+                        <p className="mt-2.5 pr-6 text-sm leading-6 text-amber-700/90 dark:text-yellow-100/70">
+                          {scene.description}
+                        </p>
+                      </div>
+
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/70 bg-white/82 opacity-75 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-100 dark:border-white/10 dark:bg-neutral-950/60 dark:opacity-100 ${mood.arrow} dark:text-yellow-100/86`}>
+                        <ChevronRight className="h-5 w-5" />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
