@@ -4,7 +4,8 @@ import { liuShiSiGua, type Gua, type Yao } from '../data/guaxiang';
 import { 
   ArrowLeft, Sparkles, BookOpen, HelpCircle, Briefcase, Heart, 
   Activity, Coins, GraduationCap, Plane, Scale, Search, Dice5,
-  Lightbulb, Compass, ChevronRight, RotateCcw, Bot, Loader2, Grid3X3, Menu, X
+  Lightbulb, Compass, ChevronRight, RotateCcw, Bot, Loader2, Grid3X3, Menu, X,
+  Download, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useScrollPosition } from '../hooks/useScrollPosition';
 import ThemeToggle from '../components/ThemeToggle';
@@ -523,6 +524,427 @@ function buildInitialInterpretationSummary(
   return summaryLines.join('\n');
 }
 
+const SHARE_CANVAS_WIDTH = 1080;
+const SHARE_CANVAS_MAX_HEIGHT = 12000;
+const SHARE_CANVAS_PADDING = 48;
+const SHARE_CANVAS_GAP = 28;
+const SHARE_CARD_RADIUS = 28;
+const SHARE_AI_TEXT_LIMIT = 2600;
+const SHARE_SUMMARY_TEXT_LIMIT = 1000;
+const SHARE_MESSAGE_TEXT_LIMIT = 520;
+const SHARE_MESSAGE_COUNT_LIMIT = 10;
+
+interface ShareCanvasTheme {
+  backgroundStart: string;
+  backgroundEnd: string;
+  panel: string;
+  panelAlt: string;
+  panelMuted: string;
+  border: string;
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  accent: string;
+  accentSoft: string;
+  sceneText: string;
+  userBubble: string;
+  userText: string;
+  assistantBubble: string;
+  assistantText: string;
+}
+
+function getShareCanvasTheme(isDarkMode: boolean): ShareCanvasTheme {
+  return isDarkMode
+    ? {
+        backgroundStart: '#0a0a0a',
+        backgroundEnd: '#111827',
+        panel: '#171717',
+        panelAlt: '#111827',
+        panelMuted: '#1f2937',
+        border: '#3f3f46',
+        textPrimary: '#fafaf9',
+        textSecondary: '#fcd34d',
+        textMuted: '#cbd5e1',
+        accent: '#eab308',
+        accentSoft: '#312e81',
+        sceneText: '#fde68a',
+        userBubble: '#6d28d9',
+        userText: '#ffffff',
+        assistantBubble: '#262626',
+        assistantText: '#ede9fe',
+      }
+    : {
+        backgroundStart: '#fffbeb',
+        backgroundEnd: '#fff7ed',
+        panel: '#ffffff',
+        panelAlt: '#fef3c7',
+        panelMuted: '#eef2ff',
+        border: '#f3c58d',
+        textPrimary: '#78350f',
+        textSecondary: '#92400e',
+        textMuted: '#7c2d12',
+        accent: '#d97706',
+        accentSoft: '#ede9fe',
+        sceneText: '#9a3412',
+        userBubble: '#7c3aed',
+        userText: '#ffffff',
+        assistantBubble: '#f8fafc',
+        assistantText: '#312e81',
+      };
+}
+
+function limitShareText(text: string, maxLength: number): string {
+  const normalized = text.replace(/\r/g, '').trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, maxLength).trim()}...`;
+}
+
+function wrapCanvasText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number
+): string[] {
+  if (!text.trim()) {
+    return [''];
+  }
+
+  const paragraphs = text.split('\n');
+  const lines: string[] = [];
+
+  paragraphs.forEach((paragraph) => {
+    if (!paragraph.trim()) {
+      lines.push('');
+      return;
+    }
+
+    let currentLine = '';
+    Array.from(paragraph).forEach((character) => {
+      const nextLine = `${currentLine}${character}`;
+      if (currentLine && context.measureText(nextLine).width > maxWidth) {
+        lines.push(currentLine);
+        currentLine = character;
+      } else {
+        currentLine = nextLine;
+      }
+    });
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+  });
+
+  return lines;
+}
+
+function drawWrappedLines(
+  context: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight: number
+): number {
+  lines.forEach((line, index) => {
+    context.fillText(line, x, y + index * lineHeight);
+  });
+  return y + lines.length * lineHeight;
+}
+
+function drawRoundedRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fillColor: string,
+  strokeColor?: string
+) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+  context.fillStyle = fillColor;
+  context.fill();
+
+  if (strokeColor) {
+    context.strokeStyle = strokeColor;
+    context.lineWidth = 2;
+    context.stroke();
+  }
+}
+
+function drawHexagramPreview(
+  context: CanvasRenderingContext2D,
+  result: DivinationResult,
+  x: number,
+  y: number
+) {
+  const lineWidth = 150;
+  const lineHeight = 12;
+  const lineGap = 18;
+
+  const lines = [...result.gua!.yaos].reverse();
+  lines.forEach((yao, index) => {
+    const top = y + index * (lineHeight + lineGap);
+    const isMoving = result.dongYao?.position === 6 - index;
+    const fillColor = isMoving ? '#ef4444' : '#92400e';
+    context.fillStyle = fillColor;
+
+    if (yao.yinYang === 'yang') {
+      drawRoundedRect(context, x, top, lineWidth, lineHeight, 6, fillColor);
+    } else {
+      drawRoundedRect(context, x, top, 62, lineHeight, 6, fillColor);
+      drawRoundedRect(context, x + 88, top, 62, lineHeight, 6, fillColor);
+    }
+  });
+}
+
+function createShareImageCanvas(
+  result: DivinationResult,
+  selectedScene: QuestionScene,
+  questionContent: string,
+  chatContextSummary: ChatContextSummary | null,
+  chatMessages: ChatMessage[],
+  aiAvailable: boolean | null,
+  isDarkMode: boolean
+): HTMLCanvasElement {
+  const theme = getShareCanvasTheme(isDarkMode);
+  const canvas = document.createElement('canvas');
+  canvas.width = SHARE_CANVAS_WIDTH;
+  canvas.height = SHARE_CANVAS_MAX_HEIGHT;
+
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('生成分享图片失败，请稍后重试。');
+  }
+
+  const gradient = context.createLinearGradient(0, 0, 0, SHARE_CANVAS_MAX_HEIGHT);
+  gradient.addColorStop(0, theme.backgroundStart);
+  gradient.addColorStop(1, theme.backgroundEnd);
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, SHARE_CANVAS_WIDTH, SHARE_CANVAS_MAX_HEIGHT);
+
+  const contentX = SHARE_CANVAS_PADDING;
+  const contentWidth = SHARE_CANVAS_WIDTH - SHARE_CANVAS_PADDING * 2;
+  let cursorY = SHARE_CANVAS_PADDING;
+
+  const sceneQuestion = questionContent.trim()
+    ? limitShareText(questionContent.trim(), 150)
+    : `当前问的是${selectedScene.name}`;
+
+  context.font = '600 28px "Microsoft YaHei", "PingFang SC", sans-serif';
+  const sceneQuestionLines = wrapCanvasText(context, `具体问题：${sceneQuestion}`, contentWidth - 72);
+  const sceneCardHeight = 112 + sceneQuestionLines.length * 38;
+  drawRoundedRect(context, contentX, cursorY, contentWidth, sceneCardHeight, SHARE_CARD_RADIUS, theme.panel, theme.border);
+
+  context.fillStyle = theme.textSecondary;
+  context.font = '700 24px "Microsoft YaHei", "PingFang SC", sans-serif';
+  context.fillText('问事场景', contentX + 28, cursorY + 42);
+
+  context.fillStyle = theme.sceneText;
+  context.font = '700 38px "Microsoft YaHei", "PingFang SC", sans-serif';
+  context.fillText(selectedScene.name, contentX + 28, cursorY + 92);
+
+  context.fillStyle = theme.textMuted;
+  context.font = '500 28px "Microsoft YaHei", "PingFang SC", sans-serif';
+  drawWrappedLines(context, sceneQuestionLines, contentX + 28, cursorY + 138, 38);
+  cursorY += sceneCardHeight + SHARE_CANVAS_GAP;
+
+  if (result.gua) {
+    const overviewHeight = 310;
+    drawRoundedRect(context, contentX, cursorY, contentWidth, overviewHeight, SHARE_CARD_RADIUS, theme.panel, theme.border);
+    drawHexagramPreview(context, result, contentX + 36, cursorY + 48);
+
+    const textX = contentX + 250;
+    const textWidth = contentWidth - 286;
+    context.fillStyle = theme.textPrimary;
+    context.font = '700 54px "Microsoft YaHei", "PingFang SC", sans-serif';
+    context.fillText(result.gua.chineseName, textX, cursorY + 86);
+
+    context.fillStyle = theme.textSecondary;
+    context.font = '600 28px "Microsoft YaHei", "PingFang SC", sans-serif';
+    context.fillText(`第 ${result.gua.id} 卦 · ${result.gua.name}`, textX, cursorY + 130);
+
+    context.fillStyle = theme.textMuted;
+    context.font = '500 28px "Microsoft YaHei", "PingFang SC", sans-serif';
+    const meaningLines = wrapCanvasText(context, result.gua.meaning, textWidth);
+    let overviewY = drawWrappedLines(context, meaningLines, textX, cursorY + 180, 38);
+
+    const relationText = `动爻：${result.dongYao?.name || '无'}    体${result.tiGuaName} / 用${result.yongGuaName}`;
+    const judgmentText = `${result.wuxingDetail.relation} · ${result.wuxingDetail.judgment}`;
+    context.fillStyle = theme.textSecondary;
+    context.font = '600 26px "Microsoft YaHei", "PingFang SC", sans-serif';
+    overviewY = drawWrappedLines(
+      context,
+      wrapCanvasText(context, relationText, textWidth),
+      textX,
+      overviewY + 28,
+      34
+    );
+    context.fillStyle = theme.textMuted;
+    context.font = '500 26px "Microsoft YaHei", "PingFang SC", sans-serif';
+    drawWrappedLines(
+      context,
+      wrapCanvasText(context, judgmentText, textWidth),
+      textX,
+      overviewY + 18,
+      34
+    );
+
+    cursorY += overviewHeight + SHARE_CANVAS_GAP;
+  }
+
+  const aiText = result.aiInterpretation
+    ? limitShareText(stripMarkdownForSummary(result.aiInterpretation.content), SHARE_AI_TEXT_LIMIT)
+    : aiAvailable === false
+      ? '当前设备未配置 AI 解卦服务。'
+      : '当前还没有生成 AI 解卦内容。';
+
+  context.font = '500 28px "Microsoft YaHei", "PingFang SC", sans-serif';
+  const aiLines = wrapCanvasText(context, aiText, contentWidth - 56);
+  const aiCardHeight = 98 + aiLines.length * 38;
+  drawRoundedRect(context, contentX, cursorY, contentWidth, aiCardHeight, SHARE_CARD_RADIUS, theme.panelAlt, theme.border);
+
+  context.fillStyle = theme.textSecondary;
+  context.font = '700 30px "Microsoft YaHei", "PingFang SC", sans-serif';
+  context.fillText('AI 大师解卦', contentX + 28, cursorY + 44);
+  context.fillStyle = theme.textPrimary;
+  context.font = '500 28px "Microsoft YaHei", "PingFang SC", sans-serif';
+  drawWrappedLines(context, aiLines, contentX + 28, cursorY + 92, 38);
+  cursorY += aiCardHeight + SHARE_CANVAS_GAP;
+
+  if (result.aiInterpretation) {
+    const summaryText = chatContextSummary
+      ? limitShareText(chatContextSummary.initialInterpretationSummary, SHARE_SUMMARY_TEXT_LIMIT)
+      : '';
+    const displayMessages = chatMessages.slice(-SHARE_MESSAGE_COUNT_LIMIT);
+
+    context.font = '500 26px "Microsoft YaHei", "PingFang SC", sans-serif';
+    const summaryLines = summaryText
+      ? wrapCanvasText(context, summaryText, contentWidth - 104)
+      : [];
+
+    let estimatedHeight = 104;
+    if (summaryLines.length > 0) {
+      estimatedHeight += 54 + summaryLines.length * 34 + 40;
+    }
+
+    displayMessages.forEach((message) => {
+      const cleaned = limitShareText(stripMarkdownForSummary(message.content), SHARE_MESSAGE_TEXT_LIMIT);
+      const bubbleWidth = Math.floor(contentWidth * 0.72);
+      const bubblePadding = 22;
+      const lineWidth = bubbleWidth - bubblePadding * 2;
+      const bubbleLines = wrapCanvasText(context, cleaned, lineWidth);
+      estimatedHeight += 54 + bubbleLines.length * 34 + 42;
+    });
+
+    if (displayMessages.length === 0) {
+      estimatedHeight += 84;
+    }
+
+    drawRoundedRect(context, contentX, cursorY, contentWidth, estimatedHeight, SHARE_CARD_RADIUS, theme.panel, theme.border);
+    context.fillStyle = theme.textSecondary;
+    context.font = '700 30px "Microsoft YaHei", "PingFang SC", sans-serif';
+    context.fillText('继续追问', contentX + 28, cursorY + 44);
+
+    let chatY = cursorY + 86;
+
+    if (summaryLines.length > 0) {
+      const summaryHeight = 54 + summaryLines.length * 34 + 28;
+      drawRoundedRect(context, contentX + 24, chatY, contentWidth - 48, summaryHeight, 22, theme.panelMuted, theme.border);
+      context.fillStyle = theme.textSecondary;
+      context.font = '600 24px "Microsoft YaHei", "PingFang SC", sans-serif';
+      context.fillText('已载入初始解卦摘要', contentX + 48, chatY + 34);
+      context.fillStyle = theme.textPrimary;
+      context.font = '500 24px "Microsoft YaHei", "PingFang SC", sans-serif';
+      drawWrappedLines(context, summaryLines, contentX + 48, chatY + 74, 34);
+      chatY += summaryHeight + 24;
+    }
+
+    if (displayMessages.length === 0) {
+      context.fillStyle = theme.textMuted;
+      context.font = '500 24px "Microsoft YaHei", "PingFang SC", sans-serif';
+      context.fillText('当前还没有追问记录。', contentX + 28, chatY + 20);
+    } else {
+      displayMessages.forEach((message) => {
+        const cleaned = limitShareText(stripMarkdownForSummary(message.content), SHARE_MESSAGE_TEXT_LIMIT);
+        const bubbleWidth = Math.floor(contentWidth * 0.72);
+        const bubblePadding = 22;
+        const lineWidth = bubbleWidth - bubblePadding * 2;
+        const bubbleLines = wrapCanvasText(context, cleaned, lineWidth);
+        const bubbleHeight = 54 + bubbleLines.length * 34 + 28;
+        const bubbleX = message.role === 'user'
+          ? contentX + contentWidth - bubbleWidth - 24
+          : contentX + 24;
+
+        drawRoundedRect(
+          context,
+          bubbleX,
+          chatY,
+          bubbleWidth,
+          bubbleHeight,
+          24,
+          message.role === 'user' ? theme.userBubble : theme.assistantBubble,
+          message.role === 'user' ? theme.userBubble : theme.border
+        );
+
+        context.fillStyle = message.role === 'user' ? theme.userText : theme.textSecondary;
+        context.font = '600 22px "Microsoft YaHei", "PingFang SC", sans-serif';
+        context.fillText(message.role === 'user' ? '我的追问' : 'AI 回答', bubbleX + bubblePadding, chatY + 32);
+
+        context.fillStyle = message.role === 'user' ? theme.userText : theme.assistantText;
+        context.font = '500 24px "Microsoft YaHei", "PingFang SC", sans-serif';
+        drawWrappedLines(context, bubbleLines, bubbleX + bubblePadding, chatY + 72, 34);
+
+        chatY += bubbleHeight + 18;
+      });
+    }
+
+    cursorY += estimatedHeight + SHARE_CANVAS_GAP;
+  }
+
+  context.fillStyle = theme.textMuted;
+  context.font = '500 24px "Microsoft YaHei", "PingFang SC", sans-serif';
+  context.fillText('IChing64 · 当前问事结果分享图', contentX, cursorY + 12);
+  cursorY += 48;
+
+  const outputHeight = Math.min(SHARE_CANVAS_MAX_HEIGHT, Math.ceil(cursorY + SHARE_CANVAS_PADDING));
+  const outputCanvas = document.createElement('canvas');
+  outputCanvas.width = SHARE_CANVAS_WIDTH;
+  outputCanvas.height = outputHeight;
+  const outputContext = outputCanvas.getContext('2d');
+
+  if (!outputContext) {
+    throw new Error('生成分享图片失败，请稍后重试。');
+  }
+
+  outputContext.drawImage(canvas, 0, 0, SHARE_CANVAS_WIDTH, outputHeight, 0, 0, SHARE_CANVAS_WIDTH, outputHeight);
+  return outputCanvas;
+}
+
+function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('生成分享图片失败，请稍后重试。'));
+        return;
+      }
+
+      resolve(blob);
+    }, 'image/png');
+  });
+}
+
 export default function QuestionDivination() {
   // 步骤管理: 'select' | 'divinate' | 'result' | 'detail'
   const [step, setStep] = useState<'select' | 'divinate' | 'result' | 'detail'>('select');
@@ -550,6 +972,9 @@ export default function QuestionDivination() {
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatContextSummary, setChatContextSummary] = useState<ChatContextSummary | null>(null);
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [shareGenerating, setShareGenerating] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
 
   // 检查 AI 服务状态
   useEffect(() => {
@@ -558,6 +983,11 @@ export default function QuestionDivination() {
 
   // 记住滚动位置
   useScrollPosition(`question-divination-${step}`);
+
+  const resetShareState = () => {
+    setShareStatus(null);
+    setShareGenerating(false);
+  };
 
   const resetChatContext = () => {
     setChatMessages([]);
@@ -591,7 +1021,9 @@ export default function QuestionDivination() {
     setNum3('');
     setQuestionContent('');
     setAiError(null);
+    setDetailsExpanded(false);
     resetChatContext();
+    resetShareState();
   };
 
   // 返回起卦页面
@@ -599,7 +1031,9 @@ export default function QuestionDivination() {
     setStep('divinate');
     setResult(null);
     setAiError(null);
+    setDetailsExpanded(false);
     resetChatContext();
+    resetShareState();
   };
 
   // 开始起卦计算
@@ -623,7 +1057,9 @@ export default function QuestionDivination() {
     }
 
     setAiError(null);
+    setDetailsExpanded(false);
     resetChatContext();
+    resetShareState();
     setIsCalculating(true);
 
     setTimeout(() => {
@@ -986,7 +1422,9 @@ export default function QuestionDivination() {
     setNum3('');
     setQuestionContent('');
     setAiError(null);
+    setDetailsExpanded(false);
     resetChatContext();
+    resetShareState();
   };
 
   // AI 解卦
@@ -1018,6 +1456,7 @@ export default function QuestionDivination() {
       const response = await getAIDivination(divinationData);
 
       if (response.success && response.data) {
+        resetShareState();
         const initialInterpretationSummary = buildInitialInterpretationSummary(
           result,
           response.data.interpretation,
@@ -1134,6 +1573,43 @@ export default function QuestionDivination() {
   const sceneInterpretation = result?.gua && selectedScene && result.wuxingRelation
     ? getSceneInterpretation(selectedScene.id, result.gua, result.dongYaoNum, result.wuxingRelation)
     : null;
+
+  const handleDownloadShareImage = async () => {
+    if (!result || !selectedScene) {
+      setShareStatus('当前暂无可下载的分享图片。');
+      return;
+    }
+
+    setShareGenerating(true);
+    setShareStatus('正在生成分享图片...');
+
+    try {
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      const canvas = createShareImageCanvas(
+        result,
+        selectedScene,
+        questionContent,
+        chatContextSummary,
+        chatMessages,
+        aiAvailable,
+        isDarkMode
+      );
+      const blob = await canvasToPngBlob(canvas);
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `iching64-${selectedScene.id}-share-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+      setShareStatus('分享图片已下载，可以直接发到小红书。');
+    } catch (error) {
+      setShareStatus(error instanceof Error ? error.message : '下载分享图片失败，请稍后重试。');
+    } finally {
+      setShareGenerating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 
@@ -1505,22 +1981,23 @@ export default function QuestionDivination() {
               <span>{step === 'detail' ? '返回解卦结果' : '重新起卦'}</span>
             </button>
 
-            {/* 问事场景标签 */}
-            <div className={`p-4 rounded-xl border-2 ${selectedScene.bgColor}`}>
-              <div className="flex items-center">
-                <div className={`p-2 rounded-lg bg-white/80 dark:bg-neutral-800/80 ${selectedScene.color} mr-3`}>
-                  {selectedScene.icon}
-                </div>
-                <div>
-                  <p className="text-sm text-amber-600 dark:text-yellow-500">问事场景</p>
-                  <h3 className={`font-bold text-lg ${selectedScene.color}`}>{selectedScene.name}</h3>
-                </div>
-              </div>
-            </div>
-
             {step === 'result' ? (
               /* 解卦结果页面 */
               <>
+                <div className="space-y-6">
+                  {/* 问事场景标签 */}
+                  <div className={`p-4 rounded-xl border-2 ${selectedScene.bgColor}`}>
+                    <div className="flex items-center">
+                      <div className={`p-2 rounded-lg bg-white/80 dark:bg-neutral-800/80 ${selectedScene.color} mr-3`}>
+                        {selectedScene.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm text-amber-600 dark:text-yellow-500">问事场景</p>
+                        <h3 className={`font-bold text-lg ${selectedScene.color}`}>{selectedScene.name}</h3>
+                      </div>
+                    </div>
+                  </div>
+
                 {/* 卦象概览 */}
                 {result.gua && (
                   <div className="bg-gradient-to-br from-amber-100 to-orange-100 
@@ -1827,7 +2304,36 @@ export default function QuestionDivination() {
                     </p>
                   </div>
                 )}
+                </div>
 
+                <div className="rounded-2xl border border-violet-200 bg-white/90 p-4 shadow-sm dark:border-violet-800/40 dark:bg-neutral-900/70">
+                  <button
+                    type="button"
+                    onClick={() => setDetailsExpanded((prev) => !prev)}
+                    className="flex w-full items-center justify-between gap-4 text-left"
+                  >
+                    <div>
+                      <p className="text-base font-bold text-violet-900 dark:text-violet-100">
+                        {detailsExpanded ? '收起细节' : '细节展开'}
+                      </p>
+                      <p className="mt-1 text-sm text-violet-600 dark:text-violet-300">
+                        {detailsExpanded
+                          ? '体用分析、场景解读、应期、动爻、决策建议和卦辞已展开。'
+                          : '体用分析及以下详细内容默认收起，点击后再查看。'}
+                      </p>
+                    </div>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200">
+                      {detailsExpanded ? (
+                        <ChevronUp className="h-5 w-5" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5" />
+                      )}
+                    </div>
+                  </button>
+                </div>
+
+                {detailsExpanded && (
+                  <>
                 {/* 体用关系展示 - 梅花易数 */}
                 {result && (
                   <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-md 
@@ -2269,6 +2775,8 @@ export default function QuestionDivination() {
                     </p>
                   </div>
                 )}
+                  </>
+                )}
 
                 {/* 操作按钮 */}
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -2283,6 +2791,23 @@ export default function QuestionDivination() {
                     查看完整卦象详情
                   </button>
                   <button
+                    onClick={handleDownloadShareImage}
+                    disabled={shareGenerating}
+                    className="flex-1 py-4 bg-gradient-to-r from-rose-500 to-red-500 
+                             hover:from-rose-600 hover:to-red-600
+                             disabled:from-rose-300 disabled:to-red-300 disabled:cursor-not-allowed
+                             text-white font-bold rounded-lg transition-all shadow-lg
+                             hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0
+                             flex items-center justify-center gap-2"
+                  >
+                    {shareGenerating ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Download className="w-5 h-5" />
+                    )}
+                    下载小红书分享图
+                  </button>
+                  <button
                     onClick={handleRestart}
                     className="flex-1 py-4 bg-gradient-to-r from-neutral-500 to-neutral-600 
                              hover:from-neutral-600 hover:to-neutral-700
@@ -2295,10 +2820,28 @@ export default function QuestionDivination() {
                     重新问事
                   </button>
                 </div>
+
+                {shareStatus && (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900/30 dark:bg-rose-950/20 dark:text-rose-300">
+                    {shareStatus}
+                  </div>
+                )}
               </>
             ) : (
               /* 完整卦象详情 */
               <>
+                <div className={`p-4 rounded-xl border-2 ${selectedScene.bgColor}`}>
+                  <div className="flex items-center">
+                    <div className={`p-2 rounded-lg bg-white/80 dark:bg-neutral-800/80 ${selectedScene.color} mr-3`}>
+                      {selectedScene.icon}
+                    </div>
+                    <div>
+                      <p className="text-sm text-amber-600 dark:text-yellow-500">问事场景</p>
+                      <h3 className={`font-bold text-lg ${selectedScene.color}`}>{selectedScene.name}</h3>
+                    </div>
+                  </div>
+                </div>
+
                 {result.gua && (
                   <>
                     {/* 卦象头部 */}
