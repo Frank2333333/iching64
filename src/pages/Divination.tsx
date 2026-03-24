@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { liuShiSiGua, type Gua, baGua } from '../data/guaxiang';
 import { Calculator, ArrowLeft, Sparkles, BookOpen, Dice5 } from 'lucide-react';
 // import { useTheme } from '../hooks/useTheme';
@@ -35,6 +36,7 @@ const baGuaMap: Record<number, string> = {
 const yaoPositionNames = ['初', '二', '三', '四', '五', '上'];
 
 export default function Divination() {
+  const navigate = useNavigate();
   const [num1, setNum1] = useState('');
   const [num2, setNum2] = useState('');
   const [num3, setNum3] = useState('');
@@ -138,6 +140,17 @@ export default function Divination() {
     setShowGuaDetail(false);
   };
 
+  const handleGoHome = () => {
+    setNum1('');
+    setNum2('');
+    setNum3('');
+    setResult(null);
+    setShowGuaDetail(false);
+    setIsCalculating(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate('/divination');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FFF8F3] via-[#FFFDFC] to-[#F7EFE7] 
                   dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950
@@ -148,7 +161,11 @@ export default function Divination() {
                        dark:border-white/10 dark:bg-neutral-950/80 dark:text-yellow-50 dark:shadow-[0_18px_48px_-36px_rgba(250,204,21,0.12)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4 py-4">
-            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGoHome}
+              className="flex items-center gap-3 rounded-full transition-opacity duration-300 hover:opacity-85"
+            >
               <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/76
                             text-[#C97C6D] shadow-[0_14px_28px_-22px_rgba(146,64,14,0.35)]
                             dark:border-white/10 dark:bg-neutral-950/65 dark:text-yellow-300 dark:shadow-none">
@@ -157,7 +174,7 @@ export default function Divination() {
               <div className="min-w-0">
                 <h1 className="text-lg font-semibold tracking-[0.14em] text-[#4B3A33] dark:text-yellow-50 sm:text-xl">数字起卦</h1>
               </div>
-            </div>
+            </button>
             <MainHeaderTabs />
           </div>
         </div>
@@ -254,12 +271,13 @@ export default function Divination() {
               <button
                 onClick={handleCalculate}
                 disabled={isCalculating}
-                className="w-full rounded-[26px] bg-gradient-to-r from-[#C97C6D] to-[#B97A6B] py-4.5 
+                className="w-full rounded-[26px] bg-gradient-to-r from-[#C97C6D] to-[#B97A6B] py-4 
                          hover:from-[#B97A6B] hover:to-[#A86E61]
                          dark:from-yellow-600 dark:to-yellow-700 dark:hover:from-yellow-500 dark:hover:to-yellow-600
                          text-white dark:text-neutral-900 font-bold transition-all shadow-[0_24px_46px_-30px_rgba(201,124,109,0.45)]
                          disabled:opacity-50 disabled:cursor-not-allowed
-                         hover:shadow-[0_28px_52px_-30px_rgba(201,124,109,0.5)] hover:-translate-y-0.5 active:translate-y-0"
+                         hover:shadow-[0_28px_52px_-30px_rgba(201,124,109,0.5)] hover:-translate-y-0.5 active:translate-y-0
+                         flex items-center justify-center gap-2"
               >
                 {isCalculating ? '起卦中...' : '开始起卦'}
               </button>
@@ -424,11 +442,12 @@ export default function Divination() {
                     {/* 查看完整卦象按钮 */}
                     <button
                       onClick={handleShowDetail}
-                      className="w-full rounded-[26px] bg-gradient-to-r from-[#C97C6D] to-[#B97A6B] py-4.5 
+                      className="w-full rounded-[26px] bg-gradient-to-r from-[#C97C6D] to-[#B97A6B] py-4 
                                hover:from-[#D58B7D] hover:to-[#C97C6D]
                                dark:from-yellow-600 dark:to-yellow-500 dark:hover:from-yellow-500 dark:hover:to-yellow-400
                                text-white dark:text-neutral-900 font-bold transition-all shadow-[0_24px_46px_-30px_rgba(201,124,109,0.45)]
-                               hover:shadow-[0_28px_52px_-30px_rgba(201,124,109,0.5)] hover:-translate-y-0.5 active:translate-y-0"
+                               hover:shadow-[0_28px_52px_-30px_rgba(201,124,109,0.5)] hover:-translate-y-0.5 active:translate-y-0
+                               flex items-center justify-center gap-2"
                     >
                       查看完整卦象详情
                     </button>

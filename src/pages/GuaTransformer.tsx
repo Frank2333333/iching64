@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { liuShiSiGua, getGuaByYaos, getTrigramFromYaos, getWuxingColor, type Gua } from '../data/guaxiang';
 import { RotateCcw, Info, ChevronRight } from 'lucide-react';
 import MainHeaderTabs from '../components/MainHeaderTabs';
@@ -87,6 +88,7 @@ function TrigramSymbol({ name }: { name: string }) {
 }
 
 export default function GuaTransformer() {
+  const navigate = useNavigate();
   // 初始为乾卦（六爻皆阳）
   const [yaos, setYaos] = useState<('yin' | 'yang')[]>(['yang', 'yang', 'yang', 'yang', 'yang', 'yang']);
   const [currentGua, setCurrentGua] = useState<Gua | undefined>(liuShiSiGua[0]); // 乾卦
@@ -112,6 +114,13 @@ export default function GuaTransformer() {
   // 重置为乾卦
   const resetToQian = () => {
     setYaos(['yang', 'yang', 'yang', 'yang', 'yang', 'yang']);
+  };
+
+  const handleGoHome = () => {
+    setIsAnimating(false);
+    resetToQian();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate('/transformer');
   };
   
   // 随机生成一卦
@@ -142,7 +151,11 @@ export default function GuaTransformer() {
                          dark:border-white/10 dark:bg-neutral-950/80 dark:text-yellow-50 dark:shadow-[0_18px_48px_-36px_rgba(250,204,21,0.12)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4 py-4">
-            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGoHome}
+              className="flex items-center gap-3 rounded-full transition-opacity duration-300 hover:opacity-85"
+            >
               <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/76
                             text-[#C97C6D] shadow-[0_14px_28px_-22px_rgba(146,64,14,0.35)]
                             dark:border-white/10 dark:bg-neutral-950/65 dark:text-yellow-300 dark:shadow-none">
@@ -151,7 +164,7 @@ export default function GuaTransformer() {
               <div className="min-w-0">
                 <h1 className="text-lg font-semibold tracking-[0.14em] text-[#4B3A33] dark:text-yellow-50 sm:text-xl">变卦推演</h1>
               </div>
-            </div>
+            </button>
             <MainHeaderTabs />
           </div>
         </div>

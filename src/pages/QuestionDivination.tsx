@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { liuShiSiGua, type Gua, type Yao } from '../data/guaxiang';
 import { 
   ArrowLeft, Sparkles, BookOpen, HelpCircle, Briefcase, Heart, 
@@ -1174,6 +1175,7 @@ function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
 }
 
 export default function QuestionDivination() {
+  const navigate = useNavigate();
   // 步骤管理: 'select' | 'divinate' | 'result' | 'detail'
   const [step, setStep] = useState<'select' | 'divinate' | 'result' | 'detail'>('select');
   const [selectedScene, setSelectedScene] = useState<QuestionScene | null>(null);
@@ -1655,6 +1657,12 @@ export default function QuestionDivination() {
   };
 
   // AI 解卦
+  const handleGoHome = () => {
+    handleRestart();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate('/');
+  };
+
   const handleAIInterpretation = async () => {
     if (!result || aiLoading) return;
     
@@ -1848,7 +1856,11 @@ export default function QuestionDivination() {
                        dark:border-white/10 dark:bg-neutral-950/80 dark:text-yellow-50 dark:shadow-[0_18px_48px_-36px_rgba(250,204,21,0.12)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4 py-4">
-            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGoHome}
+              className="flex items-center gap-3 rounded-full transition-opacity duration-300 hover:opacity-85"
+            >
               <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/76
                             text-[#C97C6D] shadow-[0_14px_28px_-22px_rgba(146,64,14,0.35)]
                             dark:border-white/10 dark:bg-neutral-950/65 dark:text-yellow-300 dark:shadow-none">
@@ -1859,7 +1871,7 @@ export default function QuestionDivination() {
                   问事解卦
                 </h1>
               </div>
-            </div>
+            </button>
             <MainHeaderTabs />
           </div>
         </div>

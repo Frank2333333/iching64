@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, BookOpen } from 'lucide-react';
 import { liuShiSiGua, type Gua } from '../data/guaxiang';
 import GuaCard from '../components/GuaCard';
@@ -9,6 +9,7 @@ import { useScrollPosition } from '../hooks/useScrollPosition';
 import MainHeaderTabs from '../components/MainHeaderTabs';
 
 export default function GuaList() {
+  const navigate = useNavigate();
   const [selectedGua, setSelectedGua] = useState<Gua | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -86,6 +87,14 @@ export default function GuaList() {
     }, 200);
   };
 
+  const handleGoHome = () => {
+    setIsTransitioning(false);
+    setSelectedGua(null);
+    setSearchTerm('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate('/hexagrams');
+  };
+
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-[#FFF8F3] via-[#FFFDFC] to-[#F7EFE7]
@@ -100,7 +109,11 @@ export default function GuaList() {
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4 py-4">
-            <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGoHome}
+              className="flex items-center gap-3 rounded-full transition-opacity duration-300 hover:opacity-85"
+            >
               <div
                 className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/76
                            text-[#C97C6D] shadow-[0_14px_28px_-22px_rgba(146,64,14,0.35)]
@@ -111,7 +124,7 @@ export default function GuaList() {
               <div className="min-w-0">
                 <h1 className="text-lg font-semibold tracking-[0.14em] sm:text-xl">六十四卦</h1>
               </div>
-            </div>
+            </button>
 
             <MainHeaderTabs desktopPrefix={desktopSearch} mobilePrefix={mobileSearch} />
           </div>
