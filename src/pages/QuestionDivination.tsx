@@ -536,7 +536,12 @@ const SHARE_MESSAGE_COUNT_LIMIT = 10;
 
 interface ShareCanvasTheme {
   backgroundStart: string;
+  backgroundMiddle: string;
   backgroundEnd: string;
+  patternColor: string;
+  patternOpacity: number;
+  cloudColor: string;
+  cloudOpacity: number;
   panel: string;
   panelAlt: string;
   panelMuted: string;
@@ -557,7 +562,12 @@ function getShareCanvasTheme(isDarkMode: boolean): ShareCanvasTheme {
   return isDarkMode
     ? {
         backgroundStart: '#0a0a0a',
-        backgroundEnd: '#111827',
+        backgroundMiddle: '#171717',
+        backgroundEnd: '#0a0a0a',
+        patternColor: '#d4af37',
+        patternOpacity: 0.06,
+        cloudColor: '#d4af37',
+        cloudOpacity: 0.04,
         panel: '#171717',
         panelAlt: '#111827',
         panelMuted: '#1f2937',
@@ -575,7 +585,12 @@ function getShareCanvasTheme(isDarkMode: boolean): ShareCanvasTheme {
       }
     : {
         backgroundStart: '#fffbeb',
-        backgroundEnd: '#fff7ed',
+        backgroundMiddle: '#fff7ed',
+        backgroundEnd: '#fefce8',
+        patternColor: '#1c1917',
+        patternOpacity: 0.03,
+        cloudColor: '#1c1917',
+        cloudOpacity: 0.025,
         panel: '#ffffff',
         panelAlt: '#fef3c7',
         panelMuted: '#eef2ff',
@@ -591,6 +606,89 @@ function getShareCanvasTheme(isDarkMode: boolean): ShareCanvasTheme {
         assistantBubble: '#f8fafc',
         assistantText: '#312e81',
       };
+}
+
+function hexToRgba(color: string, alpha: number): string {
+  const normalized = color.replace('#', '');
+  const size = normalized.length === 3 ? 1 : 2;
+  const parts = normalized.match(size === 1 ? /./g : /.{2}/g);
+
+  if (!parts || parts.length < 3) {
+    return color;
+  }
+
+  const [r, g, b] = parts.map((part) => {
+    const expanded = size === 1 ? `${part}${part}` : part;
+    return Number.parseInt(expanded, 16);
+  });
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function drawPatternLayer(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  color: string,
+  opacity: number
+) {
+  const tile = document.createElement('canvas');
+  tile.width = 80;
+  tile.height = 80;
+  const tileContext = tile.getContext('2d');
+
+  if (!tileContext) {
+    return;
+  }
+
+  tileContext.scale(0.8, 0.8);
+  tileContext.fillStyle = hexToRgba(color, opacity);
+  tileContext.fill(new Path2D('M50 0 L100 50 L50 100 L0 50 Z M50 10 L90 50 L50 90 L10 50 Z'));
+  tileContext.beginPath();
+  tileContext.arc(50, 50, 8, 0, Math.PI * 2);
+  tileContext.fill();
+
+  const pattern = context.createPattern(tile, 'repeat');
+  if (!pattern) {
+    return;
+  }
+
+  context.save();
+  context.fillStyle = pattern;
+  context.fillRect(0, 0, width, height);
+  context.restore();
+}
+
+function drawCloudLayer(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  color: string,
+  opacity: number
+) {
+  const tile = document.createElement('canvas');
+  tile.width = 200;
+  tile.height = 100;
+  const tileContext = tile.getContext('2d');
+
+  if (!tileContext) {
+    return;
+  }
+
+  tileContext.fillStyle = hexToRgba(color, opacity);
+  tileContext.fill(
+    new Path2D('M30 50 Q40 30 60 40 Q80 20 100 40 Q120 25 140 45 Q160 35 170 50 Q160 65 140 55 Q120 75 100 55 Q80 70 60 55 Q40 65 30 50')
+  );
+
+  const pattern = context.createPattern(tile, 'repeat');
+  if (!pattern) {
+    return;
+  }
+
+  context.save();
+  context.fillStyle = pattern;
+  context.fillRect(0, 0, width, height);
+  context.restore();
 }
 
 function limitShareText(text: string, maxLength: number): string {
@@ -728,11 +826,14 @@ function createShareImageCanvas(
     throw new Error('生成分享图片失败，请稍后重试。');
   }
 
-  const gradient = context.createLinearGradient(0, 0, 0, SHARE_CANVAS_MAX_HEIGHT);
+  const gradient = context.createLinearGradient(0, 0, SHARE_CANVAS_WIDTH, SHARE_CANVAS_MAX_HEIGHT);
   gradient.addColorStop(0, theme.backgroundStart);
+  gradient.addColorStop(0.5, theme.backgroundMiddle);
   gradient.addColorStop(1, theme.backgroundEnd);
   context.fillStyle = gradient;
   context.fillRect(0, 0, SHARE_CANVAS_WIDTH, SHARE_CANVAS_MAX_HEIGHT);
+  drawPatternLayer(context, SHARE_CANVAS_WIDTH, SHARE_CANVAS_MAX_HEIGHT, theme.patternColor, theme.patternOpacity);
+  drawCloudLayer(context, SHARE_CANVAS_WIDTH, SHARE_CANVAS_MAX_HEIGHT, theme.cloudColor, theme.cloudOpacity);
 
   const contentX = SHARE_CANVAS_PADDING;
   const contentWidth = SHARE_CANVAS_WIDTH - SHARE_CANVAS_PADDING * 2;
