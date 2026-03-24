@@ -4,46 +4,46 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --background: 24 100% 98%;
+    --foreground: 20 19% 25%;
+    --card: 20 100% 99%;
+    --card-foreground: 20 19% 25%;
+    --popover: 20 100% 99%;
+    --popover-foreground: 20 19% 25%;
+    --primary: 11 45% 61%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 24 47% 91%;
+    --secondary-foreground: 20 19% 25%;
+    --muted: 24 50% 94%;
+    --muted-foreground: 20 24% 44%;
+    --accent: 32 49% 69%;
+    --accent-foreground: 20 19% 25%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --border: 27 43% 85%;
+    --input: 27 43% 85%;
+    --ring: 11 45% 61%;
     --radius: 0.625rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 24 100% 98%;
+    --sidebar-foreground: 20 19% 25%;
+    --sidebar-primary: 11 45% 61%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 24 47% 91%;
+    --sidebar-accent-foreground: 20 19% 25%;
+    --sidebar-border: 27 43% 85%;
+    --sidebar-ring: 11 45% 61%;
     
     /* 易经主题变量 - 浅色模式（琥珀色） */
-    --iching-bg: 45 100% 96%;
-    --iching-bg-secondary: 30 100% 94%;
-    --iching-card: 40 50% 97%;
-    --iching-text: 35 92% 33%;
-    --iching-text-secondary: 30 60% 45%;
-    --iching-accent: 45 90% 50%;
-    --iching-border: 35 50% 85%;
-    --iching-header-from: 35 90% 25%;
-    --iching-header-via: 0 80% 30%;
-    --iching-header-to: 35 90% 25%;
+    --iching-bg: 24 100% 98%;
+    --iching-bg-secondary: 24 60% 95%;
+    --iching-card: 20 100% 99%;
+    --iching-text: 20 19% 25%;
+    --iching-text-secondary: 20 24% 44%;
+    --iching-accent: 11 45% 61%;
+    --iching-border: 27 43% 85%;
+    --iching-header-from: 11 45% 61%;
+    --iching-header-via: 32 49% 69%;
+    --iching-header-to: 128 15% 61%;
   }
 
   /* 墨黑金韵 - 深色模式 */
