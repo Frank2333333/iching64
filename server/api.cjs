@@ -1,0 +1,263 @@
+/**
+ * 反馈API服务器
+ * 提供反馈的CRUD接口和AI解卦接口
+ */
+
+// 加载环境变量
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const { initServerLogger } = require('./logger.cjs');
+const feedbackStore = require('./feedback-store.cjs');
+const divinationAI = require('./divination-ai.cjs');
+
+const logger = initServerLogger('server');
+
+const app = express();
+const PORT = process.env.FEEDBACK_PORT || 3001;
+const HOST = process.env.FEEDBACK_HOST || '0.0.0.0';  // 默认监听所有接口
+
+// 中间件
+app.use(cors());
+app.use(express.json({ limit: '10mb' })); // 增大请求体限制以容纳完整的解卦数据
+
+// 请求日志
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  next();
+});
+
+// ==================== 反馈 API ====================
+
+// 获取所有反馈
+app.get('/api/feedback', (req, res) => {
+  try {
+    const feedback = feedbackStore.getAllFeedback();
+    res.json({ success: true, data: feedback });
+  } catch (error) {
+    console.error('获取反馈失败:', error);
+    res.status(500).json({ success: false, error: '获取反馈失败' });
+  }
+});
+
+// 提交新反馈
+app.post('/api/feedback', (req, res) => {
+  try {
+    const { type, content, contact, userAgent, url, timestamp } = req.body;
+    
+    // 验证必填字段
+    if (!type || !content) {
+      return res.status(400).json({ 
+        success: false, 
+        error: '反馈类型和内容不能为空' 
+      });
+    }
+    
+    // 添加客户端IP
+    const clientIP = req.headers['x-forwarded-for'] || 
+                     req.socket.remoteAddress || 
+                     'unknown';
+    
+    const feedback = feedbackStore.addFeedback({
+      type,
+      content: content.trim(),
+      contact: contact?.trim() || undefined,
+      userAgent: userAgent || req.headers['user-agent'],
+      url: url || req.headers.referer,
+      timestamp: timestamp || Date.now(),
+      clientIP,
+    });
+    
+    if (feedback) {
+      res.json({ success: true, data: feedback });
+    } else {
+      res.status(500).json({ success: false, error: '保存反馈失败' });
+    }
+  } catch (error) {
+    console.error('提交反馈失败:', error);
+    res.status(500).json({ success: false, error: '提交反馈失败' });
+  }
+});
+
+// 清空所有反馈
+app.delete('/api/feedback', (req, res) => {
+  try {
+    const success = feedbackStore.clearAllFeedback();
+    if (success) {
+      res.json({ success: true, message: '所有反馈已清空' });
+    } else {
+      res.status(500).json({ success: false, error: '清空反馈失败' });
+    }
+  } catch (error) {
+    console.error('清空反馈失败:', error);
+    res.status(500).json({ success: false, error: '清空反馈失败' });
+  }
+});
+
+// 删除单条反馈
+app.delete('/api/feedback/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const success = feedbackStore.deleteFeedback(id);
+    if (success) {
+      res.json({ success: true, message: '反馈已删除' });
+    } else {
+      res.status(500).json({ success: false, error: '删除反馈失败' });
+    }
+  } catch (error) {
+    console.error('删除反馈失败:', error);
+    res.status(500).json({ success: false, error: '删除反馈失败' });
+  }
+});
+
+// ==================== AI 解卦 API ====================
+
+// AI 解卦接口
+app.post('/api/divination/ai', async (req, res) => {
+  try {
+    const divinationData = req.body;
+    
+    // 验证必要字段
+    if (!divinationData || !divinationData.gua) {
+      return res.status(400).json({
+        success: false,
+        error: '解卦数据不完整，缺少本卦信息'
+      });
+    }
+
+    // 检查 OpenAI 配置
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return res.status(503).json({
+        success: false,
+        error: 'AI 解卦服务未配置，请在服务器配置 OpenAI API Key'
+      });
+    }
+
+    console.log(`[${new Date().toISOString()}] 收到 AI 解卦请求: ${divinationData.gua?.name || 'unknown'}`);
+    
+    // 调用 OpenAI 解卦
+    const aiResult = await divinationAI.getAIDivination(divinationData);
+    
+    res.json({
+      success: true,
+      data: {
+        interpretation: aiResult,
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        timestamp: Date.now()
+      }
+    });
+    
+  } catch (error) {
+    console.error('AI 解卦失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'AI 解卦服务暂时不可用'
+    });
+  }
+});
+
+// AI 对话接口
+app.post('/api/divination/chat', async (req, res) => {
+  try {
+    const { message, divinationData, history } = req.body;
+    
+    // 验证必要字段
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: '消息内容不能为空'
+      });
+    }
+    
+    if (!divinationData || !divinationData.gua) {
+      return res.status(400).json({
+        success: false,
+        error: '解卦数据不完整'
+      });
+    }
+
+    // 检查 OpenAI 配置
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return res.status(503).json({
+        success: false,
+        error: 'AI 对话服务未配置，请在服务器配置 OpenAI API Key'
+      });
+    }
+
+    console.log(`[${new Date().toISOString()}] 收到 AI 对话请求: ${divinationData.gua?.name || 'unknown'}`);
+    console.log(`[${new Date().toISOString()}] 用户消息: ${message.substring(0, 100)}...`);
+    
+    // 调用 OpenAI 对话
+    const aiResult = await divinationAI.chatWithAI({
+      message: message.trim(),
+      divinationData,
+      history: history || []
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        message: aiResult,
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        timestamp: Date.now()
+      }
+    });
+    
+  } catch (error) {
+    console.error('AI 对话失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'AI 对话服务暂时不可用'
+    });
+  }
+});
+
+// ==================== 健康检查 ====================
+
+// 健康检查
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    success: true, 
+    status: 'ok', 
+    timestamp: Date.now(),
+    services: {
+      feedback: true,
+      aiDivination: !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here')
+    }
+  });
+});
+
+// 启动服务器
+function startServer() {
+  app.listen(PORT, HOST, () => {
+    console.log(`\n✅ 反馈API服务器已启动`);
+    console.log(`📡 本地访问: http://localhost:${PORT}/api/feedback`);
+    console.log(`🌐 网络访问: http://${HOST}:${PORT}/api/feedback`);
+    console.log(`💾 数据文件: ${path.join(__dirname, '../data/feedback.json')}`);
+    console.log(`📝 日志文件: ${logger.dailyPath}`);
+    console.log(`📝 最新日志: ${logger.latestPath}`);
+    
+    // 显示 AI 解卦服务状态
+    const aiEnabled = !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here');
+    console.log(`\n服务状态:`);
+    console.log(`  ${aiEnabled ? '✅' : '⚠️'} AI 解卦服务: ${aiEnabled ? '已启用' : '未配置 (需设置 OPENAI_API_KEY)'}`);
+    
+    console.log(`\n可用接口:`);
+    console.log(`  GET    /api/feedback           - 获取所有反馈`);
+    console.log(`  POST   /api/feedback           - 提交新反馈`);
+    console.log(`  POST   /api/divination/ai      - AI 解卦`);
+    console.log(`  POST   /api/divination/chat    - AI 对话`);
+    console.log(`  DELETE /api/feedback           - 清空所有反馈`);
+    console.log(`  DELETE /api/feedback/:id       - 删除单条反馈`);
+    console.log(`  GET    /api/health             - 健康检查\n`);
+  });
+}
+
+// 如果直接运行此文件则启动服务器
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, startServer };

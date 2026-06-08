@@ -40,12 +40,12 @@ export default function GuaCard({ gua, onClick, index = 0 }: GuaCardProps) {
     <button
       ref={cardRef}
       onClick={handleClick}
-      className={`group relative bg-white dark:bg-neutral-800 
-                 rounded-xl shadow-md hover:shadow-xl 
-                 transition-all duration-300 p-4 
-                 border border-amber-200 dark:border-yellow-900/30 
-                 hover:border-amber-400 dark:hover:border-yellow-600/50
-                 hover:-translate-y-1 hover:scale-[1.02]
+      className={`group relative bg-white/90 dark:bg-neutral-800 
+                 rounded-[28px] shadow-[0_24px_50px_-38px_rgba(107,74,58,0.42)] hover:shadow-[0_28px_58px_-36px_rgba(107,74,58,0.48)] 
+                 transition-all duration-300 p-5 
+                 border border-[#E9D8C8] dark:border-yellow-900/30 
+                 hover:border-[#DABAA8] dark:hover:border-yellow-600/50
+                 hover:-translate-y-0.5 hover:scale-[1.01]
                  active:scale-[0.98] active:duration-100
                  card-stagger overflow-hidden
                  dark:text-neutral-100`}
@@ -68,15 +68,15 @@ export default function GuaCard({ gua, onClick, index = 0 }: GuaCardProps) {
       ))}
 
       {/* 悬停光效 */}
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-400/0 via-amber-400/0 to-amber-400/0 
-                     group-hover:from-amber-400/5 group-hover:via-amber-400/0 group-hover:to-amber-400/10 
+      <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-[#C97C6D]/0 via-[#C97C6D]/0 to-[#C97C6D]/0 
+                     group-hover:from-[#C97C6D]/6 group-hover:via-[#D8B38A]/0 group-hover:to-[#D8B38A]/14 
                      dark:group-hover:from-yellow-500/5 dark:group-hover:to-yellow-500/10
-                     transition-all duration-500 rounded-xl" />
+                     transition-all duration-500" />
       
       {/* 卦序 */}
-      <div className="absolute top-2 left-2 w-6 h-6 bg-amber-100 dark:bg-yellow-500/20 
+      <div className="absolute left-3 top-3 h-7 w-7 bg-[#F6E9E0] dark:bg-yellow-500/20 
                      rounded-full flex items-center justify-center text-xs font-bold 
-                     text-amber-700 dark:text-yellow-400 transition-colors">
+                     text-[#8A6658] dark:text-yellow-400 transition-colors">
         {gua.id}
       </div>
       
@@ -90,13 +90,13 @@ export default function GuaCard({ gua, onClick, index = 0 }: GuaCardProps) {
       </div>
 
       {/* 卦画 - 初爻在下，上爻在上 */}
-      <div className="flex flex-col-reverse items-center justify-center py-4 space-y-1 space-y-reverse">
+      <div className="flex flex-col-reverse items-center justify-center py-5 space-y-1.5 space-y-reverse">
         {gua.yaos.map((yao, idx) => (
           <div
             key={yao.position}
             className={`h-2 rounded-full transition-all duration-300 group-hover:scale-105
                        ${yao.yinYang === 'yang'
-                         ? 'w-12 bg-amber-800 dark:bg-yellow-500'
+                         ? 'w-12 bg-[#8E675A] dark:bg-yellow-500'
                          : 'w-12 flex justify-between'
                        }`}
             style={{ 
@@ -108,8 +108,8 @@ export default function GuaCard({ gua, onClick, index = 0 }: GuaCardProps) {
           >
             {yao.yinYang === 'yin' && (
               <>
-                <div className="w-5 h-2 bg-amber-800 dark:bg-yellow-500 rounded-full" />
-                <div className="w-5 h-2 bg-amber-800 dark:bg-yellow-500 rounded-full" />
+                <div className="w-5 h-2 bg-[#8E675A] dark:bg-yellow-500 rounded-full" />
+                <div className="w-5 h-2 bg-[#8E675A] dark:bg-yellow-500 rounded-full" />
               </>
             )}
           </div>
@@ -117,25 +117,25 @@ export default function GuaCard({ gua, onClick, index = 0 }: GuaCardProps) {
       </div>
 
       {/* 卦名 */}
-      <div className="text-center mt-2">
-        <h3 className="text-lg font-bold text-amber-900 dark:text-yellow-100 
-                     group-hover:text-amber-700 dark:group-hover:text-yellow-300
+      <div className="mt-3 text-center">
+        <h3 className="text-lg font-bold text-[#4B3A33] dark:text-yellow-100 
+                     group-hover:text-[#6B5549] dark:group-hover:text-yellow-300
                      transition-colors">
           {gua.chineseName}
         </h3>
-        <p className="text-xs text-amber-600 dark:text-neutral-400">{gua.name}</p>
-        <p className="text-xs text-amber-500 dark:text-neutral-500">{gua.pronunciation}</p>
+        <p className="mt-1 text-xs text-[#8A6658] dark:text-neutral-400">{gua.name}</p>
+        <p className="mt-0.5 text-xs text-[#C09789] dark:text-neutral-500">{gua.pronunciation}</p>
       </div>
 
       {/* 上下卦 */}
-      <div className="flex justify-center gap-2 mt-2 text-xs text-amber-500 dark:text-neutral-500">
+      <div className="mt-3 flex justify-center gap-2 text-xs text-[#B98F80] dark:text-neutral-500">
         <span>{gua.shangGua}上</span>
         <span>{gua.xiaGua}下</span>
       </div>
 
       {/* 底部渐变装饰线 */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r 
-                     from-transparent via-amber-400/50 to-transparent 
+      <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r 
+                     from-transparent via-[#C97C6D]/45 to-transparent 
                      dark:via-yellow-500/50
                      scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
     </button>
