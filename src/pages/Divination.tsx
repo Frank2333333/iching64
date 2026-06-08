@@ -5,6 +5,7 @@ import { Calculator, ArrowLeft, Sparkles, BookOpen, Dice5 } from 'lucide-react';
 // import { useTheme } from '../hooks/useTheme';
 import { useScrollPosition } from '../hooks/useScrollPosition';
 import ThemeToggle from '../components/ThemeToggle';
+import { formatThreeDigitNumber, isThreeDigitNumberInput } from './divinationValidation';
 
 interface DivinationResult {
   shangGuaNum: number;
@@ -48,21 +49,20 @@ export default function Divination() {
 
   // 生成随机数
   const generateRandomNumbers = () => {
-    setNum1(Math.floor(Math.random() * 900 + 100).toString());
-    setNum2(Math.floor(Math.random() * 900 + 100).toString());
-    setNum3(Math.floor(Math.random() * 900 + 100).toString());
+    setNum1(formatThreeDigitNumber(Math.floor(Math.random() * 1000)));
+    setNum2(formatThreeDigitNumber(Math.floor(Math.random() * 1000)));
+    setNum3(formatThreeDigitNumber(Math.floor(Math.random() * 1000)));
   };
 
   const handleCalculate = () => {
-    const n1 = parseInt(num1);
-    const n2 = parseInt(num2);
-    const n3 = parseInt(num3);
-
-    if (isNaN(n1) || isNaN(n2) || isNaN(n3)) {
-      // 使用 sonner toast 或简单的 alert
-      alert('请输入有效的三位数字');
+    if (![num1, num2, num3].every(isThreeDigitNumberInput)) {
+      alert('请输入 000-999 之间的三位数字');
       return;
     }
+
+    const n1 = parseInt(num1, 10);
+    const n2 = parseInt(num2, 10);
+    const n3 = parseInt(num3, 10);
 
     setIsCalculating(true);
 
@@ -210,7 +210,10 @@ export default function Divination() {
                     第一个数字（下卦）
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={3}
+                    pattern="[0-9]{3}"
                     value={num1}
                     onChange={(e) => setNum1(e.target.value)}
                     placeholder="输入三位数字"
@@ -227,7 +230,10 @@ export default function Divination() {
                     第二个数字（上卦）
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={3}
+                    pattern="[0-9]{3}"
                     value={num2}
                     onChange={(e) => setNum2(e.target.value)}
                     placeholder="输入三位数字"
@@ -244,7 +250,10 @@ export default function Divination() {
                     第三个数字（动爻）
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={3}
+                    pattern="[0-9]{3}"
                     value={num3}
                     onChange={(e) => setNum3(e.target.value)}
                     placeholder="输入三位数字"
