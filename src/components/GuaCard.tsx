@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import type { Gua } from '../data/guaxiang';
 import { getWuxingColor } from '../data/guaxiang';
 
@@ -8,7 +8,7 @@ interface GuaCardProps {
   index?: number;
 }
 
-export default function GuaCard({ gua, onClick, index = 0 }: GuaCardProps) {
+export default React.memo(function GuaCard({ gua, onClick, index = 0 }: GuaCardProps) {
   const cardRef = useRef<HTMLButtonElement>(null);
   const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
 
@@ -140,4 +140,4 @@ export default function GuaCard({ gua, onClick, index = 0 }: GuaCardProps) {
                      scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
     </button>
   );
-}
+});

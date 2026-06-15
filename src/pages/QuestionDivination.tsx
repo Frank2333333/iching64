@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { calculateMeihuaResult, type DivinationResult } from '../lib/meihua-divination';
-import { buildInitialInterpretationSummary, stripMarkdownForSummary } from '../lib/chat-summary';
+import { buildInitialInterpretationSummary } from '../lib/chat-summary';
 import {
   ArrowLeft, HelpCircle, Briefcase, Heart,
   Activity, Coins, GraduationCap, Plane, Scale,
-  ChevronRight
+  ChevronRight, Search
 } from 'lucide-react';
 import { useScrollPosition } from '../hooks/useScrollPosition';
 import MainHeaderTabs from '../components/MainHeaderTabs';

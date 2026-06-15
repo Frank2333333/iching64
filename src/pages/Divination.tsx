@@ -4,7 +4,6 @@ import { liuShiSiGua, type Gua, baGua, baGuaMap, yaoPositionNames, getWuxingColo
 import { Calculator, ArrowLeft, Sparkles, BookOpen, Dice5 } from 'lucide-react';
 // import { useTheme } from '../hooks/useTheme';
 import { useScrollPosition } from '../hooks/useScrollPosition';
-import ThemeToggle from '../components/ThemeToggle';
 import { formatThreeDigitNumber, isThreeDigitNumberInput } from './divinationValidation';
 import MainHeaderTabs from '../components/MainHeaderTabs';
 

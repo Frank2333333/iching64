@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, BookOpen } from 'lucide-react';
 import { liuShiSiGua, type Gua } from '../data/guaxiang';
@@ -28,11 +28,15 @@ export default function GuaList() {
     }
   }, [searchParams]);
 
-  const filteredGua = liuShiSiGua.filter(
-    (gua) =>
-      gua.name.includes(searchTerm) ||
-      gua.chineseName.includes(searchTerm) ||
-      gua.pronunciation.includes(searchTerm.toLowerCase())
+  const filteredGua = useMemo(
+    () =>
+      liuShiSiGua.filter(
+        (gua) =>
+          gua.name.includes(searchTerm) ||
+          gua.chineseName.includes(searchTerm) ||
+          gua.pronunciation.includes(searchTerm.toLowerCase())
+      ),
+    [searchTerm]
   );
 
   const desktopSearch = (
