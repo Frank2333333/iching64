@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { liuShiSiGua, type Gua, type Yao } from '../data/guaxiang';
+import { liuShiSiGua, type Gua, type Yao, baGuaMap, yaoPositionNames, getWuxingColor } from '../data/guaxiang';
 import { 
   ArrowLeft, Sparkles, BookOpen, HelpCircle, Briefcase, Heart, 
   Activity, Coins, GraduationCap, Plane, Scale, Search, Dice5,
@@ -286,14 +286,7 @@ function getSelectSceneCardMood(sceneId: string) {
   }
 }
 
-// 八卦映射
-// 伏羲先天八卦数（1-8）到卦名的映射（用于数字起卦时的余数映射）
-const baGuaMap: Record<number, string> = {
-  1: '乾', 2: '兑', 3: '离', 4: '震',
-  5: '巽', 6: '坎', 7: '艮', 8: '坤',
-};
-
-const yaoPositionNames = ['初', '二', '三', '四', '五', '上'];
+// 八卦万物类象（梅花易数取象用）
 
 // 八卦万物类象（梅花易数取象用）
 const baGuaXiang: Record<string, {
@@ -1851,17 +1844,6 @@ export default function QuestionDivination() {
       e.preventDefault();
       handleSendChatMessage();
     }
-  };
-
-  const getWuxingColor = (wuxing: string) => {
-    const colors: Record<string, string> = {
-      '金': '#FFD700',
-      '木': '#228B22',
-      '水': '#1E90FF',
-      '火': '#FF4500',
-      '土': '#8B4513',
-    };
-    return colors[wuxing] || '#666';
   };
 
   // 获取场景化解卦建议

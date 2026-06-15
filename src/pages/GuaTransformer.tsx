@@ -137,7 +137,7 @@ export default function GuaTransformer() {
   const goToDetail = () => {
     if (currentGua) {
       // 跳转到六十四卦页面并打开详情
-      window.location.href = `/#/hexagrams?gua=${currentGua.id}`;
+      navigate(`/hexagrams?gua=${currentGua.id}`);
     }
   };
   

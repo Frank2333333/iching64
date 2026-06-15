@@ -1233,4 +1233,13 @@ export function getTrigramFromYaos(yaos: ('yin' | 'yang')[]): string {
   return trigrams[code];
 }
 
+// 伏羲先天八卦数（1-8）到卦名的映射（用于数字起卦时的余数映射）
+export const baGuaMap: Record<number, string> = {
+  1: '乾', 2: '兑', 3: '离', 4: '震',
+  5: '巽', 6: '坎', 7: '艮', 8: '坤',
+};
+
+// 爻位名称
+export const yaoPositionNames = ['初', '二', '三', '四', '五', '上'];
+
 export default liuShiSiGua;

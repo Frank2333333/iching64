@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { liuShiSiGua, type Gua, baGua } from '../data/guaxiang';
+import { liuShiSiGua, type Gua, baGua, baGuaMap, yaoPositionNames, getWuxingColor } from '../data/guaxiang';
 import { Calculator, ArrowLeft, Sparkles, BookOpen, Dice5 } from 'lucide-react';
 // import { useTheme } from '../hooks/useTheme';
 import { useScrollPosition } from '../hooks/useScrollPosition';
@@ -24,18 +24,6 @@ interface DivinationResult {
   } | null;
 }
 
-const baGuaMap: Record<number, string> = {
-  1: '乾',
-  2: '兑',
-  3: '离',
-  4: '震',
-  5: '巽',
-  6: '坎',
-  7: '艮',
-  8: '坤',
-};
-
-const yaoPositionNames = ['初', '二', '三', '四', '五', '上'];
 
 export default function Divination() {
   const navigate = useNavigate();
@@ -119,17 +107,6 @@ export default function Divination() {
       });
       setIsCalculating(false);
     }, 600);
-  };
-
-  const getWuxingColor = (wuxing: string) => {
-    const colors: Record<string, string> = {
-      '金': '#FFD700',
-      '木': '#228B22',
-      '水': '#1E90FF',
-      '火': '#FF4500',
-      '土': '#8B4513',
-    };
-    return colors[wuxing] || '#666';
   };
 
   const handleShowDetail = () => {
