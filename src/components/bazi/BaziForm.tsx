@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Calendar, Clock, MapPin, User, Sparkles, Compass, ScrollText } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Sparkles, Compass, ScrollText, Check } from 'lucide-react';
 import type { BaziInput } from '../../lib/bazi-api';
 
 interface BaziFormProps {
@@ -27,14 +27,56 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [dayPillar, setDayPillar] = useState({ gan: '', zhi: '' });
   const [hourPillar, setHourPillar] = useState({ gan: '', zhi: '' });
 
+  // 模式切换状态持久化（避免切换时丢失已填数据）
+  const [savedBirthdate, setSavedBirthdate] = useState({
+    year: today.getFullYear().toString(),
+    month: (today.getMonth() + 1).toString(),
+    day: today.getDate().toString(),
+    hour: '12',
+    minute: '0',
+  });
+  const [savedPillars, setSavedPillars] = useState({
+    year: { gan: '', zhi: '' },
+    month: { gan: '', zhi: '' },
+    day: { gan: '', zhi: '' },
+    hour: { gan: '', zhi: '' },
+  });
+
   // 共用字段
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [birthplace, setBirthplace] = useState('');
   const [useSolarTime, setUseSolarTime] = useState(false);
   const [question, setQuestion] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleModeChange = (mode: 'birthdate' | 'pillars') => {
+    if (mode === inputMode) return;
+    // 保存当前模式数据
+    if (inputMode === 'birthdate') {
+      setSavedBirthdate({ year, month, day, hour, minute });
+    } else {
+      setSavedPillars({ year: yearPillar, month: monthPillar, day: dayPillar, hour: hourPillar });
+    }
+    setInputMode(mode);
+    // 恢复目标模式数据
+    if (mode === 'birthdate') {
+      setYear(savedBirthdate.year);
+      setMonth(savedBirthdate.month);
+      setDay(savedBirthdate.day);
+      setHour(savedBirthdate.hour);
+      setMinute(savedBirthdate.minute);
+    } else {
+      setYearPillar(savedPillars.year);
+      setMonthPillar(savedPillars.month);
+      setDayPillar(savedPillars.day);
+      setHourPillar(savedPillars.hour);
+    }
+    setErrors({});
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const newErrors: Record<string, string> = {};
 
     if (inputMode === 'birthdate') {
       const y = parseInt(year);
@@ -44,31 +86,33 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       const min = parseInt(minute);
 
       if (isNaN(y) || y < 1900 || y > 2100) {
-        alert('请输入有效的出生年份 (1900-2100)');
-        return;
+        newErrors.year = '请输入有效的出生年份 (1900-2100)';
       }
       if (isNaN(m) || m < 1 || m > 12) {
-        alert('请输入有效的出生月份 (1-12)');
-        return;
+        newErrors.month = '请输入有效的出生月份 (1-12)';
       }
       if (isNaN(d) || d < 1 || d > 31) {
-        alert('请输入有效的出生日期 (1-31)');
-        return;
+        newErrors.day = '请输入有效的出生日期 (1-31)';
       }
       if (isNaN(h) || h < 0 || h > 23) {
-        alert('请输入有效的小时 (0-23)');
-        return;
+        newErrors.hour = '请输入有效的小时 (0-23)';
       }
       if (isNaN(min) || min < 0 || min > 59) {
-        alert('请输入有效的分钟 (0-59)');
-        return;
+        newErrors.minute = '请输入有效的分钟 (0-59)';
       }
 
-      const date = new Date(y, m - 1, d);
-      if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
-        alert('输入的日期无效');
+      if (Object.keys(newErrors).length === 0) {
+        const date = new Date(y, m - 1, d);
+        if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
+          newErrors.day = '输入的日期无效';
+        }
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
         return;
       }
+      setErrors({});
 
       onSubmit({
         year: y,
@@ -84,21 +128,23 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
     } else {
       // 直接八字模式
       if (!yearPillar.gan || !yearPillar.zhi) {
-        alert('请选择年柱');
-        return;
+        newErrors.yearPillar = '请选择年柱';
       }
       if (!monthPillar.gan || !monthPillar.zhi) {
-        alert('请选择月柱');
-        return;
+        newErrors.monthPillar = '请选择月柱';
       }
       if (!dayPillar.gan || !dayPillar.zhi) {
-        alert('请选择日柱');
-        return;
+        newErrors.dayPillar = '请选择日柱';
       }
       if (!hourPillar.gan || !hourPillar.zhi) {
-        alert('请选择时柱');
+        newErrors.hourPillar = '请选择时柱';
+      }
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
         return;
       }
+      setErrors({});
 
       onSubmit({
         gender,
@@ -177,7 +223,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
         <div className="flex gap-2 mb-6 bg-amber-50 dark:bg-amber-900/20 p-1 rounded-xl">
           <button
             type="button"
-            onClick={() => setInputMode('birthdate')}
+            onClick={() => handleModeChange('birthdate')}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
               inputMode === 'birthdate'
                 ? 'bg-white dark:bg-neutral-800 text-amber-700 dark:text-amber-300 shadow-sm border border-amber-200 dark:border-amber-700/50'
@@ -189,7 +235,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
           </button>
           <button
             type="button"
-            onClick={() => setInputMode('pillars')}
+            onClick={() => handleModeChange('pillars')}
             className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
               inputMode === 'pillars'
                 ? 'bg-white dark:bg-neutral-800 text-amber-700 dark:text-amber-300 shadow-sm border border-amber-200 dark:border-amber-700/50'
@@ -213,24 +259,26 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                 onClick={() => setGender('male')}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all ${
                   gender === 'male'
-                    ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                    : 'border-amber-200 dark:border-amber-800/30 text-amber-600 dark:text-amber-400 hover:border-amber-400'
+                    ? 'border-amber-500 bg-amber-500 text-white dark:bg-amber-600 dark:text-white shadow-md'
+                    : 'border-amber-200 dark:border-amber-800/30 text-amber-600 dark:text-amber-400 hover:border-amber-400 bg-white dark:bg-neutral-900'
                 }`}
               >
                 <User className="w-4 h-4" />
                 <span className="text-sm font-medium">男</span>
+                {gender === 'male' && <Check className="w-3.5 h-3.5" />}
               </button>
               <button
                 type="button"
                 onClick={() => setGender('female')}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all ${
                   gender === 'female'
-                    ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                    : 'border-amber-200 dark:border-amber-800/30 text-amber-600 dark:text-amber-400 hover:border-amber-400'
+                    ? 'border-amber-500 bg-amber-500 text-white dark:bg-amber-600 dark:text-white shadow-md'
+                    : 'border-amber-200 dark:border-amber-800/30 text-amber-600 dark:text-amber-400 hover:border-amber-400 bg-white dark:bg-neutral-900'
                 }`}
               >
                 <User className="w-4 h-4" />
                 <span className="text-sm font-medium">女</span>
+                {gender === 'female' && <Check className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
@@ -257,6 +305,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                              bg-white dark:bg-neutral-900
                              transition-colors placeholder:text-amber-400 dark:placeholder:text-amber-700/50"
                   />
+                  {errors.year && <p className="text-sm text-red-600 mt-1">{errors.year}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-amber-800 dark:text-amber-400 mb-2">
@@ -276,6 +325,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                              bg-white dark:bg-neutral-900
                              transition-colors placeholder:text-amber-400 dark:placeholder:text-amber-700/50"
                   />
+                  {errors.month && <p className="text-sm text-red-600 mt-1">{errors.month}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-amber-800 dark:text-amber-400 mb-2">
@@ -295,6 +345,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                              bg-white dark:bg-neutral-900
                              transition-colors placeholder:text-amber-400 dark:placeholder:text-amber-700/50"
                   />
+                  {errors.day && <p className="text-sm text-red-600 mt-1">{errors.day}</p>}
                 </div>
               </div>
 
@@ -321,6 +372,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                                bg-white dark:bg-neutral-900
                                transition-colors placeholder:text-amber-400 dark:placeholder:text-amber-700/50"
                     />
+                    {errors.hour && <p className="text-sm text-red-600 mt-1">{errors.hour}</p>}
                   </div>
                   <div className="flex items-center text-amber-600 dark:text-amber-400 text-lg">:</div>
                   <div className="flex-1">
@@ -339,6 +391,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                                bg-white dark:bg-neutral-900
                                transition-colors placeholder:text-amber-400 dark:placeholder:text-amber-700/50"
                     />
+                    {errors.minute && <p className="text-sm text-red-600 mt-1">{errors.minute}</p>}
                   </div>
                 </div>
               </div>
@@ -379,6 +432,11 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                   onZhiChange={(v) => setHourPillar((p) => ({ ...p, zhi: v }))}
                 />
               </div>
+              {(errors.yearPillar || errors.monthPillar || errors.dayPillar || errors.hourPillar) && (
+                <p className="text-sm text-red-600 mt-2">
+                  {errors.yearPillar || errors.monthPillar || errors.dayPillar || errors.hourPillar}
+                </p>
+              )}
             </div>
           )}
 

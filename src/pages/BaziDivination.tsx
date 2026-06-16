@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Compass, ArrowLeft } from 'lucide-react';
+import { Compass } from 'lucide-react';
 import MainHeaderTabs from '../components/MainHeaderTabs';
 import BaziForm from '../components/bazi/BaziForm';
-import BaziAIInterpretationPanel from '../components/bazi/BaziAIInterpretationPanel';
-import BaziChatPanel from '../components/bazi/BaziChatPanel';
+import BaziMessageList from '../components/bazi/BaziMessageList';
+import BaziChatInput from '../components/bazi/BaziChatInput';
 import {
   baziAIFortune,
   checkBaziAIStatus,
@@ -12,7 +12,6 @@ import {
   type BaziInput,
   type ChatMessage,
 } from '../lib/bazi-api';
-import { useScrollPosition } from '../hooks/useScrollPosition';
 
 interface ChatContextSummary {
   initialInterpretationSummary: string;
@@ -50,8 +49,6 @@ export default function BaziDivination() {
   // 记住输入信息，用于对话
   const [lastInput, setLastInput] = useState<BaziInput | null>(null);
 
-  useScrollPosition(`bazi-divination-${step}`);
-
   // 检查 AI 服务状态
   useEffect(() => {
     checkBaziAIStatus().then(setAiAvailable);
@@ -69,14 +66,15 @@ export default function BaziDivination() {
     navigate('/');
   };
 
-  // 提交排盘
+  // 提交排盘 -> 自动触发 AI 解读
   const handleSubmit = (data: BaziInput) => {
     setLastInput(data);
     setResult({ input: data });
     setStep('result');
     resetChat();
     setAiError(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 自动触发 AI 解读
+    handleAIInterpretation(data);
   };
 
   // 返回输入页
@@ -85,17 +83,18 @@ export default function BaziDivination() {
     setResult(null);
     resetChat();
     setAiError(null);
+    setAiLoading(false);
   };
 
-  // AI 解读
-  const handleAIInterpretation = async () => {
-    if (!lastInput || aiLoading) return;
+  // AI 解读（接受参数，避免竞态）
+  const handleAIInterpretation = async (input: BaziInput) => {
+    if (aiLoading) return;
 
     setAiLoading(true);
     setAiError(null);
 
     try {
-      const response = await baziAIFortune(lastInput);
+      const response = await baziAIFortune(input);
 
       if (response.success && response.data) {
         const interpretation: BaziAIInterpretation = {
@@ -104,7 +103,6 @@ export default function BaziDivination() {
           timestamp: response.data.timestamp,
         };
 
-        // 完整解读传给追问上下文，避免截断导致关键结论丢失
         const content = response.data.interpretation;
 
         setResult((prev) =>
@@ -114,7 +112,6 @@ export default function BaziDivination() {
           initialInterpretationSummary: content,
           createdAt: response.data.timestamp,
         });
-        resetChat();
       } else {
         setAiError(response.error || 'AI 排盘解读失败');
       }
@@ -179,11 +176,11 @@ export default function BaziDivination() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FFF8F3] via-[#FFFDFC] to-[#F7EFE7]
+    <div className="h-dvh flex flex-col overflow-hidden bg-gradient-to-br from-[#FFF8F3] via-[#FFFDFC] to-[#F7EFE7]
                   dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950
                   iching-pattern-bg iching-cloud-bg transition-colors duration-500">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-amber-200/80 bg-white/82
+      <header className="flex-none border-b border-amber-200/80 bg-white/82
                        text-amber-900 shadow-[0_14px_45px_-34px_rgba(180,83,9,0.35)]
                        backdrop-blur-xl transition-colors duration-500
                        dark:border-amber-900/30 dark:bg-neutral-950/80 dark:text-amber-50
@@ -212,148 +209,44 @@ export default function BaziDivination() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">
-        {/* Slogan */}
-        <div className="text-center mb-8 animate-fadeIn">
-          <p className="text-xl md:text-2xl font-serif text-amber-800 dark:text-amber-300/90 tracking-wider italic">
-            "知命者，不立于岩墙之下"
-          </p>
-        </div>
-
+      <main className="flex-1 overflow-hidden flex flex-col relative z-10">
         {step === 'input' && (
-          <BaziForm onSubmit={handleSubmit} loading={aiLoading} />
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="max-w-3xl mx-auto">
+              <div className="text-center mb-6 animate-fadeIn">
+                <p className="text-xl md:text-2xl font-serif text-amber-800 dark:text-amber-300/90 tracking-wider italic">
+                  "知命者，不立于岩墙之下"
+                </p>
+              </div>
+              <BaziForm onSubmit={handleSubmit} loading={aiLoading} />
+            </div>
+          </div>
         )}
 
         {step === 'result' && result && (
-          <div className="space-y-6">
-            {/* 返回按钮 */}
-            <button
-              onClick={handleBackToInput}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg
-                       text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100
-                       hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-all"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>重新输入</span>
-            </button>
-
-            {/* 出生信息摘要 */}
-            <div className="bg-white dark:bg-neutral-800 rounded-2xl p-6 shadow-md
-                         border border-amber-200 dark:border-amber-900/30">
-              <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100 mb-3">
-                命主信息
-              </h3>
-
-              {result.input.pillars ? (
-                <>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
-                    <div>
-                      <span className="text-amber-500 dark:text-amber-500">性别：</span>
-                      <span className="text-amber-900 dark:text-amber-100">
-                        {result.input.gender === 'male' ? '男' : '女'}
-                      </span>
-                    </div>
-                    {result.input.birthplace && (
-                      <div>
-                        <span className="text-amber-500 dark:text-amber-500">地点：</span>
-                        <span className="text-amber-900 dark:text-amber-100">
-                          {result.input.birthplace}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-lg font-semibold
-                                text-amber-900 dark:text-amber-100
-                                bg-amber-50 dark:bg-amber-900/20 rounded-lg px-4 py-3">
-                    <span className="text-sm text-amber-500 dark:text-amber-500 mr-1">八字：</span>
-                    <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/40 rounded-md">
-                      {result.input.pillars.year}
-                    </span>
-                    <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/40 rounded-md">
-                      {result.input.pillars.month}
-                    </span>
-                    <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/40 rounded-md">
-                      {result.input.pillars.day}
-                    </span>
-                    <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/40 rounded-md">
-                      {result.input.pillars.hour}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-amber-500 dark:text-amber-500">性别：</span>
-                    <span className="text-amber-900 dark:text-amber-100">
-                      {result.input.gender === 'male' ? '男' : '女'}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-amber-500 dark:text-amber-500">出生：</span>
-                    <span className="text-amber-900 dark:text-amber-100">
-                      {result.input.year}年{result.input.month}月{result.input.day}日
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-amber-500 dark:text-amber-500">时辰：</span>
-                    <span className="text-amber-900 dark:text-amber-100">
-                      {result.input.hour.toString().padStart(2, '0')}:
-                      {result.input.minute.toString().padStart(2, '0')}
-                    </span>
-                  </div>
-                  {result.input.birthplace && (
-                    <div>
-                      <span className="text-amber-500 dark:text-amber-500">地点：</span>
-                      <span className="text-amber-900 dark:text-amber-100">
-                        {result.input.birthplace}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {result.input.question && (
-                <div className="mt-3 pt-3 border-t border-amber-100 dark:border-amber-900/20">
-                  <span className="text-amber-500 dark:text-amber-500">咨询：</span>
-                  <span className="text-amber-900 dark:text-amber-100">{result.input.question}</span>
-                </div>
-              )}
-            </div>
-
-            {/* AI 解读 */}
-            <BaziAIInterpretationPanel
+          <>
+            <BaziMessageList
+              resultInput={result.input}
               aiInterpretation={result.aiInterpretation || null}
-              aiAvailable={aiAvailable}
               aiLoading={aiLoading}
               aiError={aiError}
-              onRequestInterpretation={handleAIInterpretation}
+              aiAvailable={aiAvailable}
+              chatMessages={chatMessages}
+              chatLoading={chatLoading}
+              chatError={chatError}
+              onBackToInput={handleBackToInput}
             />
-
-            {/* 对话面板 - 在 AI 解读结果下方 */}
-            {result.aiInterpretation && (
-              <BaziChatPanel
-                messages={chatMessages}
-                input={chatInput}
-                loading={chatLoading}
-                error={chatError}
-                contextSummary={chatContextSummary}
-                onInputChange={setChatInput}
-                onSend={handleSendChatMessage}
-                onKeyDown={handleChatKeyDown}
-              />
-            )}
-          </div>
+            <BaziChatInput
+              input={chatInput}
+              loading={chatLoading}
+              disabled={aiLoading}
+              onInputChange={setChatInput}
+              onSend={handleSendChatMessage}
+              onKeyDown={handleChatKeyDown}
+            />
+          </>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="relative z-10 bg-amber-900 dark:bg-neutral-900 text-amber-200 dark:text-amber-200/70 py-8 mt-12
-                       transition-colors duration-500 border-t dark:border-amber-900/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="mb-2">易经八字排盘</p>
-          <p className="text-sm text-amber-300 dark:text-amber-300/60">传承中华传统文化，探索命理智慧</p>
-        </div>
-      </footer>
     </div>
   );
 }
