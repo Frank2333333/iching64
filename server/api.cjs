@@ -12,6 +12,7 @@ const path = require('path');
 const { initServerLogger } = require('./logger.cjs');
 const feedbackStore = require('./feedback-store.cjs');
 const divinationAI = require('./divination-ai.cjs');
+const baziAI = require('./bazi-ai.cjs');
 
 const logger = initServerLogger('server');
 
@@ -46,20 +47,20 @@ app.get('/api/feedback', (req, res) => {
 app.post('/api/feedback', (req, res) => {
   try {
     const { type, content, contact, userAgent, url, timestamp } = req.body;
-    
+
     // 验证必填字段
     if (!type || !content) {
-      return res.status(400).json({ 
-        success: false, 
-        error: '反馈类型和内容不能为空' 
+      return res.status(400).json({
+        success: false,
+        error: '反馈类型和内容不能为空'
       });
     }
-    
+
     // 添加客户端IP
-    const clientIP = req.headers['x-forwarded-for'] || 
-                     req.socket.remoteAddress || 
+    const clientIP = req.headers['x-forwarded-for'] ||
+                     req.socket.remoteAddress ||
                      'unknown';
-    
+
     const feedback = feedbackStore.addFeedback({
       type,
       content: content.trim(),
@@ -69,7 +70,7 @@ app.post('/api/feedback', (req, res) => {
       timestamp: timestamp || Date.now(),
       clientIP,
     });
-    
+
     if (feedback) {
       res.json({ success: true, data: feedback });
     } else {
@@ -118,7 +119,7 @@ app.delete('/api/feedback/:id', (req, res) => {
 app.post('/api/divination/ai', async (req, res) => {
   try {
     const divinationData = req.body;
-    
+
     // 验证必要字段
     if (!divinationData || !divinationData.gua) {
       return res.status(400).json({
@@ -136,10 +137,10 @@ app.post('/api/divination/ai', async (req, res) => {
     }
 
     console.log(`[${new Date().toISOString()}] 收到 AI 解卦请求: ${divinationData.gua?.name || 'unknown'}`);
-    
+
     // 调用 OpenAI 解卦
     const aiResult = await divinationAI.getAIDivination(divinationData);
-    
+
     res.json({
       success: true,
       data: {
@@ -148,7 +149,7 @@ app.post('/api/divination/ai', async (req, res) => {
         timestamp: Date.now()
       }
     });
-    
+
   } catch (error) {
     console.error('AI 解卦失败:', error);
     res.status(500).json({
@@ -162,7 +163,7 @@ app.post('/api/divination/ai', async (req, res) => {
 app.post('/api/divination/chat', async (req, res) => {
   try {
     const { message, divinationData, history } = req.body;
-    
+
     // 验证必要字段
     if (!message || !message.trim()) {
       return res.status(400).json({
@@ -170,7 +171,7 @@ app.post('/api/divination/chat', async (req, res) => {
         error: '消息内容不能为空'
       });
     }
-    
+
     if (!divinationData || !divinationData.gua) {
       return res.status(400).json({
         success: false,
@@ -188,14 +189,14 @@ app.post('/api/divination/chat', async (req, res) => {
 
     console.log(`[${new Date().toISOString()}] 收到 AI 对话请求: ${divinationData.gua?.name || 'unknown'}`);
     console.log(`[${new Date().toISOString()}] 用户消息: ${message.substring(0, 100)}...`);
-    
+
     // 调用 OpenAI 对话
     const aiResult = await divinationAI.chatWithAI({
       message: message.trim(),
       divinationData,
       history: history || []
     });
-    
+
     res.json({
       success: true,
       data: {
@@ -204,9 +205,108 @@ app.post('/api/divination/chat', async (req, res) => {
         timestamp: Date.now()
       }
     });
-    
+
   } catch (error) {
     console.error('AI 对话失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'AI 对话服务暂时不可用'
+    });
+  }
+});
+
+// ==================== 八字排盘 API ====================
+
+// AI 八字排盘解读
+app.post('/api/bazi/ai', async (req, res) => {
+  try {
+    const input = req.body;
+
+    // 验证必要字段（出生日期模式或八字模式）
+    if (!input || (!input.pillars && (!input.year || !input.month || !input.day || !input.hour))) {
+      return res.status(400).json({
+        success: false,
+        error: '出生信息不完整，缺少年月日时；或直接输入八字需提供四柱信息'
+      });
+    }
+
+    // 检查 OpenAI 配置
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return res.status(503).json({
+        success: false,
+        error: 'AI 八字排盘服务未配置，请在服务器配置 OpenAI API Key'
+      });
+    }
+
+    console.log(`[${new Date().toISOString()}] 收到八字排盘请求: ${input.year}-${input.month}-${input.day} ${input.hour}:${input.minute || '00'}`);
+
+    const aiResult = await baziAI.getBaziFortune(input);
+
+    res.json({
+      success: true,
+      data: {
+        interpretation: aiResult,
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        timestamp: Date.now()
+      }
+    });
+
+  } catch (error) {
+    console.error('AI 八字排盘失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'AI 八字排盘服务暂时不可用'
+    });
+  }
+});
+
+// AI 八字对话
+app.post('/api/bazi/chat', async (req, res) => {
+  try {
+    const { message, baziInput, history } = req.body;
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: '消息内容不能为空'
+      });
+    }
+
+    if (!baziInput || !baziInput.year) {
+      return res.status(400).json({
+        success: false,
+        error: '命盘信息不完整'
+      });
+    }
+
+    // 检查 OpenAI 配置
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return res.status(503).json({
+        success: false,
+        error: 'AI 对话服务未配置'
+      });
+    }
+
+    console.log(`[${new Date().toISOString()}] 收到八字对话请求`);
+
+    const aiResult = await baziAI.chatWithBazi({
+      message: message.trim(),
+      baziInput,
+      history: history || [],
+      initialInterpretationSummary: req.body.initialInterpretationSummary || ''
+    });
+
+    res.json({
+      success: true,
+      data: {
+        message: aiResult,
+        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+        timestamp: Date.now()
+      }
+    });
+
+  } catch (error) {
+    console.error('AI 八字对话失败:', error);
     res.status(500).json({
       success: false,
       error: error.message || 'AI 对话服务暂时不可用'
@@ -218,13 +318,14 @@ app.post('/api/divination/chat', async (req, res) => {
 
 // 健康检查
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    success: true, 
-    status: 'ok', 
+  res.json({
+    success: true,
+    status: 'ok',
     timestamp: Date.now(),
     services: {
       feedback: true,
-      aiDivination: !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here')
+      aiDivination: !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here'),
+      baziAI: !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here')
     }
   });
 });
@@ -238,17 +339,19 @@ function startServer() {
     console.log(`💾 数据文件: ${path.join(__dirname, '../data/feedback.json')}`);
     console.log(`📝 日志文件: ${logger.dailyPath}`);
     console.log(`📝 最新日志: ${logger.latestPath}`);
-    
+
     // 显示 AI 解卦服务状态
     const aiEnabled = !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here');
     console.log(`\n服务状态:`);
     console.log(`  ${aiEnabled ? '✅' : '⚠️'} AI 解卦服务: ${aiEnabled ? '已启用' : '未配置 (需设置 OPENAI_API_KEY)'}`);
-    
+
     console.log(`\n可用接口:`);
     console.log(`  GET    /api/feedback           - 获取所有反馈`);
     console.log(`  POST   /api/feedback           - 提交新反馈`);
     console.log(`  POST   /api/divination/ai      - AI 解卦`);
     console.log(`  POST   /api/divination/chat    - AI 对话`);
+    console.log(`  POST   /api/bazi/ai            - 八字排盘 AI 解读`);
+    console.log(`  POST   /api/bazi/chat          - 八字对话`);
     console.log(`  DELETE /api/feedback           - 清空所有反馈`);
     console.log(`  DELETE /api/feedback/:id       - 删除单条反馈`);
     console.log(`  GET    /api/health             - 健康检查\n`);

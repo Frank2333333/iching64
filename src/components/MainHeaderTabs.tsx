@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Grid3X3, Sparkles, Calculator, HelpCircle, Menu, X } from 'lucide-react';
+import { Grid3X3, Sparkles, Calculator, HelpCircle, Star, Menu, X } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 interface MainHeaderTabsProps {
@@ -16,6 +16,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  {
+    to: '/bazi',
+    label: '八字排盘',
+    icon: <Star className="h-4 w-4" />,
+    match: (pathname) => pathname === '/bazi',
+  },
   {
     to: '/hexagrams',
     label: '六十四卦',
