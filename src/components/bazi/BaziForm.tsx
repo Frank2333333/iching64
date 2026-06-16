@@ -101,11 +101,6 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
       }
 
       onSubmit({
-        year: 2000,
-        month: 1,
-        day: 1,
-        hour: 0,
-        minute: 0,
         gender,
         birthplace: birthplace.trim() || undefined,
         question: question.trim() || undefined,
@@ -133,43 +128,43 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
     onZhiChange: (v: string) => void;
   }) => (
     <div className="flex flex-col gap-2">
-      <span className="text-sm font-medium text-amber-800 dark:text-amber-400">{label}</span>
-      <div className="flex gap-2">
-        <select
-          value={gan}
-          onChange={(e) => onGanChange(e.target.value)}
-          className="flex-1 px-3 py-3 border border-amber-200 dark:border-amber-700/50
-                   rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500
-                   dark:focus:ring-amber-600
-                   text-amber-900 dark:text-amber-100
-                   bg-white dark:bg-neutral-900
-                   transition-colors"
-        >
-          <option value="">天干</option>
-          {TIAN_GAN.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </select>
-        <select
-          value={zhi}
-          onChange={(e) => onZhiChange(e.target.value)}
-          className="flex-1 px-3 py-3 border border-amber-200 dark:border-amber-700/50
-                   rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500
-                   dark:focus:ring-amber-600
-                   text-amber-900 dark:text-amber-100
-                   bg-white dark:bg-neutral-900
-                   transition-colors"
-        >
-          <option value="">地支</option>
-          {DI_ZHI.map((z) => (
-            <option key={z} value={z}>
-              {z}
-            </option>
-          ))}
-        </select>
-      </div>
+      <span className="text-sm font-semibold text-amber-800 dark:text-amber-400 text-center">
+        {label}
+      </span>
+      <select
+        value={gan}
+        onChange={(e) => onGanChange(e.target.value)}
+        className="px-3 py-3 border border-amber-200 dark:border-amber-700/50
+                 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500
+                 dark:focus:ring-amber-600
+                 text-amber-900 dark:text-amber-100 text-center
+                 bg-white dark:bg-neutral-900
+                 transition-colors"
+      >
+        <option value="">天干</option>
+        {TIAN_GAN.map((g) => (
+          <option key={g} value={g}>
+            {g}
+          </option>
+        ))}
+      </select>
+      <select
+        value={zhi}
+        onChange={(e) => onZhiChange(e.target.value)}
+        className="px-3 py-3 border border-amber-200 dark:border-amber-700/50
+                 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500
+                 dark:focus:ring-amber-600
+                 text-amber-900 dark:text-amber-100 text-center
+                 bg-white dark:bg-neutral-900
+                 transition-colors"
+      >
+        <option value="">地支</option>
+        {DI_ZHI.map((z) => (
+          <option key={z} value={z}>
+            {z}
+          </option>
+        ))}
+      </select>
     </div>
   );
 
@@ -354,7 +349,7 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
                 <ScrollText className="w-5 h-5 text-amber-600 dark:text-amber-500" />
                 <h3 className="text-lg font-bold text-amber-900 dark:text-amber-100">输入八字四柱</h3>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <PillarSelect
                   label="年柱"
                   gan={yearPillar.gan}

@@ -13,16 +13,15 @@ export interface BaziPillars {
 }
 
 export interface BaziInput {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
+  year?: number;
+  month?: number;
+  day?: number;
+  hour?: number;
+  minute?: number;
   gender: 'male' | 'female';
   birthplace?: string;
-  useSolarTime?: boolean; // 是否使用真太阳时
+  useSolarTime?: boolean;
   question?: string;
-  /** 直接输入的八字四柱（与出生日期互斥使用） */
   pillars?: BaziPillars;
 }
 

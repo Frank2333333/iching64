@@ -272,7 +272,7 @@ app.post('/api/bazi/chat', async (req, res) => {
       });
     }
 
-    if (!baziInput || !baziInput.year) {
+    if (!baziInput || (!baziInput.year && !baziInput.pillars)) {
       return res.status(400).json({
         success: false,
         error: '命盘信息不完整'
