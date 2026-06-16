@@ -104,16 +104,14 @@ export default function BaziDivination() {
           timestamp: response.data.timestamp,
         };
 
-        // 从 AI 解读中生成摘要
+        // 完整解读传给追问上下文，避免截断导致关键结论丢失
         const content = response.data.interpretation;
-        let summary = content.substring(0, 400);
-        if (content.length > 400) summary += '...';
 
         setResult((prev) =>
           prev ? { ...prev, aiInterpretation: interpretation } : null
         );
         setChatContextSummary({
-          initialInterpretationSummary: summary,
+          initialInterpretationSummary: content,
           createdAt: response.data.timestamp,
         });
         resetChat();
