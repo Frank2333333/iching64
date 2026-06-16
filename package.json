@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"vite\"",
+    "dev": "concurrently --kill-others --kill-others-on-fail \"npm run server\" \"vite\"",
     "dev:client": "vite",
     "server": "node server/api.cjs",
+    "server:watch": "npx nodemon server/api.cjs",
+    "kill-server": "npx kill-port 3001 || powershell -Command \"Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }\"",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

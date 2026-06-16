@@ -221,9 +221,15 @@ app.post('/api/divination/chat', async (req, res) => {
 app.post('/api/bazi/ai', async (req, res) => {
   try {
     const input = req.body;
+    console.log(`[${new Date().toISOString()}] /api/bazi/ai 收到原始请求体:`, JSON.stringify(input));
 
     // 验证必要字段（出生日期模式或八字模式）
-    if (!input || (!input.pillars && (!input.year || !input.month || !input.day || !input.hour))) {
+    const hasPillars = input?.pillars && input.pillars.year && input.pillars.month && input.pillars.day && input.pillars.hour;
+    const hasBirthdate = input?.year && input?.month && input?.day && input?.hour != null;
+    console.log(`[${new Date().toISOString()}] hasPillars=${hasPillars}, hasBirthdate=${hasBirthdate}`);
+
+    if (!input || (!hasPillars && !hasBirthdate)) {
+      console.warn(`[${new Date().toISOString()}] 八字排盘请求验证失败:`, JSON.stringify(input));
       return res.status(400).json({
         success: false,
         error: '出生信息不完整，缺少年月日时；或直接输入八字需提供四柱信息'
@@ -238,7 +244,11 @@ app.post('/api/bazi/ai', async (req, res) => {
       });
     }
 
-    console.log(`[${new Date().toISOString()}] 收到八字排盘请求: ${input.year}-${input.month}-${input.day} ${input.hour}:${input.minute || '00'}`);
+    if (hasPillars) {
+      console.log(`[${new Date().toISOString()}] 收到八字排盘请求(直接八字模式): ${input.pillars.year} ${input.pillars.month} ${input.pillars.day} ${input.pillars.hour}`);
+    } else {
+      console.log(`[${new Date().toISOString()}] 收到八字排盘请求(出生日期模式): ${input.year}-${input.month}-${input.day} ${input.hour}:${input.minute || '00'}`);
+    }
 
     const aiResult = await baziAI.getBaziFortune(input);
 
@@ -333,7 +343,7 @@ app.get('/api/health', (req, res) => {
 // 启动服务器
 function startServer() {
   app.listen(PORT, HOST, () => {
-    console.log(`\n✅ 反馈API服务器已启动`);
+    console.log(`\n✅ 反馈API服务器已启动 [版本标记: bazi-v2-20260616]`);
     console.log(`📡 本地访问: http://localhost:${PORT}/api/feedback`);
     console.log(`🌐 网络访问: http://${HOST}:${PORT}/api/feedback`);
     console.log(`💾 数据文件: ${path.join(__dirname, '../data/feedback.json')}`);
