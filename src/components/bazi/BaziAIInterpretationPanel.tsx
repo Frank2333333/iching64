@@ -91,10 +91,7 @@ export default function BaziAIInterpretationPanel({
             className="text-sm md:text-base"
           />
           <div className="pt-4 border-t border-amber-200 dark:border-amber-800/50
-                        flex items-center justify-between text-sm">
-            <span className="text-amber-600 dark:text-amber-400">
-              模型: {aiInterpretation.model}
-            </span>
+                        flex items-center justify-end text-sm">
             <span className="text-amber-500 dark:text-amber-500">
               {new Date(aiInterpretation.timestamp).toLocaleString()}
             </span>

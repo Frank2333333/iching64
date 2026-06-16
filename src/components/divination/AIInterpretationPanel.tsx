@@ -86,10 +86,7 @@ export default function AIInterpretationPanel({
             className="text-sm md:text-base"
           />
           <div className="pt-4 border-t border-indigo-200 dark:border-indigo-800/50
-                        flex items-center justify-between text-sm">
-            <span className="text-indigo-600 dark:text-indigo-400">
-              模型: {aiInterpretation.model}
-            </span>
+                        flex items-center justify-end text-sm">
             <span className="text-indigo-500 dark:text-indigo-500">
               {new Date(aiInterpretation.timestamp).toLocaleString()}
             </span>
