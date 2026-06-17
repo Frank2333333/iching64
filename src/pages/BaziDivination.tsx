@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Compass } from 'lucide-react';
+import { Compass, LogIn, LogOut, Save, User, ChevronDown, Loader2, Archive } from 'lucide-react';
 import MainHeaderTabs from '../components/MainHeaderTabs';
 import BaziForm from '../components/bazi/BaziForm';
 import BaziMessageList from '../components/bazi/BaziMessageList';
 import BaziChatInput from '../components/bazi/BaziChatInput';
+import LoginDialog from '../components/auth/LoginDialog';
 import {
   baziAIFortune,
   checkBaziAIStatus,
@@ -12,6 +13,23 @@ import {
   type BaziInput,
   type ChatMessage,
 } from '../lib/bazi-api';
+import { useAuth } from '../hooks/useAuth';
+import { getProfiles, saveProfile, type BaziProfile } from '../lib/bazi-profile-api';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 
 interface ChatContextSummary {
   initialInterpretationSummary: string;
@@ -49,6 +67,18 @@ export default function BaziDivination() {
   // 记住输入信息，用于对话
   const [lastInput, setLastInput] = useState<BaziInput | null>(null);
 
+  // 认证
+  const { user, token, isLoggedIn, login, logout } = useAuth();
+  const [loginOpen, setLoginOpen] = useState(false);
+
+  // 档案
+  const [profiles, setProfiles] = useState<BaziProfile[]>([]);
+  const [, setProfilesLoading] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [initialFormData, setInitialFormData] = useState<BaziInput | undefined>(undefined);
+
   // 检查 AI 服务状态
   useEffect(() => {
     checkBaziAIStatus().then(setAiAvailable);
@@ -85,6 +115,45 @@ export default function BaziDivination() {
     setAiError(null);
     setAiLoading(false);
   };
+
+  // 加载档案列表
+  const loadProfiles = useCallback(async () => {
+    if (!token) return;
+    setProfilesLoading(true);
+    const res = await getProfiles(token);
+    setProfilesLoading(false);
+    if (res.success && res.data) {
+      setProfiles(res.data);
+    }
+  }, [token]);
+
+  // 保存档案
+  const handleSaveProfile = useCallback(async () => {
+    if (!token || !result?.input || !profileName.trim()) return;
+    setSaveLoading(true);
+    const inputMode = result.input.pillars ? 'pillars' : 'birthdate';
+    const res = await saveProfile(token, {
+      name: profileName.trim(),
+      inputMode,
+      data: result.input,
+    });
+    setSaveLoading(false);
+    if (res.success) {
+      setSaveDialogOpen(false);
+      setProfileName('');
+      loadProfiles();
+    }
+  }, [token, result, profileName, loadProfiles]);
+
+  // 载入档案到表单
+  const handleLoadProfile = useCallback((profile: BaziProfile) => {
+    setInitialFormData(profile.data);
+    setStep('input');
+    setResult(null);
+    resetChat();
+    setAiError(null);
+    setAiLoading(false);
+  }, []);
 
   // AI 解读（接受参数，避免竞态）
   const handleAIInterpretation = async (input: BaziInput) => {
@@ -203,7 +272,38 @@ export default function BaziDivination() {
                 </h1>
               </div>
             </button>
-            <MainHeaderTabs />
+            <div className="flex items-center gap-3">
+              <MainHeaderTabs />
+              {isLoggedIn ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 px-3 py-2 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
+                      <User className="w-4 h-4" />
+                      <span className="max-w-[120px] truncate">{user?.email}</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-white dark:bg-neutral-900 border-amber-200 dark:border-amber-900/30">
+                    <DropdownMenuItem onClick={() => { loadProfiles(); setStep('input'); }} className="text-amber-700 dark:text-amber-300 cursor-pointer">
+                      <Archive className="w-4 h-4 mr-2" />
+                      我的档案
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={logout} className="text-red-600 dark:text-red-400 cursor-pointer">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      退出登录
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <button
+                  onClick={() => setLoginOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                >
+                  <LogIn className="w-4 h-4" />
+                  登录
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -218,13 +318,55 @@ export default function BaziDivination() {
                   "知命者，不立于岩墙之下"
                 </p>
               </div>
-              <BaziForm onSubmit={handleSubmit} loading={aiLoading} />
+              {isLoggedIn && profiles.length > 0 && (
+                <div className="mb-4 animate-fadeIn">
+                  <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 border border-amber-200 dark:border-amber-900/30 shadow-sm">
+                    <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-400 mb-2 flex items-center gap-2">
+                      <Archive className="w-4 h-4" />
+                      我的档案
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {profiles.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleLoadProfile(p)}
+                          className="px-3 py-1.5 rounded-lg text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                        >
+                          {p.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <BaziForm
+                onSubmit={handleSubmit}
+                loading={aiLoading}
+                initialData={initialFormData}
+                onClearInitialData={() => setInitialFormData(undefined)}
+              />
             </div>
           </div>
         )}
 
         {step === 'result' && result && (
           <>
+            {isLoggedIn && (
+              <div className="flex-none px-4 sm:px-6 py-3 bg-white/60 dark:bg-neutral-900/60 border-b border-amber-200/50 dark:border-amber-900/20 flex items-center justify-between">
+                <span className="text-sm text-amber-700 dark:text-amber-400">
+                  已登录: {user?.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSaveDialogOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  保存此八字
+                </button>
+              </div>
+            )}
             <BaziMessageList
               resultInput={result.input}
               aiInterpretation={result.aiInterpretation || null}
@@ -247,6 +389,43 @@ export default function BaziDivination() {
           </>
         )}
       </main>
+
+      {/* Login Dialog */}
+      <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} onLogin={login} />
+
+      {/* Save Profile Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-white dark:bg-neutral-900 border-amber-200 dark:border-amber-900/30">
+          <DialogHeader>
+            <DialogTitle className="text-amber-900 dark:text-amber-100 flex items-center gap-2">
+              <Save className="w-5 h-5" />
+              保存八字档案
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="profile-name" className="text-amber-800 dark:text-amber-400">
+                档案名称
+              </Label>
+              <Input
+                id="profile-name"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                placeholder="例如：自己的八字、父亲八字..."
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveProfile()}
+                className="mt-2 border-amber-200 dark:border-amber-700/50 focus-visible:ring-amber-500"
+              />
+            </div>
+            <Button
+              onClick={handleSaveProfile}
+              disabled={saveLoading || !profileName.trim()}
+              className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold"
+            >
+              {saveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : '保存'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

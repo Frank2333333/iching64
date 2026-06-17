@@ -123,6 +123,10 @@ export default defineConfig({
     cors: true,
     allowedHosts: ['.iching64.fun', 'localhost', '127.0.0.1'],
     proxy: {
+      '/api/auth': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/api/feedback': {
         target: 'http://localhost:3001',
         changeOrigin: true,
@@ -148,6 +152,10 @@ export default defineConfig({
     cors: true,
     allowedHosts: ['.iching64.fun', 'localhost', '127.0.0.1'],
     proxy: {
+      '/api/auth': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
       '/api/feedback': {
         target: 'http://localhost:3001',
         changeOrigin: true,

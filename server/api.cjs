@@ -13,6 +13,9 @@ const { initServerLogger } = require('./logger.cjs');
 const feedbackStore = require('./feedback-store.cjs');
 const divinationAI = require('./divination-ai.cjs');
 const baziAI = require('./bazi-ai.cjs');
+const jwt = require('jsonwebtoken');
+const authStore = require('./auth-store.cjs');
+const baziProfileStore = require('./bazi-profile-store.cjs');
 
 const logger = initServerLogger('server');
 
@@ -356,6 +359,12 @@ function startServer() {
     console.log(`  ${aiEnabled ? '✅' : '⚠️'} AI 解卦服务: ${aiEnabled ? '已启用' : '未配置 (需设置 OPENAI_API_KEY)'}`);
 
     console.log(`\n可用接口:`);
+    console.log(`  POST   /api/auth/send-code     - 发送验证码`);
+    console.log(`  POST   /api/auth/verify-code   - 验证登录`);
+    console.log(`  GET    /api/auth/me             - 当前用户`);
+    console.log(`  GET    /api/bazi/profiles       - 获取八字档案`);
+    console.log(`  POST   /api/bazi/profiles       - 保存八字档案`);
+    console.log(`  DELETE /api/bazi/profiles/:id   - 删除八字档案`);
     console.log(`  GET    /api/feedback           - 获取所有反馈`);
     console.log(`  POST   /api/feedback           - 提交新反馈`);
     console.log(`  POST   /api/divination/ai      - AI 解卦`);
@@ -372,5 +381,169 @@ function startServer() {
 if (require.main === module) {
   startServer();
 }
+
+// ==================== JWT 认证中间件 ====================
+
+function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, error: '未登录' });
+  }
+  const token = authHeader.substring(7);
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+    req.userId = decoded.userId;
+    next();
+  } catch (err) {
+    return res.status(401).json({ success: false, error: '登录已过期' });
+  }
+}
+
+// ==================== 认证 API ====================
+
+// 发送验证码
+app.post('/api/auth/send-code', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || !email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return res.status(400).json({ success: false, error: '请输入有效的邮箱地址' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const code = authStore.generateCode(normalizedEmail);
+
+    // 发送邮件（如果 RESEND_API_KEY 已配置）
+    if (process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 'your-resend-api-key') {
+      try {
+        const { Resend } = require('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: process.env.RESEND_FROM_EMAIL || 'IChing64 <noreply@iching64.fun>',
+          to: normalizedEmail,
+          subject: 'IChing64 验证码',
+          html: `<p>您的验证码是：<strong>${code}</strong></p><p>有效期10分钟，请勿泄露。</p>`,
+        });
+      } catch (emailErr) {
+        console.error('发送邮件失败:', emailErr);
+        // 即使邮件失败也返回成功，避免暴露系统状态（但在开发环境可打印 code）
+      }
+    } else {
+      console.log(`[开发环境] 验证码: ${code} -> ${normalizedEmail}`);
+    }
+
+    res.json({ success: true, message: '验证码已发送' });
+  } catch (error) {
+    console.error('发送验证码失败:', error);
+    res.status(500).json({ success: false, error: '发送失败' });
+  }
+});
+
+// 验证验证码并登录
+app.post('/api/auth/verify-code', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !email.trim() || !code || !code.trim()) {
+      return res.status(400).json({ success: false, error: '邮箱和验证码不能为空' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const verifyResult = authStore.verifyCode(normalizedEmail, code.trim());
+    if (!verifyResult.success) {
+      return res.status(400).json({ success: false, error: verifyResult.error });
+    }
+
+    const user = authStore.getOrCreateUser(normalizedEmail);
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET || 'fallback-secret',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        user: { id: user.id, email: user.email }
+      }
+    });
+  } catch (error) {
+    console.error('验证登录失败:', error);
+    res.status(500).json({ success: false, error: '登录失败' });
+  }
+});
+
+// 获取当前用户信息
+app.get('/api/auth/me', authMiddleware, async (req, res) => {
+  try {
+    const user = authStore.getUserById(req.userId);
+    if (!user) {
+      return res.status(401).json({ success: false, error: '用户不存在' });
+    }
+    res.json({ success: true, data: { id: user.id, email: user.email } });
+  } catch (error) {
+    console.error('获取用户信息失败:', error);
+    res.status(500).json({ success: false, error: '获取失败' });
+  }
+});
+
+// ==================== 八字档案 API ====================
+
+// 获取当前用户的八字档案列表
+app.get('/api/bazi/profiles', authMiddleware, async (req, res) => {
+  try {
+    const profiles = baziProfileStore.getProfilesByUserId(req.userId);
+    res.json({ success: true, data: profiles });
+  } catch (error) {
+    console.error('获取八字档案失败:', error);
+    res.status(500).json({ success: false, error: '获取失败' });
+  }
+});
+
+// 保存新八字档案
+app.post('/api/bazi/profiles', authMiddleware, async (req, res) => {
+  try {
+    const { name, inputMode, data } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, error: '档案名称不能为空' });
+    }
+    if (!inputMode || !['birthdate', 'pillars'].includes(inputMode)) {
+      return res.status(400).json({ success: false, error: 'inputMode 无效' });
+    }
+    if (!data || typeof data !== 'object') {
+      return res.status(400).json({ success: false, error: '数据不能为空' });
+    }
+
+    const profile = baziProfileStore.addProfile(req.userId, {
+      name: name.trim(),
+      inputMode,
+      data,
+    });
+
+    if (profile) {
+      res.json({ success: true, data: profile });
+    } else {
+      res.status(500).json({ success: false, error: '保存失败' });
+    }
+  } catch (error) {
+    console.error('保存八字档案失败:', error);
+    res.status(500).json({ success: false, error: '保存失败' });
+  }
+});
+
+// 删除八字档案
+app.delete('/api/bazi/profiles/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const success = baziProfileStore.deleteProfile(req.userId, id);
+    if (success) {
+      res.json({ success: true, message: '已删除' });
+    } else {
+      res.status(500).json({ success: false, error: '删除失败' });
+    }
+  } catch (error) {
+    console.error('删除八字档案失败:', error);
+    res.status(500).json({ success: false, error: '删除失败' });
+  }
+});
 
 module.exports = { app, startServer };

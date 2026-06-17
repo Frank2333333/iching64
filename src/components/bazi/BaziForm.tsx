@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, User, Sparkles, Compass, ScrollText, Check } from 'lucide-react';
 import type { BaziInput } from '../../lib/bazi-api';
 
 interface BaziFormProps {
   onSubmit: (data: BaziInput) => void;
   loading: boolean;
+  initialData?: BaziInput;
+  onClearInitialData?: () => void;
 }
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
 
-export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
+export default function BaziForm({ onSubmit, loading, initialData, onClearInitialData }: BaziFormProps) {
   const today = new Date();
   const [inputMode, setInputMode] = useState<'birthdate' | 'pillars'>('birthdate');
 
@@ -48,6 +50,50 @@ export default function BaziForm({ onSubmit, loading }: BaziFormProps) {
   const [useSolarTime, setUseSolarTime] = useState(false);
   const [question, setQuestion] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // 加载初始档案数据
+  useEffect(() => {
+    if (!initialData) return;
+
+    if (initialData.pillars) {
+      setInputMode('pillars');
+      setYearPillar({
+        gan: initialData.pillars.year.charAt(0) || '',
+        zhi: initialData.pillars.year.charAt(1) || '',
+      });
+      setMonthPillar({
+        gan: initialData.pillars.month.charAt(0) || '',
+        zhi: initialData.pillars.month.charAt(1) || '',
+      });
+      setDayPillar({
+        gan: initialData.pillars.day.charAt(0) || '',
+        zhi: initialData.pillars.day.charAt(1) || '',
+      });
+      setHourPillar({
+        gan: initialData.pillars.hour.charAt(0) || '',
+        zhi: initialData.pillars.hour.charAt(1) || '',
+      });
+    } else if (
+      initialData.year !== undefined &&
+      initialData.month !== undefined &&
+      initialData.day !== undefined &&
+      initialData.hour !== undefined
+    ) {
+      setInputMode('birthdate');
+      setYear(initialData.year.toString());
+      setMonth(initialData.month.toString());
+      setDay(initialData.day.toString());
+      setHour(initialData.hour.toString());
+      setMinute((initialData.minute ?? 0).toString());
+    }
+
+    setGender(initialData.gender);
+    setBirthplace(initialData.birthplace || '');
+    setUseSolarTime(initialData.useSolarTime || false);
+    setQuestion(initialData.question || '');
+
+    onClearInitialData?.();
+  }, [initialData, onClearInitialData]);
 
   const handleModeChange = (mode: 'birthdate' | 'pillars') => {
     if (mode === inputMode) return;
