@@ -96,6 +96,11 @@ function buildSystemPrompt() {
 5. 不做道德审判,感情婚姻问题不自动劝分劝离
 6. 涉及医学、法律、投资、重大决策时，末尾加一句短免责提示
 7. 建议必须少而准，直接服务于用户当前问题
+8. 【用神一致性铁律】同一个八字的用神是唯一的、确定的。判断时必须遵循优先级：
+   - 第一优先：格局用神（如正官格取印星，七杀格取食神/伤官）
+   - 第二优先：调候用神（如冬木需火、夏土需水）
+   - 第三优先：扶抑用神（身强宜泄耗，身弱宜生扶）
+   - 若三者冲突，以格局用神为准。分析完毕后必须在输出中明确写出"用神：X（理由）"，且一旦确定，本次分析中不得更改。如果用户再次追问用神相关问题，必须与当前结论严格一致，禁止自相矛盾。
 `;
 
   systemPromptCache = base + skillRules + refs + outputRules;
@@ -199,7 +204,7 @@ async function getBaziFortune(input) {
   const response = await openai.chat.completions.create({
     model: MODEL,
     messages,
-    temperature: 0.5,
+    temperature: 0.15,
     max_tokens: 4000,
   });
 

@@ -212,7 +212,7 @@ export default function BaziDivination() {
       <main className="flex-1 overflow-hidden flex flex-col relative z-10">
         {step === 'input' && (
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-5xl mx-auto">
               <div className="text-center mb-6 animate-fadeIn">
                 <p className="text-xl md:text-2xl font-serif text-amber-800 dark:text-amber-300/90 tracking-wider italic">
                   "知命者，不立于岩墙之下"

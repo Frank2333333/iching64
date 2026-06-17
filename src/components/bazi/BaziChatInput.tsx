@@ -19,7 +19,7 @@ export default function BaziChatInput({
 }: BaziChatInputProps) {
   return (
     <div className="flex-none border-t border-amber-200/80 dark:border-amber-900/30 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl px-4 py-3 sm:px-6">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-5xl">
         <div className="flex gap-2">
           <textarea
             value={input}
