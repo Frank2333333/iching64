@@ -59,6 +59,8 @@ API 分组：
 - `/api/feedback` — 反馈 CRUD，JSON 文件持久化（`data/feedback.json`）
 - `/api/divination/ai` + `/api/divination/chat` — AI 解卦与追问对话
 - `/api/bazi/ai` + `/api/bazi/chat` — 八字排盘 AI 解读与对话
+- `/api/bazi/profiles` — 八字档案 CRUD（JWT 认证，JSON 文件持久化 `data/bazi-profiles.json`）
+- `/api/auth/send-code` + `/api/auth/verify-code` + `/api/auth/me` — 邮箱验证码登录（无密码），JWT 认证，Resend 发邮件
 - `/api/health` — 服务健康检查
 
 AI 服务通过 OpenAI SDK 调用，模型和密钥从 `.env` 读取。未配置 OPENAI_API_KEY 时接口返回 HTTP 503。
@@ -98,6 +100,9 @@ shadcn/ui 组件位于 `components/ui/`，依赖 `class-variance-authority` + `t
 
 复制 `.env.example` 为 `.env`，必填项：
 - `OPENAI_API_KEY` — AI 解卦/八字功能的后端依赖
+- `RESEND_API_KEY` — Resend 邮件服务 API Key，用于发送登录验证码
+- `RESEND_FROM_EMAIL` — 发件地址（如 `IChing64 <noreply@iching64.fun>`），需在 Resend 后台验证域名
+- `JWT_SECRET` — JWT 签名密钥，至少 32 位随机字符串
 - `VITE_ADMIN_PASSWORD` — 反馈管理后台密码
 - `VITE_FEEDBACK_API_URL` — 开发环境用 `/api`
 
