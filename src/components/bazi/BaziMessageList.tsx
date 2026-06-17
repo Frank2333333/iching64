@@ -144,7 +144,7 @@ export default function BaziMessageList({
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin" />
                 <span className="text-sm text-amber-600 dark:text-amber-400">
-                  AI 命理大师正在排盘解读...
+                  观天之道...
                 </span>
               </div>
             </div>
