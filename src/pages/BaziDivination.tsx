@@ -78,6 +78,7 @@ export default function BaziDivination() {
   const [profileName, setProfileName] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
   const [initialFormData, setInitialFormData] = useState<BaziInput | undefined>(undefined);
+  const [pendingSaveData, setPendingSaveData] = useState<BaziInput | null>(null);
 
   // 检查 AI 服务状态
   useEffect(() => {
@@ -129,24 +130,25 @@ export default function BaziDivination() {
 
   // 保存档案
   const handleSaveProfile = useCallback(async () => {
-    if (!token || !result?.input || !profileName.trim()) return;
+    if (!token || !pendingSaveData || !profileName.trim()) return;
     setSaveLoading(true);
-    const inputMode = result.input.pillars ? 'pillars' : 'birthdate';
+    const inputMode = pendingSaveData.pillars ? 'pillars' : 'birthdate';
     const res = await saveProfile(token, {
       name: profileName.trim(),
       inputMode,
-      data: result.input,
+      data: pendingSaveData,
     });
     setSaveLoading(false);
     if (res.success) {
       setSaveDialogOpen(false);
       setProfileName('');
+      setPendingSaveData(null);
       loadProfiles();
       if (res.overwritten) {
         alert('已覆盖同名档案');
       }
     }
-  }, [token, result, profileName, loadProfiles]);
+  }, [token, pendingSaveData, profileName, loadProfiles]);
 
   // 载入档案到表单
   const handleLoadProfile = useCallback((profile: BaziProfile) => {
@@ -369,6 +371,7 @@ export default function BaziDivination() {
                 loading={aiLoading}
                 initialData={initialFormData}
                 onClearInitialData={() => setInitialFormData(undefined)}
+                onSave={isLoggedIn ? (data) => { setPendingSaveData(data); setSaveDialogOpen(true); } : undefined}
               />
             </div>
           </div>
@@ -376,21 +379,6 @@ export default function BaziDivination() {
 
         {step === 'result' && result && (
           <>
-            {isLoggedIn && (
-              <div className="flex-none px-4 sm:px-6 py-3 bg-white/60 dark:bg-neutral-900/60 border-b border-amber-200/50 dark:border-amber-900/20 flex items-center justify-between">
-                <span className="text-sm text-amber-700 dark:text-amber-400">
-                  已登录: {user?.email}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setSaveDialogOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                >
-                  <Save className="w-4 h-4" />
-                  保存此八字
-                </button>
-              </div>
-            )}
             <BaziMessageList
               resultInput={result.input}
               aiInterpretation={result.aiInterpretation || null}

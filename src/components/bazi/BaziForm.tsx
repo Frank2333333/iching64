@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Sparkles, Compass, ScrollText, Check } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Sparkles, Compass, ScrollText, Check, Save } from 'lucide-react';
 import type { BaziInput } from '../../lib/bazi-api';
 
 interface BaziFormProps {
@@ -7,12 +7,13 @@ interface BaziFormProps {
   loading: boolean;
   initialData?: BaziInput;
   onClearInitialData?: () => void;
+  onSave?: (data: BaziInput) => void;
 }
 
 const TIAN_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 const DI_ZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
 
-export default function BaziForm({ onSubmit, loading, initialData, onClearInitialData }: BaziFormProps) {
+export default function BaziForm({ onSubmit, loading, initialData, onClearInitialData, onSave }: BaziFormProps) {
   const today = new Date();
   const [inputMode, setInputMode] = useState<'birthdate' | 'pillars'>('birthdate');
 
@@ -482,6 +483,29 @@ export default function BaziForm({ onSubmit, loading, initialData, onClearInitia
                 <p className="text-sm text-red-600 mt-2">
                   {errors.yearPillar || errors.monthPillar || errors.dayPillar || errors.hourPillar}
                 </p>
+              )}
+              {onSave && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSave({
+                      gender,
+                      birthplace: birthplace.trim() || undefined,
+                      question: question.trim() || undefined,
+                      pillars: {
+                        year: yearPillar.gan + yearPillar.zhi,
+                        month: monthPillar.gan + monthPillar.zhi,
+                        day: dayPillar.gan + dayPillar.zhi,
+                        hour: hourPillar.gan + hourPillar.zhi,
+                      },
+                    });
+                  }}
+                  disabled={!yearPillar.gan || !yearPillar.zhi || !monthPillar.gan || !monthPillar.zhi || !dayPillar.gan || !dayPillar.zhi || !hourPillar.gan || !hourPillar.zhi}
+                  className="w-full py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 rounded-lg text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  保存此八字
+                </button>
               )}
             </div>
           )}
