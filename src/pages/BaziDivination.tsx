@@ -14,7 +14,7 @@ import {
   type ChatMessage,
 } from '../lib/bazi-api';
 import { useAuth } from '../hooks/useAuth';
-import { getProfiles, saveProfile, type BaziProfile } from '../lib/bazi-profile-api';
+import { getProfiles, saveProfile, deleteProfile, type BaziProfile } from '../lib/bazi-profile-api';
 import {
   Dialog,
   DialogContent,
@@ -142,6 +142,9 @@ export default function BaziDivination() {
       setSaveDialogOpen(false);
       setProfileName('');
       loadProfiles();
+      if (res.overwritten) {
+        alert('已覆盖同名档案');
+      }
     }
   }, [token, result, profileName, loadProfiles]);
 
@@ -154,6 +157,18 @@ export default function BaziDivination() {
     setAiError(null);
     setAiLoading(false);
   }, []);
+
+  // 删除档案
+  const handleDeleteProfile = useCallback(async (id: string) => {
+    if (!token) return;
+    if (!window.confirm('确定删除此档案？')) return;
+    const res = await deleteProfile(token, id);
+    if (res.success) {
+      loadProfiles();
+    } else {
+      alert(res.error || '删除失败');
+    }
+  }, [token, loadProfiles]);
 
   // AI 解读（接受参数，避免竞态）
   const handleAIInterpretation = async (input: BaziInput) => {
@@ -327,14 +342,23 @@ export default function BaziDivination() {
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {profiles.map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => handleLoadProfile(p)}
-                          className="px-3 py-1.5 rounded-lg text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                        >
-                          {p.name}
-                        </button>
+                        <div key={p.id} className="relative group">
+                          <button
+                            type="button"
+                            onClick={() => handleLoadProfile(p)}
+                            className="px-3 py-1.5 rounded-lg text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+                          >
+                            {p.name}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteProfile(p.id); }}
+                            className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10 leading-none"
+                            title="删除"
+                          >
+                            ×
+                          </button>
+                        </div>
                       ))}
                     </div>
                   </div>

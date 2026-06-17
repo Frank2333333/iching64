@@ -49,15 +49,18 @@ function getProfilesByUserId(userId) {
 
 function addProfile(userId, profile) {
   const all = getAllProfiles();
+  const originalLen = all.length;
+  // 移除该用户同名旧档案（如有），实现覆盖逻辑
+  const filtered = all.filter(p => !(p.userId === userId && p.name === profile.name));
   const newProfile = {
     ...profile,
     id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     userId,
     createdAt: Date.now(),
   };
-  all.push(newProfile);
-  if (saveProfilesToFile(all)) {
-    return newProfile;
+  filtered.push(newProfile);
+  if (saveProfilesToFile(filtered)) {
+    return { profile: newProfile, overwritten: filtered.length !== originalLen };
   }
   return null;
 }

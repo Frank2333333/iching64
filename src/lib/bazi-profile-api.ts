@@ -25,6 +25,7 @@ export interface ProfilesResponse {
 export interface SaveProfileResponse {
   success: boolean;
   data?: BaziProfile;
+  overwritten?: boolean;
   error?: string;
 }
 

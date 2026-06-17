@@ -513,14 +513,14 @@ app.post('/api/bazi/profiles', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, error: '数据不能为空' });
     }
 
-    const profile = baziProfileStore.addProfile(req.userId, {
+    const result = baziProfileStore.addProfile(req.userId, {
       name: name.trim(),
       inputMode,
       data,
     });
 
-    if (profile) {
-      res.json({ success: true, data: profile });
+    if (result && result.profile) {
+      res.json({ success: true, data: result.profile, overwritten: result.overwritten });
     } else {
       res.status(500).json({ success: false, error: '保存失败' });
     }
