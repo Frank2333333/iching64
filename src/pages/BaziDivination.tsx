@@ -6,6 +6,10 @@ import BaziForm from '../components/bazi/BaziForm';
 import BaziMessageList from '../components/bazi/BaziMessageList';
 import BaziChatInput from '../components/bazi/BaziChatInput';
 import LoginDialog from '../components/auth/LoginDialog';
+import { calculateBaziChart, type BaziChart } from '../lib/bazi-calculator';
+import { BaziChartTable } from '../components/bazi/BaziChartTable';
+import { BaziSummaryCards } from '../components/bazi/BaziSummaryCards';
+import { BaziDaYunTimeline } from '../components/bazi/BaziDaYunTimeline';
 import {
   baziAIFortune,
   checkBaziAIStatus,
@@ -67,6 +71,9 @@ export default function BaziDivination() {
   // 记住输入信息，用于对话
   const [lastInput, setLastInput] = useState<BaziInput | null>(null);
 
+  // 本地排盘结果
+  const [chart, setChart] = useState<BaziChart | null>(null);
+
   // 认证
   const { user, token, isLoggedIn, login, logout } = useAuth();
   const [loginOpen, setLoginOpen] = useState(false);
@@ -97,14 +104,34 @@ export default function BaziDivination() {
     navigate('/');
   };
 
-  // 提交排盘 -> 自动触发 AI 解读
+  // 提交排盘 -> 本地排盘 + 自动触发 AI 解读
   const handleSubmit = (data: BaziInput) => {
     setLastInput(data);
-    setResult({ input: data });
-    setStep('result');
+    setChart(null);
     resetChat();
     setAiError(null);
-    // 自动触发 AI 解读
+
+    // 如果是出生日期模式，先本地排盘
+    if (data.year && data.month && data.day && data.hour !== undefined) {
+      const baziChart = calculateBaziChart({
+        year: data.year,
+        month: data.month,
+        day: data.day,
+        hour: data.hour,
+        minute: data.minute || 0,
+        gender: data.gender,
+        birthplace: data.birthplace,
+        useSolarTime: data.useSolarTime,
+      });
+      setChart(baziChart);
+      // 将排盘结果注入 BaziInput，让 AI 无需自行排盘
+      data.chart = baziChart;
+    }
+
+    setResult({ input: data });
+    setStep('result');
+
+    // 然后调 AI（如有 chart 则 AI prompt 中已有排盘数据）
     handleAIInterpretation(data);
   };
 
@@ -112,6 +139,7 @@ export default function BaziDivination() {
   const handleBackToInput = () => {
     setStep('input');
     setResult(null);
+    setChart(null);
     resetChat();
     setAiError(null);
     setAiLoading(false);
@@ -155,6 +183,7 @@ export default function BaziDivination() {
     setInitialFormData(profile.data);
     setStep('input');
     setResult(null);
+    setChart(null);
     resetChat();
     setAiError(null);
     setAiLoading(false);
@@ -379,17 +408,28 @@ export default function BaziDivination() {
 
         {step === 'result' && result && (
           <>
-            <BaziMessageList
-              resultInput={result.input}
-              aiInterpretation={result.aiInterpretation || null}
-              aiLoading={aiLoading}
-              aiError={aiError}
-              aiAvailable={aiAvailable}
-              chatMessages={chatMessages}
-              chatLoading={chatLoading}
-              chatError={chatError}
-              onBackToInput={handleBackToInput}
-            />
+            <div className="flex-1 overflow-y-auto">
+              {/* 传统命盘展示 */}
+              {chart && (
+                <div className="space-y-4 px-4 pt-4 pb-2 max-w-3xl mx-auto">
+                  <BaziChartTable chart={chart} />
+                  <BaziSummaryCards chart={chart} />
+                  <BaziDaYunTimeline chart={chart} />
+                </div>
+              )}
+              {/* AI 解读 */}
+              <BaziMessageList
+                resultInput={result.input}
+                aiInterpretation={result.aiInterpretation || null}
+                aiLoading={aiLoading}
+                aiError={aiError}
+                aiAvailable={aiAvailable}
+                chatMessages={chatMessages}
+                chatLoading={chatLoading}
+                chatError={chatError}
+                onBackToInput={handleBackToInput}
+              />
+            </div>
             <BaziChatInput
               input={chatInput}
               loading={chatLoading}

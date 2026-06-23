@@ -42,7 +42,7 @@ export default function BaziMessageList({
   if (!resultInput) return null;
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       <div className="mx-auto max-w-5xl space-y-4">
         {/* 用户信息摘要卡片 */}
         <div className="bg-gradient-to-br from-amber-50 to-orange-50
