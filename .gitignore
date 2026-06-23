@@ -49,6 +49,10 @@ coverage/
 coverage/
 *.lcov
 
+# Cloudflare
+.dev.vars
+.wrangler/
+
 # Misc
 *.tgz
 *.zip

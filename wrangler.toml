@@ -1,0 +1,27 @@
+name = "iching64"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Pages 静态资源输出目录
+pages_build_output_dir = "./dist"
+
+# D1 数据库（替代 JSON 文件存储）
+# 首次使用需运行: wrangler d1 create iching64-db
+# 然后将返回的 database_id 填入下方
+[[d1_databases]]
+binding = "DB"
+database_name = "iching64-db"
+database_id = "1bf632c0-cfdc-4358-adc8-bfd52cdc7ab0"
+
+# KV 命名空间（验证码存储，带 TTL）
+# 首次使用需运行: wrangler kv namespace create AUTH_KV
+# 然后将返回的 id 填入下方
+[[kv_namespaces]]
+binding = "AUTH_KV"
+id = "b6aa6d73907f4338b6c0f17b311169a8"
+
+# 非敏感配置
+[vars]
+OPENAI_MODEL = "deepseek-v4-pro-202606"
+OPENAI_BASE_URL = "https://tokenhub.tencentmaas.com/plan/v3"
+RESEND_FROM_EMAIL = "IChing64 <noreply@iching64.fun>"
