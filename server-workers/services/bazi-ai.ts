@@ -51,9 +51,123 @@ interface BaziInput {
   birthplace?: string;
   question?: string;
   pillars?: { year: string; month: string; day: string; hour: string };
+  chart?: {
+    yearPillar: { gan: string; zhi: string; cangGan: string[]; shiShen: string[]; nayin: string };
+    monthPillar: { gan: string; zhi: string; cangGan: string[]; shiShen: string[]; nayin: string };
+    dayPillar: { gan: string; zhi: string; cangGan: string[]; shiShen: string[]; nayin: string };
+    hourPillar: { gan: string; zhi: string; cangGan: string[]; shiShen: string[]; nayin: string };
+    dayMaster: string;
+    dayMasterElement: string;
+    dayMasterStrength: string;
+    pattern: string;
+    yongShen: string;
+    xiShen: string;
+    jiShen: string;
+    daYun: Array<{ startAge: number; endAge: number; gan: string; zhi: string; shiShen: string }>;
+    currentLiuNian: { year: number; gan: string; zhi: string; shiShen: string };
+    birthYear: number;
+    solarTimeCorrection?: {
+      birthplace: string;
+      longitude: number;
+      correctionMinutes: number;
+      originalHour: number;
+      correctedHour: number;
+      hourPillarChanged: boolean;
+    };
+  };
+}
+
+function buildChartPrompt(input: BaziInput): string {
+  const c = input.chart!;
+  const pillars = [c.yearPillar, c.monthPillar, c.dayPillar, c.hourPillar];
+  const pillarNames = ['年柱', '月柱', '日柱', '时柱'];
+
+  let prompt = `以下是已经排好的八字命盘，请直接进行专业解读，不需要自行排盘：\n\n`;
+
+  // 四柱
+  prompt += `四柱：`;
+  for (let i = 0; i < 4; i++) {
+    prompt += `${pillarNames[i]} ${pillars[i].gan}${pillars[i].zhi}`;
+    if (i < 3) prompt += '  ';
+  }
+  prompt += '\n';
+
+  // 藏干
+  prompt += `藏干：`;
+  for (let i = 0; i < 4; i++) {
+    prompt += `${pillarNames[i]}[${pillars[i].cangGan.join('')}]`;
+    if (i < 3) prompt += ' ';
+  }
+  prompt += '\n';
+
+  // 十神
+  prompt += `十神：`;
+  for (let i = 0; i < 4; i++) {
+    prompt += `${pillarNames[i]}[${pillars[i].shiShen.join('/')}]`;
+    if (i < 3) prompt += ' ';
+  }
+  prompt += '\n';
+
+  // 纳音
+  prompt += `纳音：`;
+  for (let i = 0; i < 4; i++) {
+    prompt += `${pillarNames[i]}[${pillars[i].nayin}]`;
+    if (i < 3) prompt += ' ';
+  }
+  prompt += '\n';
+
+  // 日主
+  prompt += `日主：${c.dayMaster}${c.dayMasterElement}，${c.dayMasterStrength}\n`;
+  prompt += `格局：${c.pattern}\n`;
+  prompt += `用神：${c.yongShen}，喜神：${c.xiShen}，忌神：${c.jiShen}\n\n`;
+
+  // 大运
+  prompt += `大运：${c.daYun.map(dy => `${dy.startAge}岁${dy.gan}${dy.zhi}`).join(' → ')}\n`;
+
+  // 流年
+  prompt += `当前流年：${c.currentLiuNian.year}${c.currentLiuNian.gan}${c.currentLiuNian.zhi}，十神${c.currentLiuNian.shiShen}\n\n`;
+
+  // 真太阳时
+  if (c.solarTimeCorrection) {
+    const sc = c.solarTimeCorrection;
+    prompt += `出生地：${sc.birthplace}（真太阳时修正${sc.correctionMinutes > 0 ? '+' : ''}${sc.correctionMinutes}分钟${sc.hourPillarChanged ? '，时柱已变更' : ''}）\n`;
+  } else if (input.birthplace) {
+    prompt += `出生地：${input.birthplace}\n`;
+  }
+
+  prompt += `性别：${input.gender === 'male' ? '男' : '女'}\n`;
+
+  if (input.question) {
+    prompt += `用户问题：${input.question}\n`;
+  }
+
+  prompt += `
+【分析要求】
+1. 基于以上已排好的命盘，直接进行深度解读
+2. 重点分析日主强弱、格局成败、用神喜忌的命理依据
+3. 结合大运流年，判断当前运势走向
+4. 给出核心画像：性格底色、行为模式、关系模式、压力来源、优劣势、人生主线
+5. 若用户有具体问题，先直接回答，再展开命理解释
+6. 给出至少一个校准问题，请用户验证过去某个具体事实
+7. 按以下格式输出：
+
+铁口：...
+依据：...
+名家方法：...
+现实落点：...
+置信度：...
+校准：...
+`;
+
+  return prompt;
 }
 
 function buildBaziPrompt(input: BaziInput): string {
+  // 优先使用本地排盘数据
+  if (input.chart) {
+    return buildChartPrompt(input);
+  }
+
   const { year, month, day, hour, minute, gender, birthplace, question, pillars } = input;
   const genderText = gender === 'male' ? '男' : '女';
 
@@ -193,6 +307,18 @@ export async function chatWithBazi(data: BaziChatData, env: Env): Promise<string
 
   if (contextParts.length > 0) {
     messages.push({ role: 'system', content: contextParts.join('\n') });
+  }
+
+  // 如果有排盘数据，注入排盘摘要
+  if (baziInput.chart) {
+    const c = baziInput.chart;
+    const currentAge = new Date().getFullYear() - c.birthYear;
+    const currentDaYun = c.daYun.find(dy => currentAge >= dy.startAge && currentAge <= dy.endAge);
+    const chartSummary = `命盘摘要：${c.dayMaster}${c.dayMasterElement}日主，${c.dayMasterStrength}，${c.pattern}，用${c.yongShen}喜${c.xiShen}忌${c.jiShen}\n`
+      + `四柱：${c.yearPillar.gan}${c.yearPillar.zhi} ${c.monthPillar.gan}${c.monthPillar.zhi} ${c.dayPillar.gan}${c.dayPillar.zhi} ${c.hourPillar.gan}${c.hourPillar.zhi}\n`
+      + `当前大运：${currentDaYun ? currentDaYun.gan + currentDaYun.zhi + '（' + currentDaYun.startAge + '-' + currentDaYun.endAge + '岁）' : '未知'}`;
+
+    messages.push({ role: 'system', content: chartSummary });
   }
 
   // 添加历史对话（最近 8 轮）
