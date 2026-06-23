@@ -3,6 +3,8 @@
  * 调用后端 /api/bazi/ai 和 /api/bazi/chat 接口
  */
 
+import type { BaziChart } from './bazi-calculator';
+
 const API_BASE_URL = import.meta.env.VITE_FEEDBACK_API_URL || '/api';
 
 export interface BaziPillars {
@@ -23,6 +25,7 @@ export interface BaziInput {
   useSolarTime?: boolean;
   question?: string;
   pillars?: BaziPillars;
+  chart?: BaziChart;
 }
 
 export interface BaziFortuneResponse {
