@@ -4,24 +4,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概览
 
-IChing64 — 易经六十四卦学习平台，部署于 https://www.iching64.fun/。
+IChing64 — 易经六十四卦学习平台，部署于 https://iching64.fun/。
 
-技术栈：React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui + React Router（HashRouter）。
+技术栈：React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui + React Router（HashRouter）+ Cloudflare Pages/Workers。
 状态管理仅用 React Hooks，无 Redux。
 
 ## 常用命令
 
 ```bash
-# 开发（同时启动 Vite 前端 5173 + Express 后端 3001）
+# 开发（Wrangler 代理 Vite 前端 + Pages Functions 后端）
 npm run dev
 
-# 仅启动后端（Express on 3001）
-npm run server
+# 仅启动 Vite 前端
+npm run dev:client
 
-# 仅启动 Vite 前端	npm run dev:client
+# 旧版开发（Express 后端，已弃用）
+npm run dev:legacy
 
-# 构建
+# 构建（先打包技能内容 → TypeScript 编译 → Vite 构建）
 npm run build
+
+# 构建后本地预览
+npm run preview
+
+# 部署到 Cloudflare Pages（Production）
+npm run deploy
+
+# D1 数据库迁移
+npm run db:migrate:local   # 本地
+npm run db:migrate         # 远程
+
+# 密钥管理
+npx wrangler pages secret put <KEY_NAME>        # 设置密钥
+npx wrangler pages secret list                   # 查看密钥列表
+
+# D1 数据查询
+npx wrangler d1 execute iching64-db --remote --command "SELECT * FROM users"
 
 # 测试
 npx vitest run              # 单次运行
@@ -30,9 +48,6 @@ npx vitest                  # watch 模式
 
 # 代码检查
 npm run lint
-
-# 预览生产构建
-npm run preview
 ```
 
 ## 架构
@@ -49,21 +64,44 @@ npm run preview
 
 导航栏组件在 `src/components/MainHeaderTabs.tsx`。
 
-64卦数据为**单文件 JSON-like TS 导出**（`src/data/guaxiang.ts`），定义了 `Gua` / `Yao` 接口，包含卦辞、爻辞、卦变关系等全部字段。本项目无数据库；所有卦象数据在编译时打包。
+64卦数据为**单文件 JSON-like TS 导出**（`src/data/guaxiang.ts`），定义了 `Gua` / `Yao` 接口，包含卦辞、爻辞、卦变关系等全部字段。所有卦象数据在编译时打包。
 
-### 后端 Express（server/api.cjs）
+前端 API 调用使用原生 `fetch()`，基础路径为 `/api`（通过 `VITE_FEEDBACK_API_URL` 配置，默认 `/api`），Cloudflare Pages Functions 自动路由，无需代理配置。
 
-开发时监听 `localhost:3001`，通过 Vite `proxy` 转发 `/api/*`。
+### 后端（Cloudflare Pages Functions + Hono）
 
-API 分组：
-- `/api/feedback` — 反馈 CRUD，JSON 文件持久化（`data/feedback.json`）
+运行在 Cloudflare Workers 边缘运行时，入口为 `functions/api/[[route]].ts`（Hono catch-all 路由）。
+
+**关键文件**：
+- `functions/api/[[route]].ts` — 所有 API 路由定义，替代原 Express 应用
+- `server-workers/utils/auth.ts` — JWT 认证（jose，Web Crypto API）
+- `server-workers/utils/openai-client.ts` — OpenAI SDK 工厂函数
+- `server-workers/utils/resend-client.ts` — Resend SDK 工厂函数
+- `server-workers/services/divination-ai.ts` — AI 解卦服务（从 divination-ai.cjs 移植）
+- `server-workers/services/bazi-ai.ts` — 八字 AI 服务（从 bazi-ai.cjs 移植）
+- `server-workers/services/skill-content.ts` — **构建时自动生成**，包含玄学技能内容常量
+
+API 路由（与原 Express 完全对应，响应格式 `{ success, data?, error? }`）：
+- `/api/feedback` — 反馈 CRUD，D1 数据库持久化
 - `/api/divination/ai` + `/api/divination/chat` — AI 解卦与追问对话
 - `/api/bazi/ai` + `/api/bazi/chat` — 八字排盘 AI 解读与对话
-- `/api/bazi/profiles` — 八字档案 CRUD（JWT 认证，JSON 文件持久化 `data/bazi-profiles.json`）
-- `/api/auth/send-code` + `/api/auth/verify-code` + `/api/auth/me` — 邮箱验证码登录（无密码），JWT 认证，Resend 发邮件
+- `/api/bazi/profiles` — 八字档案 CRUD（JWT 认证，D1 持久化，同名覆盖用 `INSERT OR REPLACE`）
+- `/api/auth/send-code` + `/api/auth/verify-code` + `/api/auth/me` — 邮箱验证码登录，验证码存 KV（TTL 600s），JWT 认证
 - `/api/health` — 服务健康检查
 
-AI 服务通过 OpenAI SDK 调用，模型和密钥从 `.env` 读取。未配置 OPENAI_API_KEY 时接口返回 HTTP 503。
+### 数据存储
+
+| 存储 | 用途 | 替代 |
+|------|------|------|
+| Cloudflare D1 | 用户、反馈、八字档案（结构化数据） | 原 data/*.json 文件 |
+| Cloudflare KV | 验证码（带 TTL 自动过期） | 原内存 Map |
+| 构建时打包 | 玄学技能 SKILL.md + references/*.md | 原 fs.readFileSync 运行时读取 |
+
+D1 表结构见 `migrations/0001_initial.sql`。
+
+### 玄学技能内容打包
+
+`scripts/bundle-xuan-skill.ts` 在构建前运行，读取 `server/skills/xuan/` 下的 .md 文件，生成 `server-workers/services/skill-content.ts`（两个 export 常量：SKILL_CONTENT 和 REFERENCES_CONTENT）。截断规则与原 `loadSkillContent()` 一致。
 
 ### 梅花易数核心逻辑
 
@@ -73,18 +111,25 @@ AI 服务通过 OpenAI SDK 调用，模型和密钥从 `.env` 读取。未配置
 - 生克关系基于八卦五行（金/木/水/火/土），由体用五行推导
 - 互卦（过程）、变卦（结果）通过上/下卦组合变换得出
 
+### 八字排盘核心逻辑
+
+本地排盘引擎 `src/lib/bazi-calculator.ts`，与梅花易数架构一致（先本地计算，再给 AI 解读）：
+
+- **依赖**：`lunar-javascript`（阴历转换、日柱、节气时间）
+- **常量表**：`src/data/bazi-constants.ts`（天干地支、纳音、藏干、五虎遁/五鼠遁、十神映射）
+- **城市经纬度**：`src/data/cities.ts`（335 城市，用于真太阳时修正）
+- **计算流程**：真太阳时修正 → 阴历转换 → 年柱(立春为界) → 月柱(节气为界) → 日柱(lunar-javascript) → 时柱(五鼠遁) → 纳音/藏干/十神 → 日主强弱(得令+得地+得势) → 格局(月支本气透出) → 用神喜忌 → 大运(8步) → 当前流年
+- **数据结构**：`BaziChart` 接口包含四柱(Pillar)、日主信息、格局用神、大运(DaYun[])、流年(LiuNian)、真太阳时修正信息
+- **UI 组件**：`BaziChartTable`（传统命盘表格）、`BaziSummaryCards`（日主+格局卡片）、`BaziDaYunTimeline`（大运时间轴）
+- **AI 集成**：`BaziInput.chart` 字段将排盘数据传入后端，`bazi-ai.ts` 的 `buildChartPrompt` 直接用排盘数据构建 prompt，AI 无需自行排盘
+- **type 声明**：`lunar-javascript` 无自带类型，使用 `src/types/lunar-javascript.d.ts`
+
 ### AI 对话约束
 
-`server/divination-ai.cjs` 实现了严格的对话控制逻辑：
+`server-workers/services/divination-ai.ts` 实现了严格的对话控制逻辑：
 - **场景锁定**：事业/感情/健康/财运/学业/出行/官司/寻物，AI 回答不得擅自切换场景
 - **追问意图分类**：根据用户消息正则匹配分为 timing(时间)/advice(建议)/outcome(结果)/judgment(判断)，每种意图有固定的回答模板
 - **追问轨迹追踪**：最近 3 条用户追问注入上下文，避免 AI 自相矛盾
-
-### Vite 配置要点
-
-`vite.config.ts` 中定义了自定义 Vite 插件（访问计数器 + 持久化日志写入 `logs/`），开发配置超过默认复杂程度。
-
-**关键规则**：新增任何 `/api/*` 后端路由，必须**同时在** `server.proxy` 和 `preview.proxy` 两段代理配置中添加对应条目（已有 `/api/feedback`、`/api/health`、`/api/divination`、`/api/bazi`）。历史上曾因漏配 `/api/bazi` 导致开发环境前端收到空 HTML 响应。
 
 ### 样式主题
 
@@ -96,21 +141,67 @@ AI 服务通过 OpenAI SDK 调用，模型和密钥从 `.env` 读取。未配置
 
 shadcn/ui 组件位于 `components/ui/`，依赖 `class-variance-authority` + `tailwind-merge`（通过 `src/lib/utils.ts` 的 `cn()` 合并类名）。
 
-## 环境变量
+## 环境变量与密钥
 
-复制 `.env.example` 为 `.env`，必填项：
-- `OPENAI_API_KEY` — AI 解卦/八字功能的后端依赖
-- `RESEND_API_KEY` — Resend 邮件服务 API Key，用于发送登录验证码
-- `RESEND_FROM_EMAIL` — 发件地址（如 `IChing64 <noreply@iching64.fun>`），需在 Resend 后台验证域名
-- `JWT_SECRET` — JWT 签名密钥，至少 32 位随机字符串
+### 生产环境（Cloudflare）
+
+非敏感配置写在 `wrangler.toml` 的 `[vars]` 段：
+- `OPENAI_MODEL` — 模型名，如 `gpt-4o-mini`
+- `OPENAI_BASE_URL` — API 基础地址
+- `RESEND_FROM_EMAIL` — 发件人地址
+
+敏感密钥通过 `wrangler pages secret put` 设置（加密存储，代码中不可见）：
+- `OPENAI_API_KEY` — AI 解卦/八字功能依赖
+- `RESEND_API_KEY` — 邮件服务
+- `JWT_SECRET` — JWT 签名密钥，至少 32 位
+
+前端构建时变量（在 Cloudflare Dashboard 设置）：
 - `VITE_ADMIN_PASSWORD` — 反馈管理后台密码
-- `VITE_FEEDBACK_API_URL` — 开发环境用 `/api`
+- `VITE_FEEDBACK_API_URL` — 默认 `/api`，无需修改
+
+### 本地开发
+
+创建 `.dev.vars` 文件（与 `.env` 格式相同，`wrangler pages dev` 自动读取，已被 `.gitignore` 忽略）：
+
+```ini
+OPENAI_API_KEY=sk-xxx
+RESEND_API_KEY=re_xxx
+JWT_SECRET=your-random-secret
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_BASE_URL=https://api.openai.com/v1
+RESEND_FROM_EMAIL=IChing64 <noreply@iching64.fun>
+```
+
+## 部署
+
+```bash
+# 1. 首次：创建 D1 数据库和 KV 命名空间
+npx wrangler d1 create iching64-db        # 把返回的 database_id 填入 wrangler.toml
+npx wrangler kv namespace create AUTH_KV  # 把返回的 id 填入 wrangler.toml
+
+# 2. 远程建表
+npm run db:migrate
+
+# 3. 设置密钥
+npx wrangler pages secret put OPENAI_API_KEY
+npx wrangler pages secret put RESEND_API_KEY
+npx wrangler pages secret put JWT_SECRET
+
+# 4. 构建 + 部署（Production 分支为 cloudflare）
+npm run build
+npx wrangler pages deploy ./dist --project-name=iching64 --branch=cloudflare --commit-dirty=true
+```
+
+Production 分支设置为 `cloudflare`（在 Cloudflare Dashboard → Workers & Pages → iching64 → Settings → Builds & deployments 中配置）。
 
 ## 注意事项
 
-- `server/skills/xuan/` 是一个**Git 子模块**（内嵌仓库），存储八字排盘的参考资料（SKILL.md + references）。克隆后可能需要 `git submodule update --init`。
-- Windows 开发环境：部分源文件为 LF 换行，Git `core.autocrlf` 可能导致 `git add` 时出现 LF→CRLF warning，不影响运行但需注意 `Edit` 工具逐字节匹配的问题。
-- 前端 `# HashRouter` 意味着所有路由以 `/#/` 开头部署为静态站点，无需服务端路由配置。
+- `server/skills/xuan/` 是一个 **Git 子模块**，存储八字排盘的参考资料。克隆后需 `git submodule update --init`。构建脚本 `scripts/bundle-xuan-skill.ts` 依赖此子模块。
+- Windows 开发环境：部分源文件为 LF 换行，Git `core.autocrlf` 可能导致 LF→CRLF warning，不影响运行但需注意 `Edit` 工具逐字节匹配的问题。
+- 前端 HashRouter 意味着所有路由以 `/#/` 开头，Cloudflare Pages 无需额外路由配置。
+- 旧的 Express 后端代码保留在 `server/` 目录（已不在生产环境使用），仅供参考。
+- D1 不支持 `undefined` 值绑定，所有可选字段必须用 `?? null` 处理。
+- Workers 执行时间限制：免费版 10ms CPU / 30s 挂钟时间。AI 调用是 I/O 等待不占 CPU，但长时间对话可能接近 30s 挂钟上限。
 
 # IChing64 项目 Claude 工作记录
 
@@ -135,7 +226,7 @@ shadcn/ui 组件位于 `components/ui/`，依赖 `class-variance-authority` + `t
 
 4. **空参数误调用**
    - 在工具链偶发异常时，出现了 `Edit: {}` 的无效调用，导致 `InputValidationError`。
-   - 这属于工具调用层问题，但可通过“先确认参数再调用”避免。
+   - 这属于工具调用层问题，但可通过"先确认参数再调用"避免。
 
 ### 解决对策（强制遵循）
 
