@@ -7,9 +7,9 @@ import BaziMessageList from '../components/bazi/BaziMessageList';
 import BaziChatInput from '../components/bazi/BaziChatInput';
 import LoginDialog from '../components/auth/LoginDialog';
 import { calculateBaziChart, type BaziChart } from '../lib/bazi-calculator';
-import { BaziChartTable } from '../components/bazi/BaziChartTable';
-import { BaziSummaryCards } from '../components/bazi/BaziSummaryCards';
-import { BaziDaYunTimeline } from '../components/bazi/BaziDaYunTimeline';
+import BaziChartTable from '../components/bazi/BaziChartTable';
+import BaziSummaryCards from '../components/bazi/BaziSummaryCards';
+import BaziDaYunTimeline from '../components/bazi/BaziDaYunTimeline';
 import {
   baziAIFortune,
   checkBaziAIStatus,

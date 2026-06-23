@@ -144,7 +144,7 @@ function buildPillar(ganIndex: number, zhiIndex: number, dayGanIndex: number): P
   const gan = TIAN_GAN[ganIndex];
   const zhi = DI_ZHI[zhiIndex];
   const cangGan = CANG_GAN[zhi];
-  const shiShen = cangGan.map(cg => SHI_SHEN_MAP[dayGanIndex][TIAN_GAN.indexOf(cg)]);
+  const shiShen = cangGan.map(cg => SHI_SHEN_MAP[dayGanIndex][TIAN_GAN.indexOf(cg as typeof TIAN_GAN[number])]);
 
   return {
     gan,
@@ -203,7 +203,7 @@ function calculateDayMasterStrength(
 /** 确定格局 */
 function determinePattern(dayGanIndex: number, monthPillar: Pillar): string {
   const benQi = monthPillar.cangGan[0]; // 本气
-  const shiShen = SHI_SHEN_MAP[dayGanIndex][TIAN_GAN.indexOf(benQi)];
+  const shiShen = SHI_SHEN_MAP[dayGanIndex][TIAN_GAN.indexOf(benQi as typeof TIAN_GAN[number])];
   const patternMap: Record<string, string> = {
     '正官': '正官格',
     '七杀': '七杀格',
@@ -336,12 +336,12 @@ export function calculateBaziChart(input: BaziCalcInput): BaziChart {
   // 5. 日柱
   const dayGan = lunar.getDayGan();
   const dayZhi = lunar.getDayZhi();
-  const dayGanIndex = TIAN_GAN.indexOf(dayGan);
-  const dayZhiIndex = DI_ZHI.indexOf(dayZhi);
+  const dayGanIndex = TIAN_GAN.indexOf(dayGan as typeof TIAN_GAN[number]);
+  const dayZhiIndex = DI_ZHI.indexOf(dayZhi as typeof DI_ZHI[number]);
 
   // 6. 时柱
   const shichenIndex = Math.floor(((hour + 1) % 24) / 2);
-  const hourGanIndex = TIAN_GAN.indexOf(WU_SHU_DUN[dayGanIndex][shichenIndex]);
+  const hourGanIndex = TIAN_GAN.indexOf(WU_SHU_DUN[dayGanIndex][shichenIndex] as typeof TIAN_GAN[number]);
   const hourZhiIndex = shichenIndex;
 
   // 7-9. 构造四柱（含纳音、藏干、十神）

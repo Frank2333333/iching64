@@ -168,7 +168,7 @@ const ELEMENT_ORDER = ['木', '火', '土', '金', '水'] as const;
 export const SHI_SHEN_MAP: string[][] = (() => {
   const ganElement: number[] = [];
   for (let i = 0; i < 10; i++) {
-    ganElement.push(ELEMENT_ORDER.indexOf(GAN_TO_ELEMENT[TIAN_GAN[i]]));
+    ganElement.push(ELEMENT_ORDER.indexOf(GAN_TO_ELEMENT[TIAN_GAN[i]] as typeof ELEMENT_ORDER[number]));
   }
 
   const sameYinYang = (a: number, b: number) => (a % 2) === (b % 2);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateBaziChart, type BaziChart } from './bazi-calculator';
+import { calculateBaziChart } from './bazi-calculator';
 
 const VALID_STRENGTHS = ['身强', '身弱', '偏强', '偏弱', '中和'];
 
