@@ -69,59 +69,99 @@ export default function BaziMessageList({
           </div>
 
           <div className="space-y-2 text-sm">
-            {resultInput.pillars ? (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="text-amber-500 dark:text-amber-500">性别：</span>
-                <span className="text-amber-900 dark:text-amber-100">
-                  {resultInput.gender === 'male' ? '男' : '女'}
-                </span>
-                {resultInput.birthplace && (
-                  <>
-                    <span className="text-amber-500 dark:text-amber-500">地点：</span>
-                    <span className="text-amber-900 dark:text-amber-100">{resultInput.birthplace}</span>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <Calendar className="w-3 h-3 text-amber-500" />
-                <span className="text-amber-900 dark:text-amber-100">
-                  {resultInput.year}年{resultInput.month}月{resultInput.day}日
-                </span>
-                <Clock className="w-3 h-3 text-amber-500" />
-                <span className="text-amber-900 dark:text-amber-100">
-                  {resultInput.hour?.toString().padStart(2, '0')}:
-                  {resultInput.minute?.toString().padStart(2, '0')}
-                </span>
-                <span className="text-amber-500 dark:text-amber-500">
-                  {resultInput.gender === 'male' ? '男' : '女'}
-                </span>
-                {resultInput.birthplace && (
-                  <>
-                    <MapPin className="w-3 h-3 text-amber-500" />
-                    <span className="text-amber-900 dark:text-amber-100">{resultInput.birthplace}</span>
-                  </>
-                )}
-              </div>
-            )}
-            {resultInput.pillars && (
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-xs text-amber-500 dark:text-amber-500">八字：</span>
-                {Object.values(resultInput.pillars).map((p) => (
-                  <span key={p} className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded-md text-amber-900 dark:text-amber-100 font-semibold">
-                    {p}
+            {resultInput.chart ? (
+              <>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="text-amber-500 dark:text-amber-500">性别：</span>
+                  <span className="text-amber-900 dark:text-amber-100">
+                    {resultInput.gender === 'male' ? '男' : '女'}
                   </span>
-                ))}
-              </div>
-            )}
-            {resultInput.question && (
-              <div className="pt-1 border-t border-amber-100 dark:border-amber-900/20">
-                <span className="text-amber-500 dark:text-amber-500">
-                  <Sparkles className="w-3 h-3 inline mr-1" />
-                  咨询：
-                </span>
-                <span className="text-amber-900 dark:text-amber-100">{resultInput.question}</span>
-              </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-xs text-amber-500 dark:text-amber-500">八字：</span>
+                  {[
+                    resultInput.chart.yearPillar,
+                    resultInput.chart.monthPillar,
+                    resultInput.chart.dayPillar,
+                    resultInput.chart.hourPillar,
+                  ].map((p) => (
+                    <span key={p.gan + p.zhi} className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded-md text-amber-900 dark:text-amber-100 font-semibold">
+                      {p.gan}{p.zhi}
+                    </span>
+                  ))}
+                </div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 pt-1">
+                  {resultInput.chart.dayMaster}{resultInput.chart.dayMasterElement}·{resultInput.chart.dayMasterStrength}
+                  {' | '}
+                  {resultInput.chart.pattern}
+                  {' | '}
+                  用{resultInput.chart.yongShen}喜{resultInput.chart.xiShen}忌{resultInput.chart.jiShen}
+                </div>
+                {resultInput.question && (
+                  <div className="pt-1 border-t border-amber-100 dark:border-amber-900/20">
+                    <span className="text-amber-700 dark:text-amber-300">
+                      问：{resultInput.question}
+                    </span>
+                  </div>
+                )}
+              </>
+            ) : (
+            <>
+              {resultInput.pillars ? (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="text-amber-500 dark:text-amber-500">性别：</span>
+                  <span className="text-amber-900 dark:text-amber-100">
+                    {resultInput.gender === 'male' ? '男' : '女'}
+                  </span>
+                  {resultInput.birthplace && (
+                    <>
+                      <span className="text-amber-500 dark:text-amber-500">地点：</span>
+                      <span className="text-amber-900 dark:text-amber-100">{resultInput.birthplace}</span>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <Calendar className="w-3 h-3 text-amber-500" />
+                  <span className="text-amber-900 dark:text-amber-100">
+                    {resultInput.year}年{resultInput.month}月{resultInput.day}日
+                  </span>
+                  <Clock className="w-3 h-3 text-amber-500" />
+                  <span className="text-amber-900 dark:text-amber-100">
+                    {resultInput.hour?.toString().padStart(2, '0')}:
+                    {resultInput.minute?.toString().padStart(2, '0')}
+                  </span>
+                  <span className="text-amber-500 dark:text-amber-500">
+                    {resultInput.gender === 'male' ? '男' : '女'}
+                  </span>
+                  {resultInput.birthplace && (
+                    <>
+                      <MapPin className="w-3 h-3 text-amber-500" />
+                      <span className="text-amber-900 dark:text-amber-100">{resultInput.birthplace}</span>
+                    </>
+                  )}
+                </div>
+              )}
+              {resultInput.pillars && (
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-xs text-amber-500 dark:text-amber-500">八字：</span>
+                  {Object.values(resultInput.pillars).map((p) => (
+                    <span key={p} className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900/40 rounded-md text-amber-900 dark:text-amber-100 font-semibold">
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {resultInput.question && (
+                <div className="pt-1 border-t border-amber-100 dark:border-amber-900/20">
+                  <span className="text-amber-500 dark:text-amber-500">
+                    <Sparkles className="w-3 h-3 inline mr-1" />
+                    咨询：
+                  </span>
+                  <span className="text-amber-900 dark:text-amber-100">{resultInput.question}</span>
+                </div>
+              )}
+            </>
             )}
           </div>
         </div>
