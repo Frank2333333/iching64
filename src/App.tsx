@@ -9,6 +9,7 @@ const GuaTransformer = lazy(() => import('./pages/GuaTransformer'));
 const QuestionDivination = lazy(() => import('./pages/QuestionDivination'));
 const BaziDivination = lazy(() => import('./pages/BaziDivination'));
 const ZiweiDivination = lazy(() => import('./pages/ZiweiDivination'));
+const ClassicsPage = lazy(() => import('./pages/ClassicsPage'));
 
 function LoadingFallback() {
   return (
@@ -64,6 +65,7 @@ function AppContent() {
           <Route path="/admin/feedback" element={<FeedbackAdmin />} />
           <Route path="/bazi" element={<BaziDivination />} />
           <Route path="/ziwei" element={<ZiweiDivination />} />
+          <Route path="/classics" element={<ClassicsPage />} />
         </Routes>
       </Suspense>
     </div>

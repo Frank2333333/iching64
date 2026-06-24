@@ -61,6 +61,7 @@ npm run lint
 - `/transformer` → `GuaTransformer`（变卦推演）
 - `/bazi` → `BaziDivination`（八字排盘）
 - `/ziwei` → `ZiweiDivination`（紫微斗数）
+- `/classics` → `ClassicsPage`（经典查阅）
 - `/admin/feedback` → `FeedbackAdmin`（反馈管理后台）
 
 导航栏组件在 `src/components/MainHeaderTabs.tsx`。
@@ -88,6 +89,7 @@ API 路由（与原 Express 完全对应，响应格式 `{ success, data?, error
 - `/api/divination/ai` + `/api/divination/chat` — AI 解卦与追问对话
 - `/api/bazi/ai` + `/api/bazi/chat` — 八字排盘 AI 解读与对话
 - `/api/ziwei/ai` + `/api/ziwei/chat` — 紫微斗数 AI 解读与对话
+- `/api/classics/ai` — 经典文献 AI 解读
 - `/api/bazi/profiles` — 八字档案 CRUD（JWT 认证，D1 持久化，同名覆盖用 `INSERT OR REPLACE`）
 - `/api/auth/send-code` + `/api/auth/verify-code` + `/api/auth/me` — 邮箱验证码登录，验证码存 KV（TTL 600s），JWT 认证
 - `/api/health` — 服务健康检查
@@ -140,6 +142,17 @@ D1 表结构见 `migrations/0001_initial.sql`。
 - **UI 组件**：`ZiweiPalaceGrid`（4×4传统宫位网格）、`ZiweiSummaryCards`（命宫+五行局+四化卡片）
 - **AI 集成**：`ZiweiInput.chart` 字段注入后端，`ziwei-ai.ts` 的 `buildChartPrompt` 格式化12宫+四化为文本 prompt
 - **序列化边界**：iztro 的 FunctionalAstrolabe 有方法和循环引用，calculator 层一步转换为纯对象
+
+### 结构化经典文献
+
+经典文献数据位于 `src/data/classics/`，沿用 Book > Chapter > Paragraph 体系：
+
+- **类型定义**：`src/data/classics/types.ts`（Book/Chapter/Paragraph/SearchHit）
+- **数据文件**：`gusuifu.ts`（骨髓赋）、`quanji.ts`（全集）、`quanshu.ts`（全书）
+- **注册表**：`src/data/classics/index.ts`（ALL_BOOKS、getBookBySlug、searchClassics）
+- **搜索**：前端内存全文搜索，返回带 `<mark>` 高亮的摘要
+- **UI**：`ClassicsPage` 三步导航（书架→目录→阅读），每段有 AI 解读按钮
+- **AI**：`classics-ai.ts` 提供 `interpretParagraph()`，温度 0.3
 
 ### AI 对话约束
 

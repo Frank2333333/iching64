@@ -8,6 +8,7 @@ import { signJWT, verifyJWT } from '../../server-workers/utils/auth';
 import { getAIDivination, chatWithAI } from '../../server-workers/services/divination-ai';
 import { getBaziFortune, chatWithBazi } from '../../server-workers/services/bazi-ai';
 import { getZiweiFortune, chatWithZiwei } from '../../server-workers/services/ziwei-ai';
+import { interpretParagraph } from '../../server-workers/services/classics-ai';
 
 // ==================== 类型定义 ====================
 
@@ -66,6 +67,7 @@ app.get('/api/health', (c) => {
       aiDivination: aiEnabled,
       baziAI: aiEnabled,
       ziweiAI: aiEnabled,
+      classicsAI: aiEnabled,
     },
   });
 });
@@ -313,6 +315,34 @@ app.post('/api/ziwei/chat', async (c) => {
   } catch (error: unknown) {
     console.error('AI 紫微斗数对话失败:', error);
     const msg = (error as Error).message || 'AI 对话服务暂时不可用';
+    return c.json({ success: false, error: msg }, 500);
+  }
+});
+
+// ==================== 经典文献 API ====================
+
+app.post('/api/classics/ai', async (c) => {
+  try {
+    const { bookTitle, chapterTitle, text, question } = await c.req.json();
+
+    if (!bookTitle || !chapterTitle || !text) {
+      return c.json({ success: false, error: '经典文献信息不完整' }, 400);
+    }
+
+    if (!c.env.OPENAI_API_KEY || c.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return c.json({ success: false, error: 'AI 解读服务未配置' }, 503);
+    }
+
+    console.log(`[API] 经典文献解读请求: ${bookTitle} · ${chapterTitle}`);
+    const aiResult = await interpretParagraph({ bookTitle, chapterTitle, text, question }, c.env);
+
+    return c.json({
+      success: true,
+      data: { interpretation: aiResult, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() },
+    });
+  } catch (error: unknown) {
+    console.error('经典文献解读失败:', error);
+    const msg = (error as Error).message || 'AI 解读服务暂时不可用';
     return c.json({ success: false, error: msg }, 500);
   }
 });
