@@ -60,6 +60,7 @@ npm run lint
 - `/divination` → `Divination`（数字起卦）
 - `/transformer` → `GuaTransformer`（变卦推演）
 - `/bazi` → `BaziDivination`（八字排盘）
+- `/ziwei` → `ZiweiDivination`（紫微斗数）
 - `/admin/feedback` → `FeedbackAdmin`（反馈管理后台）
 
 导航栏组件在 `src/components/MainHeaderTabs.tsx`。
@@ -79,12 +80,14 @@ npm run lint
 - `server-workers/utils/resend-client.ts` — Resend SDK 工厂函数
 - `server-workers/services/divination-ai.ts` — AI 解卦服务（从 divination-ai.cjs 移植）
 - `server-workers/services/bazi-ai.ts` — 八字 AI 服务（从 bazi-ai.cjs 移植）
+- `server-workers/services/ziwei-ai.ts` — 紫微斗数 AI 服务
 - `server-workers/services/skill-content.ts` — **构建时自动生成**，包含玄学技能内容常量
 
 API 路由（与原 Express 完全对应，响应格式 `{ success, data?, error? }`）：
 - `/api/feedback` — 反馈 CRUD，D1 数据库持久化
 - `/api/divination/ai` + `/api/divination/chat` — AI 解卦与追问对话
 - `/api/bazi/ai` + `/api/bazi/chat` — 八字排盘 AI 解读与对话
+- `/api/ziwei/ai` + `/api/ziwei/chat` — 紫微斗数 AI 解读与对话
 - `/api/bazi/profiles` — 八字档案 CRUD（JWT 认证，D1 持久化，同名覆盖用 `INSERT OR REPLACE`）
 - `/api/auth/send-code` + `/api/auth/verify-code` + `/api/auth/me` — 邮箱验证码登录，验证码存 KV（TTL 600s），JWT 认证
 - `/api/health` — 服务健康检查
@@ -123,6 +126,20 @@ D1 表结构见 `migrations/0001_initial.sql`。
 - **UI 组件**：`BaziChartTable`（传统命盘表格）、`BaziSummaryCards`（日主+格局卡片）、`BaziDaYunTimeline`（大运时间轴）
 - **AI 集成**：`BaziInput.chart` 字段将排盘数据传入后端，`bazi-ai.ts` 的 `buildChartPrompt` 直接用排盘数据构建 prompt，AI 无需自行排盘
 - **type 声明**：`lunar-javascript` 无自带类型，使用 `src/types/lunar-javascript.d.ts`
+
+### 紫微斗数核心逻辑
+
+本地排盘引擎 `src/lib/ziwei-calculator.ts`，使用 iztro 库作为计算引擎（与 bazi 用 lunar-javascript 的模式一致）：
+
+- **依赖**：`iztro`（核心排盘：14主星+辅星+煞星安位、命宫身宫、大限、四化、亮度）
+- **常量表**：`src/data/ziwei-constants.ts`（星曜分类展示映射、四化颜色、宫位网格映射、hourToTimeIndex 转换）
+- **城市经纬度**：复用 `src/data/cities.ts`（真太阳时修正）
+- **计算流程**：真太阳时修正 → hour→timeIndex 转换 → `astro.bySolar()` → FunctionalAstrolabe → 转换为纯对象 ZiweiChart → 提取生年四化
+- **数据结构**：`ZiweiChart` 接口包含12宫(Palace[])、生年四化(SiHua)、五行局、命主/身主、真太阳时修正；每宫含主星/辅星/杂耀(Star[])、大限信息
+- **星曜分类**：iztro 的 8 种 type（major/soft/tough/adjective/flower/helper/lucun/tianma），四化直接用 star.mutagen
+- **UI 组件**：`ZiweiPalaceGrid`（4×4传统宫位网格）、`ZiweiSummaryCards`（命宫+五行局+四化卡片）
+- **AI 集成**：`ZiweiInput.chart` 字段注入后端，`ziwei-ai.ts` 的 `buildChartPrompt` 格式化12宫+四化为文本 prompt
+- **序列化边界**：iztro 的 FunctionalAstrolabe 有方法和循环引用，calculator 层一步转换为纯对象
 
 ### AI 对话约束
 

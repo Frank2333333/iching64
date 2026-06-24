@@ -7,6 +7,7 @@ import { cors } from 'hono/cors';
 import { signJWT, verifyJWT } from '../../server-workers/utils/auth';
 import { getAIDivination, chatWithAI } from '../../server-workers/services/divination-ai';
 import { getBaziFortune, chatWithBazi } from '../../server-workers/services/bazi-ai';
+import { getZiweiFortune, chatWithZiwei } from '../../server-workers/services/ziwei-ai';
 
 // ==================== 类型定义 ====================
 
@@ -64,6 +65,7 @@ app.get('/api/health', (c) => {
       feedback: true,
       aiDivination: aiEnabled,
       baziAI: aiEnabled,
+      ziweiAI: aiEnabled,
     },
   });
 });
@@ -249,6 +251,67 @@ app.post('/api/bazi/chat', async (c) => {
     });
   } catch (error: unknown) {
     console.error('AI 八字对话失败:', error);
+    const msg = (error as Error).message || 'AI 对话服务暂时不可用';
+    return c.json({ success: false, error: msg }, 500);
+  }
+});
+
+// ==================== 紫微斗数 API ====================
+
+app.post('/api/ziwei/ai', async (c) => {
+  try {
+    const input = await c.req.json();
+
+    const hasBirthdate = input?.year && input?.month && input?.day && input?.hour != null;
+
+    if (!input || (!hasBirthdate && !input.chart)) {
+      return c.json({ success: false, error: '出生信息不完整，缺少年月日时' }, 400);
+    }
+
+    if (!c.env.OPENAI_API_KEY || c.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return c.json({ success: false, error: 'AI 紫微斗数服务未配置' }, 503);
+    }
+
+    console.log(`[API] 紫微斗数请求`);
+    const aiResult = await getZiweiFortune(input, c.env);
+
+    return c.json({
+      success: true,
+      data: { interpretation: aiResult, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() },
+    });
+  } catch (error: unknown) {
+    console.error('AI 紫微斗数失败:', error);
+    const msg = (error as Error).message || 'AI 紫微斗数服务暂时不可用';
+    return c.json({ success: false, error: msg }, 500);
+  }
+});
+
+app.post('/api/ziwei/chat', async (c) => {
+  try {
+    const { message, ziweiInput, history, initialInterpretationSummary } = await c.req.json();
+
+    if (!message || !message.trim()) {
+      return c.json({ success: false, error: '消息内容不能为空' }, 400);
+    }
+    if (!ziweiInput || (!ziweiInput.year && !ziweiInput.chart)) {
+      return c.json({ success: false, error: '命盘信息不完整' }, 400);
+    }
+    if (!c.env.OPENAI_API_KEY || c.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return c.json({ success: false, error: 'AI 对话服务未配置' }, 503);
+    }
+
+    console.log(`[API] 紫微斗数对话请求`);
+    const aiResult = await chatWithZiwei(
+      { message: message.trim(), ziweiInput, history: history || [], initialInterpretationSummary },
+      c.env,
+    );
+
+    return c.json({
+      success: true,
+      data: { message: aiResult, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() },
+    });
+  } catch (error: unknown) {
+    console.error('AI 紫微斗数对话失败:', error);
     const msg = (error as Error).message || 'AI 对话服务暂时不可用';
     return c.json({ success: false, error: msg }, 500);
   }
