@@ -266,14 +266,17 @@ function SanFangOverlay({ selectedPalaceIndex }: { selectedPalaceIndex: number }
 
 /** 中心信息区 */
 function CenterInfo({ chart }: { chart: ZiweiChart }) {
-  const { timeView, scopePalaceNames } = useZiweiPalace();
+  const { timeView, scopePalaceNames, selectedDaXianIndex, liunianYear } = useZiweiPalace();
   const currentDaXian = chart.currentDaXianIndex >= 0 ? chart.daXians[chart.currentDaXianIndex] : null;
-  const isScopeView = timeView !== 'mingpan' && scopePalaceNames;
+  const selectedDaXian = selectedDaXianIndex >= 0 && selectedDaXianIndex < chart.daXians.length
+    ? chart.daXians[selectedDaXianIndex]
+    : null;
+  const isScopeView = timeView !== 'mingpan';
 
   // 运限命宫位置：scopePalaceNames 中 "命宫" 对应的宫位地支
-  const scopeMingGongBranch = isScopeView
+  const scopeMingGongBranch = scopePalaceNames
     ? (() => {
-        const mingIdx = scopePalaceNames!.indexOf('命宫');
+        const mingIdx = scopePalaceNames.indexOf('命宫');
         if (mingIdx < 0) return null;
         const branchNames = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
         return branchNames[(mingIdx + 2) % 12];
@@ -306,10 +309,18 @@ function CenterInfo({ chart }: { chart: ZiweiChart }) {
             真太阳时修正{chart.solarTimeCorrection.correctionMinutes > 0 ? '+' : ''}{chart.solarTimeCorrection.correctionMinutes}分
           </div>
         )}
-        {/* 运限视角信息 */}
-        {isScopeView && scopeMingGongBranch && (
+        {/* 运限视角信息 — 大限 */}
+        {isScopeView && timeView === 'daxian' && selectedDaXian && (
           <div className={`text-[10px] ${scopeColor} mt-1 pt-1 border-t ${scopeColor}`}>
-            {scopeLabel}命宫：{scopeMingGongBranch}宫
+            {scopeLabel}：{selectedDaXian.palaceName}（{selectedDaXian.startAge}-{selectedDaXian.endAge}岁）· {selectedDaXian.heavenlyStem}{selectedDaXian.earthlyBranch}
+            {scopeMingGongBranch && ` · 命宫${scopeMingGongBranch}`}
+          </div>
+        )}
+        {/* 运限视角信息 — 流年 */}
+        {isScopeView && timeView === 'liunian' && (
+          <div className={`text-[10px] ${scopeColor} mt-1 pt-1 border-t ${scopeColor}`}>
+            {scopeLabel}：{liunianYear}年
+            {scopeMingGongBranch && ` · 命宫${scopeMingGongBranch}`}
           </div>
         )}
         {/* 当前大限信息（本命视角） */}

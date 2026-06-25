@@ -142,9 +142,9 @@ D1 表结构见 `migrations/0001_initial.sql`。
 - **计算流程**：真太阳时修正 → hour→timeIndex 转换 → `astro.bySolar()` → FunctionalAstrolabe → 转换为纯对象 ZiweiChart → 提取生年四化 → 后处理（三方四正索引、空宫/借宫、当前大限、DaXianInfo 列表）→ 计算运限数据(horoscopeData)
 - **数据结构**：`ZiweiChart` 接口包含12宫(Palace[])、生年四化(SiHua)、五行局、命主/身主、真太阳时修正、currentAge、currentDaXianIndex、daXians(DaXianInfo[])、natalYearStemIndex、horoscopeData(HoroscopeData：含大限/流年旋转宫名、天干地支、四化星名、流耀星名)；每宫含主星/辅星/杂耀(Star[])、大限信息、oppositeIndex、sanFangIndices、isEmpty、borrowedFromIndex/borrowedStars、isCurrentDaXian
 - **星曜分类**：iztro 的 8 种 type（major/soft/tough/adjective/flower/helper/lucun/tianma），四化直接用 star.mutagen
-- **交互状态**：`ZiweiPalaceContext.tsx` 管理宫位选中、星曜选中、时间视图（本命/大限/流年）、叠加四化、运限宫名(scopePalaceNames)、运限流耀(scopeHoroscopeStars)
-- **UI 组件**：`ZiweiPalaceGrid`（4×4宫位网格+三方四正SVG叠加+交互选中+运限宫名旋转+流耀星显示+入场动画）、`ZiweiTimeNav`（本命/大限/流年切换+四化叠加+运限宫名/流耀传入Context）、`ZiweiSummaryCards`（命格总览+四化+大限运程+格局概览）、`ZiweiPatternsCard`（格局识别详情卡片）、`ZiweiStarDetailPanel`（星曜详情滑入面板+知识库链接）、`ZiweiPalaceAITrigger`（宫位点击自动触发 AI 分析）、`ZiweiForm`（4步向导：日期→时间+时辰→性别→问题）
-- **AI 集成**：`ZiweiInput.chart` 字段注入后端，`ziwei-ai.ts` 的 `buildChartPrompt` 格式化12宫+四化为文本 prompt；宫位/四化/话题快捷按钮均通过客户端构建 prompt + 现有 chat API 实现
+- **交互状态**：`ZiweiPalaceContext.tsx` 管理宫位选中、星曜选中、时间视图（本命/大限/流年）、叠加四化、运限宫名(scopePalaceNames)、运限流耀(scopeHoroscopeStars)、选中大限索引(selectedDaXianIndex)
+- **UI 组件**：`ZiweiPalaceGrid`（4×4宫位网格+三方四正SVG叠加+交互选中+运限宫名旋转+流耀星显示+入场动画）、`ZiweiTimeNav`（本命/大限/流年切换+大限步进器+流年步进器+四化叠加+运限宫名/流耀传入Context）、`ZiweiSummaryCards`（命格总览+四化+大限运程+格局概览）、`ZiweiPatternsCard`（格局识别详情卡片）、`ZiweiStarDetailPanel`（星曜详情滑入面板+知识库链接）、`ZiweiPalaceAITrigger`（宫位点击自动触发 AI 分析，含运限上下文注入）、`ZiweiForm`（4步向导：日期→时间+时辰→性别→问题）
+- **AI 集成**：`ZiweiInput.chart` 字段注入后端，`ziwei-ai.ts` 的 `buildChartPrompt` 格式化12宫+四化为文本 prompt；宫位/四化/话题快捷按钮均通过客户端构建 prompt + 现有 chat API 实现；大限/流年视图下自动注入运限四化和命宫信息到 AI prompt；运限专用话题按钮（大限总运/事业/感情、流年运势/提醒）
 - **序列化边界**：iztro 的 FunctionalAstrolabe 有方法和循环引用，calculator 层一步转换为纯对象
 - **星曜图鉴**：`/ziwei-knowledge` 路由，ZiweiKnowledge 页面，卡片网格浏览14主星+8吉星+6煞星，点击展开详情
 

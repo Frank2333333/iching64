@@ -46,6 +46,10 @@ interface ZiweiPalaceContextValue {
   /** 运限的流耀星名按宫位索引（null 表示本命视角无流耀） */
   scopeHoroscopeStars: string[][] | null;
   setScopeHoroscopeStars: (stars: string[][] | null) => void;
+
+  /** 当前选中的大限索引（对应 chart.daXians[] 的索引，-1 表示无） */
+  selectedDaXianIndex: number;
+  setSelectedDaXianIndex: (index: number) => void;
 }
 
 const ZiweiPalaceContext = createContext<ZiweiPalaceContextValue | null>(null);
@@ -59,6 +63,7 @@ export function ZiweiPalaceProvider({ children }: { children: ReactNode }) {
   const [overlaySiHua, setOverlaySiHua] = useState<Record<string, string> | null>(null);
   const [scopePalaceNames, setScopePalaceNames] = useState<string[] | null>(null);
   const [scopeHoroscopeStars, setScopeHoroscopeStars] = useState<string[][] | null>(null);
+  const [selectedDaXianIndex, setSelectedDaXianIndex] = useState(-1);
 
   return (
     <ZiweiPalaceContext.Provider value={{
@@ -78,6 +83,8 @@ export function ZiweiPalaceProvider({ children }: { children: ReactNode }) {
       setScopePalaceNames,
       scopeHoroscopeStars,
       setScopeHoroscopeStars,
+      selectedDaXianIndex,
+      setSelectedDaXianIndex,
     }}>
       {children}
     </ZiweiPalaceContext.Provider>

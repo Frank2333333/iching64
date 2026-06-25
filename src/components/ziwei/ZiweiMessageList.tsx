@@ -1,6 +1,7 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { Bot, Loader2, ArrowLeft, User } from 'lucide-react';
 import MarkdownRenderer from '../MarkdownRenderer';
+import { useZiweiPalace } from './ZiweiPalaceContext';
 import type { ZiweiInput, ChatMessage } from '../../lib/ziwei-api';
 import type { ZiweiChart } from '../../lib/ziwei-calculator';
 
@@ -23,7 +24,13 @@ interface ZiweiMessageListProps {
   onTopicClick?: (prompt: string) => void;
 }
 
-const TOPIC_BUTTONS = [
+interface TopicButton {
+  label: string;
+  prompt: string;
+  scope?: 'daxian' | 'liunian';
+}
+
+const TOPIC_BUTTONS: TopicButton[] = [
   { label: '命格', prompt: '请全面分析我的命格特征，包括性格、先天格局、命宫主星组合的整体评价，以及一生的整体运势走向。' },
   { label: '感情', prompt: '请重点分析我的感情运势，包括夫妻宫和桃花星的配置，适合的婚恋对象类型，以及感情中需要注意的问题。' },
   { label: '事业', prompt: '请重点分析我的事业运势，包括官禄宫和事业相关星曜的配置，适合的职业方向，以及事业发展中的关键时期。' },
@@ -45,6 +52,31 @@ export default function ZiweiMessageList({
   onTopicClick,
 }: ZiweiMessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { timeView, selectedDaXianIndex, liunianYear } = useZiweiPalace();
+
+  // 根据运限视角动态生成话题按钮
+  const topicButtons = useMemo(() => {
+    const buttons = [...TOPIC_BUTTONS];
+
+    if (timeView === 'daxian' && chart) {
+      const daXian = selectedDaXianIndex >= 0 && selectedDaXianIndex < chart.daXians.length
+        ? chart.daXians[selectedDaXianIndex]
+        : null;
+      const ageInfo = daXian ? `${daXian.startAge}-${daXian.endAge}岁` : '';
+      buttons.push(
+        { label: '大限总运', prompt: `请分析我当前大限（${ageInfo}）的整体运势走向，包括大限命宫、大限四化对本命各宫的影响，以及这十年的关键转折。`, scope: 'daxian' as const },
+        { label: '大限事业', prompt: `请分析我当前大限（${ageInfo}）的事业运势，包括大限官禄宫的变化、大限四化对事业的影响，以及这十年事业的机遇和挑战。`, scope: 'daxian' as const },
+        { label: '大限感情', prompt: `请分析我当前大限（${ageInfo}）的感情运势，包括大限夫妻宫的变化、大限桃花星的影响，以及这十年感情的关键变化。`, scope: 'daxian' as const },
+      );
+    } else if (timeView === 'liunian') {
+      buttons.push(
+        { label: '流年运势', prompt: `请分析我${liunianYear}年的整体运势，包括流年命宫、流年四化的影响，以及今年的关键月份和注意事项。`, scope: 'liunian' as const },
+        { label: '流年提醒', prompt: `请提醒我${liunianYear}年需要特别注意的事项，包括可能的风险、需要把握的机遇、以及流年四化带来的具体影响。`, scope: 'liunian' as const },
+      );
+    }
+
+    return buttons;
+  }, [timeView, chart, selectedDaXianIndex, liunianYear]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -74,18 +106,20 @@ export default function ZiweiMessageList({
         {/* 话题快捷按钮 */}
         {onTopicClick && !aiLoading && aiInterpretation && (
           <div className="flex flex-wrap gap-1.5">
-            {TOPIC_BUTTONS.map(btn => (
+            {topicButtons.map(btn => (
               <button
                 key={btn.label}
                 onClick={() => onTopicClick(btn.prompt)}
                 disabled={chatLoading}
-                className="text-[11px] px-2.5 py-1 rounded-lg border
-                  border-amber-200/60 dark:border-amber-800/30
-                  text-amber-700 dark:text-amber-400
-                  bg-white/50 dark:bg-neutral-800/50
-                  hover:bg-amber-50 dark:hover:bg-amber-900/20
+                className={`text-[11px] px-2.5 py-1 rounded-lg border
+                  ${'scope' in btn && btn.scope === 'daxian'
+                    ? 'border-purple-200/60 dark:border-purple-800/30 text-purple-700 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-900/10 hover:bg-purple-100/50 dark:hover:bg-purple-900/20'
+                    : 'scope' in btn && btn.scope === 'liunian'
+                      ? 'border-blue-200/60 dark:border-blue-800/30 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-100/50 dark:hover:bg-blue-900/20'
+                      : 'border-amber-200/60 dark:border-amber-800/30 text-amber-700 dark:text-amber-400 bg-white/50 dark:bg-neutral-800/50 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                  }
                   disabled:opacity-40 disabled:cursor-not-allowed
-                  transition-colors"
+                  transition-colors`}
               >
                 {btn.label}
               </button>

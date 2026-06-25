@@ -2,9 +2,10 @@
  * 紫微斗数时间导航 — 本命/大限/流年 视图切换
  *
  * 切换视图时自动计算对应四化叠加层和运限宫名，
- * 通过 Context 传递给宫位网格。
+ * 通过 Context 传递给宫位网格。支持大限步进和流年步进。
  */
 
+import { useEffect } from 'react';
 import { useZiweiPalace, type TimeView } from './ZiweiPalaceContext';
 import {
   buildSiHuaOverlay,
@@ -56,14 +57,14 @@ function SihuaInfoLine({ scopeData, label }: { scopeData: HoroscopePalaceData; l
 }
 
 /** 备用四化信息行（无 horoscopeData 时用本地表） */
-function SihuaInfoLineFallback({ stemIndex, label }: { stemIndex: number; label: string }) {
+function SihuaInfoLineFallback({ stemIndex, label, stemLabel }: { stemIndex: number; label: string; stemLabel?: string }) {
   const overlay = buildSiHuaOverlay(stemIndex);
   const entries = Object.entries(overlay);
   const stemName = TIAN_GAN_NAMES[stemIndex] || '?';
 
   return (
     <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 text-[11px]">
-      <span className="text-gray-500 dark:text-gray-400">{label}·{stemName}年四化：</span>
+      <span className="text-gray-500 dark:text-gray-400">{label}·{stemLabel || stemName}四化：</span>
       {entries.map(([star, type]) => {
         const style = SIHUA_STYLES[type];
         return (
@@ -83,11 +84,24 @@ export default function ZiweiTimeNav({ chart }: ZiweiTimeNavProps) {
   const {
     timeView, setTimeView,
     liunianYear, setLiunianYear,
+    selectedDaXianIndex, setSelectedDaXianIndex,
     setOverlaySiHua,
     setScopePalaceNames, setScopeHoroscopeStars,
   } = useZiweiPalace();
 
   const horoscopeData = chart.horoscopeData;
+
+  // 同步 selectedDaXianIndex 到 chart.currentDaXianIndex（首次加载或 chart 变化时）
+  useEffect(() => {
+    if (chart.currentDaXianIndex >= 0) {
+      setSelectedDaXianIndex(chart.currentDaXianIndex);
+    }
+  }, [chart.currentDaXianIndex, setSelectedDaXianIndex]);
+
+  // 当前选中的大限
+  const selectedDaXian = selectedDaXianIndex >= 0 && selectedDaXianIndex < chart.daXians.length
+    ? chart.daXians[selectedDaXianIndex]
+    : null;
 
   const handleViewChange = (view: TimeView) => {
     setTimeView(view);
@@ -97,51 +111,70 @@ export default function ZiweiTimeNav({ chart }: ZiweiTimeNavProps) {
       setScopePalaceNames(null);
       setScopeHoroscopeStars(null);
     } else if (view === 'daxian') {
-      if (horoscopeData) {
-        const dec = horoscopeData.decadal;
-        setOverlaySiHua(buildOverlayFromMutagen(dec.mutagen));
-        setScopePalaceNames(dec.palaceNames);
-        setScopeHoroscopeStars(dec.horoscopeStars);
-      } else {
-        // 回退到本地 SI_HUA_TABLE
-        const currentDaXian = chart.currentDaXianIndex >= 0
-          ? chart.daXians[chart.currentDaXianIndex]
-          : null;
-        if (currentDaXian) {
-          const stemIdx = TIAN_GAN_NAMES.indexOf(currentDaXian.heavenlyStem as any);
-          setOverlaySiHua(stemIdx >= 0 ? buildSiHuaOverlay(stemIdx) : null);
-        } else {
-          setOverlaySiHua(null);
-        }
-        setScopePalaceNames(null);
-        setScopeHoroscopeStars(null);
-      }
+      applyDaXianOverlay(selectedDaXianIndex);
     } else if (view === 'liunian') {
-      if (horoscopeData) {
-        const year = horoscopeData.yearly;
-        setOverlaySiHua(buildOverlayFromMutagen(year.mutagen));
-        setScopePalaceNames(year.palaceNames);
-        setScopeHoroscopeStars(year.horoscopeStars);
-      } else {
-        const stemIdx = getYearStemIndex(liunianYear);
-        setOverlaySiHua(buildSiHuaOverlay(stemIdx));
-        setScopePalaceNames(null);
-        setScopeHoroscopeStars(null);
-      }
+      applyLiuNianOverlay(liunianYear);
     }
   };
 
+  /** 应用大限叠加层 */
+  const applyDaXianOverlay = (daXianIdx: number) => {
+    const daXian = daXianIdx >= 0 && daXianIdx < chart.daXians.length
+      ? chart.daXians[daXianIdx]
+      : null;
+
+    // 只有当前大限（currentDaXianIndex）才有 horoscopeData
+    const isCurrentDaXian = daXianIdx === chart.currentDaXianIndex;
+
+    if (isCurrentDaXian && horoscopeData) {
+      const dec = horoscopeData.decadal;
+      setOverlaySiHua(buildOverlayFromMutagen(dec.mutagen));
+      setScopePalaceNames(dec.palaceNames);
+      setScopeHoroscopeStars(dec.horoscopeStars);
+    } else if (daXian) {
+      // 非当前大限：用本地四化表
+      const stemIdx = TIAN_GAN_NAMES.indexOf(daXian.heavenlyStem as typeof TIAN_GAN_NAMES[number]);
+      setOverlaySiHua(stemIdx >= 0 ? buildSiHuaOverlay(stemIdx) : null);
+      setScopePalaceNames(null);
+      setScopeHoroscopeStars(null);
+    } else {
+      setOverlaySiHua(null);
+      setScopePalaceNames(null);
+      setScopeHoroscopeStars(null);
+    }
+  };
+
+  /** 应用流年叠加层 */
+  const applyLiuNianOverlay = (year: number) => {
+    if (horoscopeData) {
+      const yearData = horoscopeData.yearly;
+      setOverlaySiHua(buildOverlayFromMutagen(yearData.mutagen));
+      setScopePalaceNames(yearData.palaceNames);
+      setScopeHoroscopeStars(yearData.horoscopeStars);
+    } else {
+      const stemIdx = getYearStemIndex(year);
+      setOverlaySiHua(buildSiHuaOverlay(stemIdx));
+      setScopePalaceNames(null);
+      setScopeHoroscopeStars(null);
+    }
+  };
+
+  /** 大限步进 */
+  const handleDaXianChange = (delta: number) => {
+    const newIdx = selectedDaXianIndex + delta;
+    if (newIdx < 0 || newIdx >= chart.daXians.length) return;
+    setSelectedDaXianIndex(newIdx);
+    applyDaXianOverlay(newIdx);
+  };
+
+  /** 流年步进 */
   const handleYearChange = (delta: number) => {
     const newYear = liunianYear + delta;
     setLiunianYear(newYear);
-    // 流年切换时，horoscopeData 是基于当前日期算的，
-    // 不同年份的四化需要用本地表补充
-    const stemIdx = getYearStemIndex(newYear);
-    setOverlaySiHua(buildSiHuaOverlay(stemIdx));
-    // 宫名旋转暂时保持不变（horoscope 基于当前日期）
+    applyLiuNianOverlay(newYear);
   };
 
-  // 当前大限信息
+  // 当前大限信息（用于标签旁显示）
   const currentDaXian = chart.currentDaXianIndex >= 0
     ? chart.daXians[chart.currentDaXianIndex]
     : null;
@@ -149,7 +182,7 @@ export default function ZiweiTimeNav({ chart }: ZiweiTimeNavProps) {
   return (
     <div className="space-y-2">
       {/* 标签栏 */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 flex-wrap">
         <button
           onClick={() => handleViewChange('mingpan')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
@@ -177,6 +210,40 @@ export default function ZiweiTimeNav({ chart }: ZiweiTimeNavProps) {
           )}
         </button>
 
+        {/* 大限步进器 */}
+        {timeView === 'daxian' && chart.daXians.length > 0 && (
+          <div className="flex items-center gap-1 ml-1">
+            <button
+              onClick={() => handleDaXianChange(-1)}
+              disabled={selectedDaXianIndex <= 0}
+              className="w-6 h-6 rounded text-gray-500 dark:text-gray-400
+                hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors text-sm
+                disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              ‹
+            </button>
+            <span className="text-xs font-medium text-purple-700 dark:text-purple-300 whitespace-nowrap">
+              {selectedDaXian
+                ? `${selectedDaXian.startAge}-${selectedDaXian.endAge}岁`
+                : '--'}
+            </span>
+            <button
+              onClick={() => handleDaXianChange(1)}
+              disabled={selectedDaXianIndex >= chart.daXians.length - 1}
+              className="w-6 h-6 rounded text-gray-500 dark:text-gray-400
+                hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors text-sm
+                disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              ›
+            </button>
+            {selectedDaXian && (
+              <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                {selectedDaXian.heavenlyStem}{selectedDaXian.earthlyBranch}·{selectedDaXian.palaceName}
+              </span>
+            )}
+          </div>
+        )}
+
         <button
           onClick={() => handleViewChange('liunian')}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
@@ -190,7 +257,7 @@ export default function ZiweiTimeNav({ chart }: ZiweiTimeNavProps) {
 
         {/* 流年年份步进器 */}
         {timeView === 'liunian' && (
-          <div className="flex items-center gap-1 ml-2">
+          <div className="flex items-center gap-1 ml-1">
             <button
               onClick={() => handleYearChange(-1)}
               className="w-6 h-6 rounded text-gray-500 dark:text-gray-400
@@ -213,13 +280,14 @@ export default function ZiweiTimeNav({ chart }: ZiweiTimeNavProps) {
       </div>
 
       {/* 四化叠加信息 */}
-      {timeView === 'daxian' && horoscopeData && (
+      {timeView === 'daxian' && selectedDaXianIndex === chart.currentDaXianIndex && horoscopeData && (
         <SihuaInfoLine scopeData={horoscopeData.decadal} label="大限" />
       )}
-      {timeView === 'daxian' && !horoscopeData && currentDaXian && (
+      {timeView === 'daxian' && !(selectedDaXianIndex === chart.currentDaXianIndex && horoscopeData) && selectedDaXian && (
         <SihuaInfoLineFallback
-          stemIndex={TIAN_GAN_NAMES.indexOf(currentDaXian.heavenlyStem as any)}
+          stemIndex={TIAN_GAN_NAMES.indexOf(selectedDaXian.heavenlyStem as typeof TIAN_GAN_NAMES[number])}
           label="大限"
+          stemLabel={`${selectedDaXian.heavenlyStem}${selectedDaXian.earthlyBranch}`}
         />
       )}
       {timeView === 'liunian' && horoscopeData && (
