@@ -7,6 +7,7 @@
  */
 
 import { useZiweiPalace } from './ZiweiPalaceContext';
+import { useNavigate } from 'react-router-dom';
 import { STAR_TYPE_STYLES, SIHUA_STYLES } from '../../data/ziwei-constants';
 import { STAR_DESCRIPTIONS, MINOR_STAR_DESCRIPTIONS } from '../../data/ziwei-star-descriptions';
 import type { Star } from '../../lib/ziwei-calculator';
@@ -19,6 +20,7 @@ interface ZiweiStarDetailPanelProps {
 
 export default function ZiweiStarDetailPanel({ chart }: ZiweiStarDetailPanelProps) {
   const { selectedStar, setSelectedStar } = useZiweiPalace();
+  const navigate = useNavigate();
 
   if (!selectedStar) return null;
 
@@ -170,6 +172,17 @@ export default function ZiweiStarDetailPanel({ chart }: ZiweiStarDetailPanelProp
                 </div>
               ))}
             </div>
+          )}
+
+          {/* 查看完整解读链接 */}
+          {(desc || minorDesc) && (
+            <button
+              onClick={() => { setSelectedStar(null); navigate('/ziwei-knowledge'); }}
+              className="w-full text-center text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200
+                py-2 border-t border-amber-100 dark:border-amber-900/20 transition-colors"
+            >
+              查看完整解读 →
+            </button>
           )}
         </div>
       </div>

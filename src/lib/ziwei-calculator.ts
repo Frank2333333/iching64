@@ -77,6 +77,21 @@ export interface SiHua {
   ji: string;    // 化忌星
 }
 
+/** 运限宫位数据（大限/流年切换时使用） */
+export interface HoroscopePalaceData {
+  palaceNames: string[];         // 旋转后的12宫名称（[0]=该运限的命宫）
+  heavenlyStem: string;          // 运限天干
+  earthlyBranch: string;         // 运限地支
+  mutagen: string[];             // 四化星名 [禄,权,科,忌]
+  horoscopeStars: string[][];    // 流耀星名按宫位索引
+}
+
+/** 运限数据（大限+流年） */
+export interface HoroscopeData {
+  decadal: HoroscopePalaceData;  // 大限
+  yearly: HoroscopePalaceData;   // 流年
+}
+
 /** 真太阳时修正信息 */
 export interface SolarTimeCorrection {
   birthplace: string;
@@ -109,6 +124,7 @@ export interface ZiweiChart {
   currentDaXianIndex: number;        // 当前大限在 daXians 中的索引（-1 表示无）
   daXians: DaXianInfo[];             // 大限列表
   natalYearStemIndex: number;        // 出生年天干索引（0=甲, 1=乙, ..., 9=癸）
+  horoscopeData?: HoroscopeData;     // 运限数据（大限/流年，计算时同步生成）
 }
 
 // ────────────────────────────────────────────
@@ -246,6 +262,46 @@ function extractBirthSiHua(palaces: Palace[]): SiHua {
   return sihua;
 }
 
+/** 从 iztro HoroscopeItem 提取纯对象 */
+function extractHoroscopeItem(item: {
+  index: number;
+  name: string;
+  heavenlyStem: string;
+  earthlyBranch: string;
+  palaceNames: string[];
+  mutagen: string[];
+  stars?: { name: string; type: string; mutagen?: string }[][];
+}): HoroscopePalaceData {
+  return {
+    palaceNames: item.palaceNames as string[],
+    heavenlyStem: item.heavenlyStem as string,
+    earthlyBranch: item.earthlyBranch as string,
+    mutagen: item.mutagen as string[],
+    horoscopeStars: item.stars
+      ? item.stars.map(palaceStars => palaceStars.map(s => s.name as string))
+      : [],
+  };
+}
+
+/** 计算 horoscope 运限数据 */
+function calculateHoroscopeFromAstrolabe(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  astrolabe: any,
+): HoroscopeData | undefined {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const h = astrolabe.horoscope() as any;
+    if (!h) return undefined;
+
+    return {
+      decadal: extractHoroscopeItem(h.decadal),
+      yearly: extractHoroscopeItem(h.yearly),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 // ────────────────────────────────────────────
 // 主函数
 // ────────────────────────────────────────────
@@ -303,6 +359,9 @@ export function calculateZiweiChart(input: ZiweiCalcInput): ZiweiChart {
   // 8. 后处理：三方四正、空宫/借宫、当前大限标记
   enrichPalaces(palaces, currentAge);
 
+  // 9. 计算运限数据（大限/流年）
+  const horoscopeData = calculateHoroscopeFromAstrolabe(astrolabe);
+
   return {
     solarDate: astrolabe.solarDate as string,
     lunarDate: astrolabe.lunarDate as string,
@@ -324,5 +383,6 @@ export function calculateZiweiChart(input: ZiweiCalcInput): ZiweiChart {
     currentDaXianIndex,
     daXians,
     natalYearStemIndex,
+    horoscopeData,
   };
 }

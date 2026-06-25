@@ -222,3 +222,90 @@ export const MINOR_STAR_DESCRIPTIONS: Record<string, { element: string; descript
   '地空': { element: '壬水', description: '主精神空虚，破财之象。与地劫成对。' },
   '地劫': { element: '丙火', description: '主财物劫夺，破耗之象。与地空成对。' },
 };
+
+// ────────────────────────────────────────────
+// 星曜知识库辅助
+// ────────────────────────────────────────────
+
+export type StarCategory = 'major' | 'auspicious' | 'malefic';
+
+export interface StarKnowledgeEntry {
+  name: string;
+  category: StarCategory;
+  element: string;
+  nature: string;
+  keywords: string[];
+  description: string;
+  /** 仅主星有详细领域分析 */
+  domains?: { career: string; relationship: string; wealth: string; health: string };
+  niHaixua?: string;
+}
+
+const MAJOR_STAR_NAMES = ['紫微','天机','太阳','武曲','天同','廉贞','天府','太阴','贪狼','巨门','天相','天梁','七杀','破军'];
+const AUSPICIOUS_NAMES = ['文昌','文曲','左辅','右弼','天魁','天钺','禄存','天马'];
+const MALEFIC_NAMES = ['擎羊','陀罗','火星','铃星','地空','地劫'];
+
+/** 构建星曜知识库条目 */
+function buildStarEntries(): StarKnowledgeEntry[] {
+  const entries: StarKnowledgeEntry[] = [];
+
+  for (const name of MAJOR_STAR_NAMES) {
+    const desc = STAR_DESCRIPTIONS[name];
+    if (!desc) continue;
+    entries.push({
+      name,
+      category: 'major',
+      element: desc.element,
+      nature: desc.nature,
+      keywords: desc.keywords,
+      description: `${desc.element} · ${desc.nature}，${desc.keywords.join('、')}。最佳宫位：${desc.bestPalace}。`,
+      domains: {
+        career: desc.career,
+        relationship: desc.relationship,
+        wealth: desc.wealth,
+        health: desc.health,
+      },
+      niHaixua: desc.niHaixua,
+    });
+  }
+
+  for (const name of AUSPICIOUS_NAMES) {
+    const desc = MINOR_STAR_DESCRIPTIONS[name];
+    if (!desc) continue;
+    entries.push({
+      name,
+      category: 'auspicious',
+      element: desc.element,
+      nature: '吉星',
+      keywords: [name === '禄存' ? '财禄' : name === '天马' ? '迁动' : '助力'],
+      description: desc.description,
+    });
+  }
+
+  for (const name of MALEFIC_NAMES) {
+    const desc = MINOR_STAR_DESCRIPTIONS[name];
+    if (!desc) continue;
+    entries.push({
+      name,
+      category: 'malefic',
+      element: desc.element,
+      nature: '煞星',
+      keywords: [name === '擎羊' || name === '陀罗' ? '刑伤' : name === '火星' || name === '铃星' ? '暴烈' : '空亡'],
+      description: desc.description,
+    });
+  }
+
+  return entries;
+}
+
+export const ALL_STAR_ENTRIES: StarKnowledgeEntry[] = buildStarEntries();
+
+export function getStarByName(name: string): StarKnowledgeEntry | undefined {
+  return ALL_STAR_ENTRIES.find(e => e.name === name);
+}
+
+export const STAR_CATEGORY_LABELS: Record<StarCategory, { label: string; color: string; darkColor: string }> = {
+  major:     { label: '主星', color: 'text-amber-700',   darkColor: 'dark:text-amber-300' },
+  auspicious: { label: '吉星', color: 'text-blue-700',    darkColor: 'dark:text-blue-300' },
+  malefic:   { label: '煞星', color: 'text-red-700',     darkColor: 'dark:text-red-400' },
+};

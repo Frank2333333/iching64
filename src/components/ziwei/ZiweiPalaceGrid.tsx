@@ -67,16 +67,22 @@ function StarDisplay({ star, size = 'normal', overlayMutagen, overlayLabel, onSt
 }
 
 /** 单个宫位格子 */
-function PalaceCell({ palace, isSelected, isSanFang, overlaySiHua, overlayLabel }: {
+function PalaceCell({ palace, isSelected, isSanFang, overlaySiHua, overlayLabel, scopePalaceName, scopeHoroscopeStarNames, animDelay }: {
   palace: Palace;
   isSelected: boolean;
   isSanFang: boolean;
   overlaySiHua: Record<string, string> | null;
   overlayLabel: string;
+  scopePalaceName?: string;             // 运限视角的宫名（如大限/流年下的命宫、财帛等）
+  scopeHoroscopeStarNames?: string[];   // 运限流耀星名列表
+  animDelay?: number;                   // 入场动画延迟（ms）
 }) {
   const { setSelectedPalaceIndex, setSelectedStar, selectedPalaceIndex } = useZiweiPalace();
   const isMing = palace.name === '命宫';
+  const isScopeMing = scopePalaceName === '命宫';
   const isBody = palace.isBodyPalace;
+  // 有运限视角时，主标签用运限宫名；否则用本命宫名
+  const displayName = scopePalaceName || palace.name;
 
   const handleClick = () => {
     setSelectedPalaceIndex(selectedPalaceIndex === palace.index ? null : palace.index);
@@ -86,24 +92,31 @@ function PalaceCell({ palace, isSelected, isSanFang, overlaySiHua, overlayLabel 
     <div
       className={`relative p-1.5 sm:p-2 border border-amber-200/60 dark:border-amber-800/30
         min-h-[100px] sm:min-h-[120px] flex flex-col cursor-pointer
-        transition-all duration-200
-        ${isMing ? 'bg-amber-50/80 dark:bg-amber-900/20' : 'bg-white/50 dark:bg-neutral-800/50'}
+        transition-all duration-200 palace-cell-animate
+        ${(isMing || isScopeMing) ? 'bg-amber-50/80 dark:bg-amber-900/20' : 'bg-white/50 dark:bg-neutral-800/50'}
         ${isSelected ? 'ring-2 ring-blue-500/70 ring-inset' : ''}
         ${isSanFang && !isSelected ? 'ring-1 ring-blue-400/40 ring-inset bg-blue-50/20 dark:bg-blue-900/10' : ''}
         ${palace.isCurrentDaXian ? 'border-l-2 border-l-purple-500/70' : ''}
         hover:bg-amber-50/50 dark:hover:bg-amber-900/10`}
+      style={animDelay !== undefined ? { animationDelay: `${animDelay}ms` } : undefined}
       onClick={handleClick}
     >
       {/* 宫名+天干地支 */}
-      <div className="flex items-center justify-between mb-1">
-        <span className={`text-xs font-bold ${isMing ? 'text-amber-700 dark:text-amber-300' : 'text-amber-800/80 dark:text-amber-400/80'}`}>
-          {palace.name}
+      <div className="flex items-center justify-between mb-0.5">
+        <span className={`text-xs font-bold ${isScopeMing ? 'text-blue-600 dark:text-blue-300' : isMing ? 'text-amber-700 dark:text-amber-300' : 'text-amber-800/80 dark:text-amber-400/80'}`}>
+          {displayName}
           {isBody && <span className="text-[10px] ml-0.5 text-purple-600 dark:text-purple-400">身</span>}
         </span>
         <span className="text-[10px] text-gray-500 dark:text-gray-400">
           {palace.heavenlyStem}{palace.earthlyBranch}
         </span>
       </div>
+      {/* 运限视角下显示本命宫名 */}
+      {scopePalaceName && scopePalaceName !== palace.name && (
+        <div className="text-[9px] text-gray-400 dark:text-gray-500 mb-0.5">
+          本命：{palace.name}
+        </div>
+      )}
 
       {/* 主星 */}
       {palace.majorStars.length > 0 ? (
@@ -152,6 +165,17 @@ function PalaceCell({ palace, isSelected, isSanFang, overlaySiHua, overlayLabel 
         <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 mt-0.5">
           {palace.adjectiveStars.map((s) => (
             <span key={s.name} className="text-[10px] text-gray-400 dark:text-gray-500">{s.name}</span>
+          ))}
+        </div>
+      )}
+
+      {/* 流耀星（大限/流年视图） */}
+      {scopeHoroscopeStarNames && scopeHoroscopeStarNames.length > 0 && (
+        <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 mt-0.5">
+          {scopeHoroscopeStarNames.map((name) => (
+            <span key={name} className="text-[10px] text-blue-500 dark:text-blue-400 font-medium">
+              <span className="text-blue-400/60 dark:text-blue-500/60">流</span>{name}
+            </span>
           ))}
         </div>
       )}
@@ -242,7 +266,24 @@ function SanFangOverlay({ selectedPalaceIndex }: { selectedPalaceIndex: number }
 
 /** 中心信息区 */
 function CenterInfo({ chart }: { chart: ZiweiChart }) {
+  const { timeView, scopePalaceNames } = useZiweiPalace();
   const currentDaXian = chart.currentDaXianIndex >= 0 ? chart.daXians[chart.currentDaXianIndex] : null;
+  const isScopeView = timeView !== 'mingpan' && scopePalaceNames;
+
+  // 运限命宫位置：scopePalaceNames 中 "命宫" 对应的宫位地支
+  const scopeMingGongBranch = isScopeView
+    ? (() => {
+        const mingIdx = scopePalaceNames!.indexOf('命宫');
+        if (mingIdx < 0) return null;
+        const branchNames = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+        return branchNames[(mingIdx + 2) % 12];
+      })()
+    : null;
+
+  const scopeLabel = timeView === 'daxian' ? '大限' : timeView === 'liunian' ? '流年' : '';
+  const scopeColor = timeView === 'daxian'
+    ? 'text-purple-600 dark:text-purple-400 border-purple-200/40 dark:border-purple-800/30'
+    : 'text-blue-600 dark:text-blue-400 border-blue-200/40 dark:border-blue-800/30';
 
   return (
     <div className="p-2 sm:p-3 flex flex-col items-center justify-center text-center
@@ -265,8 +306,14 @@ function CenterInfo({ chart }: { chart: ZiweiChart }) {
             真太阳时修正{chart.solarTimeCorrection.correctionMinutes > 0 ? '+' : ''}{chart.solarTimeCorrection.correctionMinutes}分
           </div>
         )}
-        {/* 当前大限信息 */}
-        {currentDaXian && (
+        {/* 运限视角信息 */}
+        {isScopeView && scopeMingGongBranch && (
+          <div className={`text-[10px] ${scopeColor} mt-1 pt-1 border-t ${scopeColor}`}>
+            {scopeLabel}命宫：{scopeMingGongBranch}宫
+          </div>
+        )}
+        {/* 当前大限信息（本命视角） */}
+        {!isScopeView && currentDaXian && (
           <div className="text-[10px] text-purple-600 dark:text-purple-400 mt-1 pt-1 border-t border-purple-200/40 dark:border-purple-800/30">
             当前大限：{currentDaXian.palaceName}（{currentDaXian.startAge}-{currentDaXian.endAge}岁）
           </div>
@@ -277,7 +324,14 @@ function CenterInfo({ chart }: { chart: ZiweiChart }) {
 }
 
 export default function ZiweiPalaceGrid({ chart }: ZiweiPalaceGridProps) {
-  const { selectedPalaceIndex, overlaySiHua, timeView } = useZiweiPalace();
+  const { selectedPalaceIndex, overlaySiHua, timeView, scopePalaceNames, scopeHoroscopeStars } = useZiweiPalace();
+
+  // 宫格入场动画延迟：巳→午→...→辰，每宫递增 40ms
+  const STAGGER_ORDER = [3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2]; // 巳→辰
+  const animDelayMap = new Map<number, number>();
+  STAGGER_ORDER.forEach((palaceIdx, step) => {
+    animDelayMap.set(palaceIdx, step * 40);
+  });
 
   // 叠加四化标签前缀
   const overlayLabel = timeView === 'daxian' ? '限' : timeView === 'liunian' ? '年' : '';
@@ -332,6 +386,9 @@ export default function ZiweiPalaceGrid({ chart }: ZiweiPalaceGridProps) {
                   isSanFang={sanFangSet.has(palace.index) && selectedPalaceIndex !== null}
                   overlaySiHua={overlaySiHua}
                   overlayLabel={overlayLabel}
+                  scopePalaceName={scopePalaceNames?.[palace.index]}
+                  scopeHoroscopeStarNames={scopeHoroscopeStars?.[palace.index]}
+                  animDelay={animDelayMap.get(palace.index)}
                 />
               );
             })

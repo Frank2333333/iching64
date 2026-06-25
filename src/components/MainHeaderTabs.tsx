@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Grid3X3, Sparkles, Calculator, HelpCircle, Star, Menu, X, Crown, BookOpen } from 'lucide-react';
+import { Grid3X3, Sparkles, Calculator, HelpCircle, Star, Menu, X, Crown, BookOpen, Flame } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
 interface MainHeaderTabsProps {
@@ -39,6 +39,12 @@ const navItems: NavItem[] = [
     label: '经典查阅',
     icon: <BookOpen className="h-4 w-4" />,
     match: (pathname) => pathname === '/classics',
+  },
+  {
+    to: '/ziwei-knowledge',
+    label: '星曜图鉴',
+    icon: <Flame className="h-4 w-4" />,
+    match: (pathname) => pathname === '/ziwei-knowledge',
   },
   {
     to: '/transformer',
