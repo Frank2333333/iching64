@@ -1,5 +1,11 @@
 import type { ZiweiChart, Palace, Star } from '../../lib/ziwei-calculator';
-import { PALACE_GRID_MAP, STAR_TYPE_STYLES, SIHUA_STYLES } from '../../data/ziwei-constants';
+import {
+  PALACE_GRID_MAP,
+  PALACE_SVG_POS,
+  STAR_TYPE_STYLES,
+  SIHUA_STYLES,
+} from '../../data/ziwei-constants';
+import { useZiweiPalace } from './ZiweiPalaceContext';
 
 interface ZiweiPalaceGridProps {
   chart: ZiweiChart;
@@ -16,13 +22,36 @@ function SihuaBadge({ mutagen }: { mutagen: string }) {
   );
 }
 
+/** 叠加四化徽章（大限/流年四化） */
+function OverlaySihuaBadge({ mutagen, label }: { mutagen: string; label: string }) {
+  const style = SIHUA_STYLES[mutagen];
+  if (!style) return null;
+  return (
+    <span className={`text-[9px] font-bold border border-dashed rounded px-0.5
+      ${style.light} dark:${style.dark}
+      border-current opacity-80`}>
+      {label}{mutagen}
+    </span>
+  );
+}
+
 /** 星曜显示 */
-function StarDisplay({ star, size = 'normal' }: { star: Star; size?: 'normal' | 'small' }) {
+function StarDisplay({ star, size = 'normal', overlayMutagen, overlayLabel, onStarClick }: {
+  star: Star;
+  size?: 'normal' | 'small';
+  overlayMutagen?: string;
+  overlayLabel?: string;
+  onStarClick?: () => void;
+}) {
   const typeStyle = STAR_TYPE_STYLES[star.type];
   const isLarge = size === 'normal';
 
   return (
-    <span className={`inline-flex items-center gap-0.5 ${isLarge ? 'text-sm font-bold' : 'text-[11px]'}`}>
+    <span
+      className={`inline-flex items-center gap-0.5 ${isLarge ? 'text-sm font-bold' : 'text-[11px]'}
+        ${onStarClick ? 'cursor-pointer hover:opacity-70 transition-opacity' : ''}`}
+      onClick={onStarClick ? (e) => { e.stopPropagation(); onStarClick(); } : undefined}
+    >
       <span className={typeStyle.light + ' dark:' + typeStyle.dark}>
         {star.name}
       </span>
@@ -30,19 +59,41 @@ function StarDisplay({ star, size = 'normal' }: { star: Star; size?: 'normal' | 
         <span className="text-[9px] text-gray-400 dark:text-gray-500">{star.brightness}</span>
       )}
       {star.mutagen && <SihuaBadge mutagen={star.mutagen} />}
+      {overlayMutagen && overlayLabel && (
+        <OverlaySihuaBadge mutagen={overlayMutagen} label={overlayLabel} />
+      )}
     </span>
   );
 }
 
 /** 单个宫位格子 */
-function PalaceCell({ palace }: { palace: Palace }) {
+function PalaceCell({ palace, isSelected, isSanFang, overlaySiHua, overlayLabel }: {
+  palace: Palace;
+  isSelected: boolean;
+  isSanFang: boolean;
+  overlaySiHua: Record<string, string> | null;
+  overlayLabel: string;
+}) {
+  const { setSelectedPalaceIndex, setSelectedStar, selectedPalaceIndex } = useZiweiPalace();
   const isMing = palace.name === '命宫';
   const isBody = palace.isBodyPalace;
 
+  const handleClick = () => {
+    setSelectedPalaceIndex(selectedPalaceIndex === palace.index ? null : palace.index);
+  };
+
   return (
-    <div className={`relative p-1.5 sm:p-2 border border-amber-200/60 dark:border-amber-800/30
-      ${isMing ? 'bg-amber-50/80 dark:bg-amber-900/20' : 'bg-white/50 dark:bg-neutral-800/50'}
-      min-h-[100px] sm:min-h-[120px] flex flex-col`}>
+    <div
+      className={`relative p-1.5 sm:p-2 border border-amber-200/60 dark:border-amber-800/30
+        min-h-[100px] sm:min-h-[120px] flex flex-col cursor-pointer
+        transition-all duration-200
+        ${isMing ? 'bg-amber-50/80 dark:bg-amber-900/20' : 'bg-white/50 dark:bg-neutral-800/50'}
+        ${isSelected ? 'ring-2 ring-blue-500/70 ring-inset' : ''}
+        ${isSanFang && !isSelected ? 'ring-1 ring-blue-400/40 ring-inset bg-blue-50/20 dark:bg-blue-900/10' : ''}
+        ${palace.isCurrentDaXian ? 'border-l-2 border-l-purple-500/70' : ''}
+        hover:bg-amber-50/50 dark:hover:bg-amber-900/10`}
+      onClick={handleClick}
+    >
       {/* 宫名+天干地支 */}
       <div className="flex items-center justify-between mb-1">
         <span className={`text-xs font-bold ${isMing ? 'text-amber-700 dark:text-amber-300' : 'text-amber-800/80 dark:text-amber-400/80'}`}>
@@ -55,22 +106,50 @@ function PalaceCell({ palace }: { palace: Palace }) {
       </div>
 
       {/* 主星 */}
-      {palace.majorStars.length > 0 && (
+      {palace.majorStars.length > 0 ? (
         <div className="flex flex-wrap gap-x-1.5 gap-y-0.5">
-          {palace.majorStars.map((s) => <StarDisplay key={s.name} star={s} size="normal" />)}
+          {palace.majorStars.map((s) => (
+            <StarDisplay
+              key={s.name}
+              star={s}
+              size="normal"
+              overlayMutagen={overlaySiHua?.[s.name]}
+              overlayLabel={overlayLabel}
+              onStarClick={() => setSelectedStar({ name: s.name, palaceIndex: palace.index })}
+            />
+          ))}
+        </div>
+      ) : (
+        /* 空宫标注 */
+        <div className="flex flex-col">
+          <span className="text-[11px] italic text-gray-400 dark:text-gray-500">空宫</span>
+          {palace.borrowedStars && palace.borrowedStars.length > 0 && (
+            <span className="text-[9px] text-gray-400 dark:text-gray-500">
+              借{palace.borrowedStars.join('·')}
+            </span>
+          )}
         </div>
       )}
 
       {/* 辅星 */}
       {palace.minorStars.length > 0 && (
         <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 mt-0.5">
-          {palace.minorStars.map((s) => <StarDisplay key={s.name} star={s} size="small" />)}
+          {palace.minorStars.map((s) => (
+            <StarDisplay
+              key={s.name}
+              star={s}
+              size="small"
+              overlayMutagen={overlaySiHua?.[s.name]}
+              overlayLabel={overlayLabel}
+              onStarClick={() => setSelectedStar({ name: s.name, palaceIndex: palace.index })}
+            />
+          ))}
         </div>
       )}
 
       {/* 杂耀 */}
       {palace.adjectiveStars.length > 0 && (
-        <div className="flex flex-wrap gap-x-1 gap-y-0.5 mt-0.5">
+        <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 mt-0.5">
           {palace.adjectiveStars.map((s) => (
             <span key={s.name} className="text-[10px] text-gray-400 dark:text-gray-500">{s.name}</span>
           ))}
@@ -81,7 +160,7 @@ function PalaceCell({ palace }: { palace: Palace }) {
       <div className="mt-auto pt-0.5 flex items-center justify-between">
         <span className="text-[9px] text-gray-400 dark:text-gray-600">{palace.changsheng12}</span>
         {palace.decadal && (
-          <span className="text-[9px] text-blue-500/70 dark:text-blue-400/50">
+          <span className={`text-[9px] ${palace.isCurrentDaXian ? 'text-purple-500 dark:text-purple-400 font-bold' : 'text-blue-500/70 dark:text-blue-400/50'}`}>
             {palace.decadal.range[0]}-{palace.decadal.range[1]}
           </span>
         )}
@@ -90,8 +169,81 @@ function PalaceCell({ palace }: { palace: Palace }) {
   );
 }
 
+/** 三方四正 SVG 连线叠加层 */
+function SanFangOverlay({ selectedPalaceIndex }: { selectedPalaceIndex: number }) {
+  const pos = PALACE_SVG_POS[selectedPalaceIndex];
+  if (!pos) return null;
+
+  // 三方四正：己宫、对宫、三合1、三合2
+  const oppositeIdx = (selectedPalaceIndex + 6) % 12;
+  const sanHe1Idx = (selectedPalaceIndex + 4) % 12;
+  const sanHe2Idx = (selectedPalaceIndex + 8) % 12;
+
+  const oppositePos = PALACE_SVG_POS[oppositeIdx];
+  const sanHe1Pos = PALACE_SVG_POS[sanHe1Idx];
+  const sanHe2Pos = PALACE_SVG_POS[sanHe2Idx];
+
+  if (!oppositePos || !sanHe1Pos || !sanHe2Pos) return null;
+
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none transition-opacity duration-300"
+      style={{ zIndex: 10 }}
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
+      {/* 对宫连线（穿过中心） */}
+      <line
+        x1={pos[0]} y1={pos[1]} x2={oppositePos[0]} y2={oppositePos[1]}
+        stroke="rgba(59,130,246,0.45)" strokeWidth="0.5"
+        strokeDasharray="2,1.5"
+      />
+
+      {/* 三合三角形 */}
+      <line
+        x1={pos[0]} y1={pos[1]} x2={sanHe1Pos[0]} y2={sanHe1Pos[1]}
+        stroke="rgba(59,130,246,0.45)" strokeWidth="0.5"
+        strokeDasharray="2,1.5"
+      />
+      <line
+        x1={pos[0]} y1={pos[1]} x2={sanHe2Pos[0]} y2={sanHe2Pos[1]}
+        stroke="rgba(59,130,246,0.45)" strokeWidth="0.5"
+        strokeDasharray="2,1.5"
+      />
+      <line
+        x1={sanHe1Pos[0]} y1={sanHe1Pos[1]} x2={sanHe2Pos[0]} y2={sanHe2Pos[1]}
+        stroke="rgba(59,130,246,0.45)" strokeWidth="0.5"
+        strokeDasharray="2,1.5"
+      />
+
+      {/* 对宫连接线 */}
+      <line
+        x1={oppositePos[0]} y1={oppositePos[1]} x2={sanHe1Pos[0]} y2={sanHe1Pos[1]}
+        stroke="rgba(59,130,246,0.3)" strokeWidth="0.4"
+        strokeDasharray="1.5,1.5"
+      />
+      <line
+        x1={oppositePos[0]} y1={oppositePos[1]} x2={sanHe2Pos[0]} y2={sanHe2Pos[1]}
+        stroke="rgba(59,130,246,0.3)" strokeWidth="0.4"
+        strokeDasharray="1.5,1.5"
+      />
+
+      {/* 宫位中心圆点 */}
+      {[pos, oppositePos, sanHe1Pos, sanHe2Pos].map((p, i) => (
+        <circle
+          key={i}
+          cx={p[0]} cy={p[1]} r="1.2"
+          fill={i === 0 ? 'rgba(59,130,246,0.7)' : 'rgba(59,130,246,0.5)'}
+        />
+      ))}
+    </svg>
+  );
+}
+
 /** 中心信息区 */
 function CenterInfo({ chart }: { chart: ZiweiChart }) {
+  const currentDaXian = chart.currentDaXianIndex >= 0 ? chart.daXians[chart.currentDaXianIndex] : null;
+
   return (
     <div className="p-2 sm:p-3 flex flex-col items-center justify-center text-center
       bg-amber-50/60 dark:bg-neutral-900/60 border border-amber-200/40 dark:border-amber-800/20
@@ -113,14 +265,39 @@ function CenterInfo({ chart }: { chart: ZiweiChart }) {
             真太阳时修正{chart.solarTimeCorrection.correctionMinutes > 0 ? '+' : ''}{chart.solarTimeCorrection.correctionMinutes}分
           </div>
         )}
+        {/* 当前大限信息 */}
+        {currentDaXian && (
+          <div className="text-[10px] text-purple-600 dark:text-purple-400 mt-1 pt-1 border-t border-purple-200/40 dark:border-purple-800/30">
+            当前大限：{currentDaXian.palaceName}（{currentDaXian.startAge}-{currentDaXian.endAge}岁）
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 export default function ZiweiPalaceGrid({ chart }: ZiweiPalaceGridProps) {
+  const { selectedPalaceIndex, overlaySiHua, timeView } = useZiweiPalace();
+
+  // 叠加四化标签前缀
+  const overlayLabel = timeView === 'daxian' ? '限' : timeView === 'liunian' ? '年' : '';
+
+  // 计算 三方四正 高亮宫位集合
+  const sanFangSet = new Set<number>();
+  if (selectedPalaceIndex !== null) {
+    const [self, opposite, sanHe1, sanHe2] = [
+      selectedPalaceIndex,
+      (selectedPalaceIndex + 6) % 12,
+      (selectedPalaceIndex + 4) % 12,
+      (selectedPalaceIndex + 8) % 12,
+    ];
+    sanFangSet.add(self);
+    sanFangSet.add(opposite);
+    sanFangSet.add(sanHe1);
+    sanFangSet.add(sanHe2);
+  }
+
   // 构建 4×4 网格
-  // grid[row][col] = palace | 'center' | null
   const grid: (Palace | 'center' | null)[][] = Array.from({ length: 4 }, () => Array(4).fill(null));
 
   // 放置12宫
@@ -136,21 +313,40 @@ export default function ZiweiPalaceGrid({ chart }: ZiweiPalaceGridProps) {
     <div className="w-full overflow-x-auto">
       <div className="min-w-[480px] sm:min-w-[560px]">
         <div className="grid grid-cols-4 gap-0 border border-amber-300/50 dark:border-amber-700/40
-          rounded-lg overflow-hidden bg-amber-50/30 dark:bg-neutral-900/30">
+          rounded-lg overflow-hidden bg-amber-50/30 dark:bg-neutral-900/30 relative">
           {grid.map((row, ri) =>
             row.map((cell, ci) => {
               if (cell === 'center') {
-                // 中心信息区只在 (1,1) 渲染，占 2×2
                 if (ri === 1 && ci === 1) {
                   return <CenterInfo key={`${ri}-${ci}`} chart={chart} />;
                 }
-                return null; // (1,2), (2,1), (2,2) 被 col-span-2 row-span-2 覆盖
+                return null;
               }
               if (cell === null) return null;
-              return <PalaceCell key={`${ri}-${ci}`} palace={cell} />;
+              const palace = cell as Palace;
+              return (
+                <PalaceCell
+                  key={`${ri}-${ci}`}
+                  palace={palace}
+                  isSelected={selectedPalaceIndex === palace.index}
+                  isSanFang={sanFangSet.has(palace.index) && selectedPalaceIndex !== null}
+                  overlaySiHua={overlaySiHua}
+                  overlayLabel={overlayLabel}
+                />
+              );
             })
           )}
+
+          {/* 三方四正 SVG 叠加层 */}
+          {selectedPalaceIndex !== null && (
+            <SanFangOverlay selectedPalaceIndex={selectedPalaceIndex} />
+          )}
         </div>
+      </div>
+
+      {/* 操作提示 */}
+      <div className="text-center text-[11px] text-gray-400 dark:text-gray-500 mt-2">
+        点击宫位查看三方四正 · 点击星曜查看详情
       </div>
     </div>
   );

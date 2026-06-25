@@ -134,13 +134,16 @@ D1 表结构见 `migrations/0001_initial.sql`。
 本地排盘引擎 `src/lib/ziwei-calculator.ts`，使用 iztro 库作为计算引擎（与 bazi 用 lunar-javascript 的模式一致）：
 
 - **依赖**：`iztro`（核心排盘：14主星+辅星+煞星安位、命宫身宫、大限、四化、亮度）
-- **常量表**：`src/data/ziwei-constants.ts`（星曜分类展示映射、四化颜色、宫位网格映射、hourToTimeIndex 转换）
+- **常量表**：`src/data/ziwei-constants.ts`（星曜分类展示映射、四化颜色、宫位网格映射、hourToTimeIndex 转换、SI_HUA_TABLE 十天干四化表、PALACE_SVG_POS 三方四正 SVG 坐标、PALACE_ROLES 宫位领域映射）
+- **星曜描述**：`src/data/ziwei-star-descriptions.ts`（14 主星五行/性质/关键词/倪海厦解读/事业感情财运健康分析，辅星简述）
+- **格局检测**：`src/lib/ziwei-patterns.ts`（27 种格局检测器，含君臣庆会/紫府同宫/火贪格/杀破狼等，按级别 excellent/good/neutral/caution 分级）
 - **城市经纬度**：复用 `src/data/cities.ts`（真太阳时修正）
-- **计算流程**：真太阳时修正 → hour→timeIndex 转换 → `astro.bySolar()` → FunctionalAstrolabe → 转换为纯对象 ZiweiChart → 提取生年四化
-- **数据结构**：`ZiweiChart` 接口包含12宫(Palace[])、生年四化(SiHua)、五行局、命主/身主、真太阳时修正；每宫含主星/辅星/杂耀(Star[])、大限信息
+- **计算流程**：真太阳时修正 → hour→timeIndex 转换 → `astro.bySolar()` → FunctionalAstrolabe → 转换为纯对象 ZiweiChart → 提取生年四化 → 后处理（三方四正索引、空宫/借宫、当前大限、DaXianInfo 列表）
+- **数据结构**：`ZiweiChart` 接口包含12宫(Palace[])、生年四化(SiHua)、五行局、命主/身主、真太阳时修正、currentAge、currentDaXianIndex、daXians(DaXianInfo[])、natalYearStemIndex；每宫含主星/辅星/杂耀(Star[])、大限信息、oppositeIndex、sanFangIndices、isEmpty、borrowedFromIndex/borrowedStars、isCurrentDaXian
 - **星曜分类**：iztro 的 8 种 type（major/soft/tough/adjective/flower/helper/lucun/tianma），四化直接用 star.mutagen
-- **UI 组件**：`ZiweiPalaceGrid`（4×4传统宫位网格）、`ZiweiSummaryCards`（命宫+五行局+四化卡片）
-- **AI 集成**：`ZiweiInput.chart` 字段注入后端，`ziwei-ai.ts` 的 `buildChartPrompt` 格式化12宫+四化为文本 prompt
+- **交互状态**：`ZiweiPalaceContext.tsx` 管理宫位选中、星曜选中、时间视图（本命/大限/流年）、叠加四化
+- **UI 组件**：`ZiweiPalaceGrid`（4×4宫位网格+三方四正SVG叠加+交互选中）、`ZiweiTimeNav`（本命/大限/流年切换+四化叠加）、`ZiweiSummaryCards`（命格总览+四化+大限运程+格局概览）、`ZiweiPatternsCard`（格局识别详情卡片）、`ZiweiStarDetailPanel`（星曜详情滑入面板）、`ZiweiPalaceAITrigger`（宫位点击自动触发 AI 分析）
+- **AI 集成**：`ZiweiInput.chart` 字段注入后端，`ziwei-ai.ts` 的 `buildChartPrompt` 格式化12宫+四化为文本 prompt；宫位/四化/话题快捷按钮均通过客户端构建 prompt + 现有 chat API 实现
 - **序列化边界**：iztro 的 FunctionalAstrolabe 有方法和循环引用，calculator 层一步转换为纯对象
 
 ### 结构化经典文献

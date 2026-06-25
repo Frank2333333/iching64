@@ -1,12 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Compass } from 'lucide-react';
 import MainHeaderTabs from '../components/MainHeaderTabs';
 import ZiweiForm from '../components/ziwei/ZiweiForm';
 import ZiweiPalaceGrid from '../components/ziwei/ZiweiPalaceGrid';
 import ZiweiSummaryCards from '../components/ziwei/ZiweiSummaryCards';
+import ZiweiPatternsCard from '../components/ziwei/ZiweiPatternsCard';
 import ZiweiMessageList from '../components/ziwei/ZiweiMessageList';
 import ZiweiChatInput from '../components/ziwei/ZiweiChatInput';
+import ZiweiTimeNav from '../components/ziwei/ZiweiTimeNav';
+import ZiweiStarDetailPanel from '../components/ziwei/ZiweiStarDetailPanel';
+import ZiweiPalaceAITrigger from '../components/ziwei/ZiweiPalaceAITrigger';
+import { ZiweiPalaceProvider } from '../components/ziwei/ZiweiPalaceContext';
 import { calculateZiweiChart, type ZiweiChart } from '../lib/ziwei-calculator';
 import {
   ziweiAIFortune,
@@ -187,6 +192,46 @@ export default function ZiweiDivination() {
     }
   };
 
+  // 宫位 AI 分析触发
+  const handlePalaceAnalyze = useCallback(async (prompt: string) => {
+    if (!lastInput || chatLoading) return;
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: prompt,
+      timestamp: Date.now(),
+    };
+
+    const newMessages = [...chatMessages, userMessage];
+    setChatMessages(newMessages);
+    setChatLoading(true);
+    setChatError(null);
+
+    try {
+      const response = await ziweiChat({
+        message: prompt,
+        ziweiInput: lastInput,
+        history: chatMessages.slice(-8),
+        initialInterpretationSummary: chatContextSummary?.initialInterpretationSummary,
+      });
+
+      if (response.success && response.data) {
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: response.data.message,
+          timestamp: response.data.timestamp,
+        };
+        setChatMessages([...newMessages, assistantMessage]);
+      } else {
+        setChatError(response.error || '宫位分析失败');
+      }
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : '请求失败');
+    } finally {
+      setChatLoading(false);
+    }
+  }, [lastInput, chatLoading, chatMessages, chatContextSummary]);
+
   return (
     <div className="h-dvh flex flex-col overflow-hidden bg-gradient-to-br from-[#FFF8F3] via-[#FFFDFC] to-[#F7EFE7]
       dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950
@@ -233,12 +278,14 @@ export default function ZiweiDivination() {
         )}
 
         {step === 'result' && result && (
-          <>
+          <ZiweiPalaceProvider>
             <div className="flex-1 overflow-y-auto">
               {chart && (
                 <div className="space-y-4 px-4 pt-4 pb-2 max-w-3xl mx-auto">
+                  <ZiweiTimeNav chart={chart} />
                   <ZiweiPalaceGrid chart={chart} />
                   <ZiweiSummaryCards chart={chart} />
+                  <ZiweiPatternsCard chart={chart} />
                 </div>
               )}
               <ZiweiMessageList
@@ -251,6 +298,7 @@ export default function ZiweiDivination() {
                 chatLoading={chatLoading}
                 chatError={chatError}
                 onBackToInput={handleBackToInput}
+                onTopicClick={handlePalaceAnalyze}
               />
             </div>
             <ZiweiChatInput
@@ -261,7 +309,9 @@ export default function ZiweiDivination() {
               onSend={handleSendChatMessage}
               onKeyDown={handleChatKeyDown}
             />
-          </>
+            {chart && <ZiweiStarDetailPanel chart={chart} />}
+            {chart && <ZiweiPalaceAITrigger chart={chart} onPalaceAnalyze={handlePalaceAnalyze} disabled={chatLoading} />}
+          </ZiweiPalaceProvider>
         )}
       </main>
     </div>

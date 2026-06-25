@@ -35,6 +35,16 @@ export interface Star {
   mutagen?: string;     // 禄/权/科/忌
 }
 
+/** 大限信息（从宫位大限数据中提取） */
+export interface DaXianInfo {
+  startAge: number;
+  endAge: number;
+  palaceIndex: number;      // 对应 palaces[] 中的索引
+  palaceName: string;
+  heavenlyStem: string;
+  earthlyBranch: string;
+}
+
 /** 单个宫位 */
 export interface Palace {
   index: number;            // 0-11，从寅宫开始
@@ -51,6 +61,12 @@ export interface Palace {
     heavenlyStem: string;
     earthlyBranch: string;
   };
+  oppositeIndex: number;          // 对宫 (index + 6) % 12
+  sanFangIndices: number[];       // 三方四正 [self, opposite, (self+4)%12, (self+8)%12]
+  isEmpty: boolean;               // 空宫（无主星）
+  borrowedFromIndex?: number;     // 借宫来源（对宫 index，当空宫时）
+  borrowedStars?: string[];       // 借到的对宫主星名
+  isCurrentDaXian: boolean;       // 是否为当前大限宫位
 }
 
 /** 生年四化 */
@@ -89,6 +105,10 @@ export interface ZiweiChart {
   palaces: Palace[];        // 12宫，从寅(0)开始
   birthSiHua: SiHua;        // 生年四化
   solarTimeCorrection?: SolarTimeCorrection;
+  currentAge: number;                // 当前年龄
+  currentDaXianIndex: number;        // 当前大限在 daXians 中的索引（-1 表示无）
+  daXians: DaXianInfo[];             // 大限列表
+  natalYearStemIndex: number;        // 出生年天干索引（0=甲, 1=乙, ..., 9=癸）
 }
 
 // ────────────────────────────────────────────
@@ -153,8 +173,8 @@ function transformStar(s: { name: string; type: string; brightness?: string; mut
   };
 }
 
-/** 转换 iztro 宫位为纯对象 */
-function transformPalace(p: {
+/** 转换 iztro 宫位为纯对象（不含三方四正等后处理字段） */
+function transformPalaceRaw(p: {
   index: number;
   name: string;
   isBodyPalace: boolean;
@@ -165,7 +185,7 @@ function transformPalace(p: {
   adjectiveStars: { name: string; type: string; brightness?: string; mutagen?: string }[];
   changsheng12: string;
   decadal?: { range: [number, number]; heavenlyStem: string; earthlyBranch: string };
-}): Palace {
+}): Omit<Palace, 'oppositeIndex' | 'sanFangIndices' | 'isEmpty' | 'borrowedFromIndex' | 'borrowedStars' | 'isCurrentDaXian'> {
   return {
     index: p.index,
     name: p.name as string,
@@ -178,6 +198,38 @@ function transformPalace(p: {
     changsheng12: p.changsheng12 as string,
     decadal: p.decadal ?? undefined,
   };
+}
+
+/** 后处理：为宫位添加三方四正、空宫/借宫、当前大限等字段 */
+function enrichPalaces(palaces: Palace[], currentAge: number): void {
+  // 找出当前大限对应的宫位索引
+  let currentDaXianPalaceIndex = -1;
+  for (const p of palaces) {
+    if (p.decadal && currentAge >= p.decadal.range[0] && currentAge <= p.decadal.range[1]) {
+      currentDaXianPalaceIndex = p.index;
+      break;
+    }
+  }
+
+  for (const p of palaces) {
+    const oppositeIndex = (p.index + 6) % 12;
+    const sanHe1 = (p.index + 4) % 12;
+    const sanHe2 = (p.index + 8) % 12;
+
+    p.oppositeIndex = oppositeIndex;
+    p.sanFangIndices = [p.index, oppositeIndex, sanHe1, sanHe2];
+    p.isEmpty = p.majorStars.length === 0;
+    p.isCurrentDaXian = p.index === currentDaXianPalaceIndex;
+
+    // 空宫借对宫主星
+    if (p.isEmpty) {
+      const oppositePalace = palaces[oppositeIndex];
+      if (oppositePalace && oppositePalace.majorStars.length > 0) {
+        p.borrowedFromIndex = oppositeIndex;
+        p.borrowedStars = oppositePalace.majorStars.map(s => s.name);
+      }
+    }
+  }
 }
 
 /** 从命盘提取生年四化 */
@@ -225,10 +277,31 @@ export function calculateZiweiChart(input: ZiweiCalcInput): ZiweiChart {
   const astrolabe = astro.bySolar(dateStr as any, timeIndex, genderStr as any, true, 'zh-CN' as any);
 
   // 5. 转换为纯对象
-  const palaces = (astrolabe.palaces as unknown as Palace[]).slice(0, 12).map(transformPalace);
+  const palaces = (astrolabe.palaces as unknown as Palace[]).slice(0, 12).map(transformPalaceRaw) as Palace[];
 
   // 6. 提取生年四化
   const birthSiHua = extractBirthSiHua(palaces);
+
+  // 7. 计算当前年龄、大限、天干索引
+  const currentAge = new Date().getFullYear() - year;
+  const natalYearStemIndex = ((year - 4) % 10 + 10) % 10;
+
+  const daXians: DaXianInfo[] = palaces
+    .filter(p => p.decadal)
+    .map(p => ({
+      startAge: p.decadal!.range[0],
+      endAge: p.decadal!.range[1],
+      palaceIndex: p.index,
+      palaceName: p.name,
+      heavenlyStem: p.decadal!.heavenlyStem,
+      earthlyBranch: p.decadal!.earthlyBranch,
+    }))
+    .sort((a, b) => a.startAge - b.startAge);
+
+  const currentDaXianIndex = daXians.findIndex(d => currentAge >= d.startAge && currentAge <= d.endAge);
+
+  // 8. 后处理：三方四正、空宫/借宫、当前大限标记
+  enrichPalaces(palaces, currentAge);
 
   return {
     solarDate: astrolabe.solarDate as string,
@@ -247,5 +320,9 @@ export function calculateZiweiChart(input: ZiweiCalcInput): ZiweiChart {
     palaces,
     birthSiHua,
     solarTimeCorrection,
+    currentAge,
+    currentDaXianIndex,
+    daXians,
+    natalYearStemIndex,
   };
 }

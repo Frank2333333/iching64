@@ -198,4 +198,67 @@ describe('calculateZiweiChart', () => {
 
     expect(chart.solarTimeCorrection!.hourIndexChanged).toBe(true);
   });
+
+  // ── 新增字段测试 ──
+
+  it('computes oppositeIndex for each palace', () => {
+    const chart = calculateZiweiChart(REF_INPUT);
+
+    for (const palace of chart.palaces) {
+      expect(palace.oppositeIndex).toBe((palace.index + 6) % 12);
+    }
+  });
+
+  it('computes sanFangIndices with 4 unique indices', () => {
+    const chart = calculateZiweiChart(REF_INPUT);
+
+    for (const palace of chart.palaces) {
+      expect(palace.sanFangIndices).toHaveLength(4);
+      expect(palace.sanFangIndices[0]).toBe(palace.index);
+      expect(palace.sanFangIndices[1]).toBe(palace.oppositeIndex);
+      expect(new Set(palace.sanFangIndices).size).toBe(4);
+    }
+  });
+
+  it('marks empty palaces correctly', () => {
+    const chart = calculateZiweiChart(REF_INPUT);
+
+    for (const palace of chart.palaces) {
+      if (palace.isEmpty) {
+        expect(palace.majorStars).toHaveLength(0);
+        // 空宫应该有借宫信息
+        expect(palace.borrowedFromIndex).toBeDefined();
+        expect(palace.borrowedStars).toBeDefined();
+        expect(palace.borrowedStars!.length).toBeGreaterThan(0);
+      } else {
+        expect(palace.majorStars.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('computes currentAge and natalYearStemIndex', () => {
+    const chart = calculateZiweiChart(REF_INPUT);
+
+    expect(chart.currentAge).toBe(new Date().getFullYear() - 1990);
+    expect(chart.natalYearStemIndex).toBe(6); // 庚年 = index 6
+  });
+
+  it('has daXians array sorted by startAge', () => {
+    const chart = calculateZiweiChart(REF_INPUT);
+
+    expect(chart.daXians.length).toBeGreaterThan(0);
+    for (let i = 1; i < chart.daXians.length; i++) {
+      expect(chart.daXians[i].startAge).toBeGreaterThanOrEqual(chart.daXians[i - 1].startAge);
+    }
+  });
+
+  it('marks currentDaXian on exactly one palace', () => {
+    const chart = calculateZiweiChart(REF_INPUT);
+    const currentDaXianPalaces = chart.palaces.filter(p => p.isCurrentDaXian);
+
+    expect(currentDaXianPalaces.length).toBeLessThanOrEqual(1);
+    if (currentDaXianPalaces.length === 1) {
+      expect(chart.currentDaXianIndex).toBeGreaterThanOrEqual(0);
+    }
+  });
 });

@@ -81,3 +81,87 @@ export const PALACE_GRID_MAP: { row: number; col: number }[] = [
   { row: 3, col: 2 }, // 10: 子
   { row: 3, col: 1 }, // 11: 丑
 ];
+
+// ────────────────────────────────────────────
+// 三方四正 & SVG 坐标
+// ────────────────────────────────────────────
+
+/** 宫位索引 → 三方四正宫位索引（己、对宫、三合1、三合2） */
+export function getSanFangSiZheng(palaceIndex: number): [number, number, number, number] {
+  return [
+    palaceIndex,
+    (palaceIndex + 6) % 12,   // 对宫
+    (palaceIndex + 4) % 12,   // 三合1
+    (palaceIndex + 8) % 12,   // 三合2
+  ];
+}
+
+/** 宫位索引 → 4×4 网格中的 SVG 中心坐标（百分比 x,y）
+ * 基于 PALACE_GRID_MAP 的行列位置计算每个宫格中心
+ */
+export const PALACE_SVG_POS: Record<number, [number, number]> = {};
+for (let i = 0; i < 12; i++) {
+  const { row, col } = PALACE_GRID_MAP[i];
+  PALACE_SVG_POS[i] = [col * 25 + 12.5, row * 25 + 12.5];
+}
+
+// ────────────────────────────────────────────
+// 四化表（倪海厦天纪体系 — 固定四化）
+// ────────────────────────────────────────────
+
+/** 十天干 → 四化星 [化禄, 化权, 化科, 化忌] */
+export const SI_HUA_TABLE: Record<number, [string, string, string, string]> = {
+  0: ['廉贞', '破军', '武曲', '太阳'],   // 甲
+  1: ['天机', '天梁', '紫微', '太阴'],   // 乙
+  2: ['天同', '天机', '文昌', '廉贞'],   // 丙
+  3: ['太阴', '天同', '天机', '巨门'],   // 丁
+  4: ['贪狼', '太阴', '右弼', '天梁'],   // 戊
+  5: ['武曲', '贪狼', '左辅', '文曲'],   // 己
+  6: ['太阳', '武曲', '太阴', '天同'],   // 庚
+  7: ['巨门', '太阳', '文曲', '天机'],   // 辛
+  8: ['紫微', '天府', '太阴', '贪狼'],   // 壬
+  9: ['破军', '巨门', '太阴', '贪狼'],   // 癸（注：部分流派为右弼化科）
+};
+
+/** 十天干名称 */
+export const TIAN_GAN_NAMES = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'] as const;
+
+/** 年份 → 天干索引（0=甲, 1=乙, ..., 9=癸） */
+export function getYearStemIndex(year: number): number {
+  return ((year - 4) % 10 + 10) % 10;
+}
+
+/** 天干索引 → 四化叠加映射（星名 → 四化类型） */
+export function buildSiHuaOverlay(stemIndex: number): Record<string, string> {
+  const entry = SI_HUA_TABLE[stemIndex];
+  if (!entry) return {};
+  return {
+    [entry[0]]: '禄',
+    [entry[1]]: '权',
+    [entry[2]]: '科',
+    [entry[3]]: '忌',
+  };
+}
+
+/** 12 宫名称（标准顺序，从命宫开始） */
+export const PALACE_NAMES = [
+  '命宫', '兄弟', '夫妻', '子女',
+  '财帛', '疾厄', '迁移', '交友',
+  '官禄', '田宅', '福德', '父母',
+] as const;
+
+/** 宫位名称 → 主管领域（用于 AI 分析提示） */
+export const PALACE_ROLES: Record<string, string> = {
+  '命宫': '自我/性格/先天格局',
+  '兄弟': '兄弟/朋友/合伙人',
+  '夫妻': '感情/婚姻/配偶',
+  '子女': '子女/下属/投资',
+  '财帛': '收入/理财/财运',
+  '疾厄': '健康/灾厄/内心',
+  '迁移': '外出/社交/际遇',
+  '交友': '朋友/部属/人际关系',
+  '官禄': '事业/学业/地位',
+  '田宅': '家庭/不动产/存款',
+  '福德': '精神/享受/祖德',
+  '父母': '父母/长辈/相貌',
+};

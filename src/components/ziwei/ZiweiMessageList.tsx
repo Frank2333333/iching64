@@ -20,7 +20,17 @@ interface ZiweiMessageListProps {
   chatLoading: boolean;
   chatError: string | null;
   onBackToInput: () => void;
+  onTopicClick?: (prompt: string) => void;
 }
+
+const TOPIC_BUTTONS = [
+  { label: '命格', prompt: '请全面分析我的命格特征，包括性格、先天格局、命宫主星组合的整体评价，以及一生的整体运势走向。' },
+  { label: '感情', prompt: '请重点分析我的感情运势，包括夫妻宫和桃花星的配置，适合的婚恋对象类型，以及感情中需要注意的问题。' },
+  { label: '事业', prompt: '请重点分析我的事业运势，包括官禄宫和事业相关星曜的配置，适合的职业方向，以及事业发展中的关键时期。' },
+  { label: '财运', prompt: '请重点分析我的财运，包括财帛宫和财星配置，正财偏财的特点，理财建议，以及财运的关键转折期。' },
+  { label: '健康', prompt: '请重点分析我的健康运势，包括疾厄宫的配置，需要特别注意的健康问题，以及养生保健建议。' },
+  { label: '性格', prompt: '请深入分析我的性格特质，包括命宫主星的性格倾向，优点缺点，以及性格对人际关系和事业发展的影响。' },
+];
 
 export default function ZiweiMessageList({
   resultInput,
@@ -32,6 +42,7 @@ export default function ZiweiMessageList({
   chatLoading,
   chatError,
   onBackToInput,
+  onTopicClick,
 }: ZiweiMessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -59,6 +70,28 @@ export default function ZiweiMessageList({
             </div>
           )}
         </div>
+
+        {/* 话题快捷按钮 */}
+        {onTopicClick && !aiLoading && aiInterpretation && (
+          <div className="flex flex-wrap gap-1.5">
+            {TOPIC_BUTTONS.map(btn => (
+              <button
+                key={btn.label}
+                onClick={() => onTopicClick(btn.prompt)}
+                disabled={chatLoading}
+                className="text-[11px] px-2.5 py-1 rounded-lg border
+                  border-amber-200/60 dark:border-amber-800/30
+                  text-amber-700 dark:text-amber-400
+                  bg-white/50 dark:bg-neutral-800/50
+                  hover:bg-amber-50 dark:hover:bg-amber-900/20
+                  disabled:opacity-40 disabled:cursor-not-allowed
+                  transition-colors"
+              >
+                {btn.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* AI 解读 */}
         {aiLoading && !aiInterpretation && (
