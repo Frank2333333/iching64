@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Sparkles, Loader2, User, Compass, ChevronRight, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Sparkles, Loader2, User, Compass, ChevronRight, Star, Crown, ArrowRight } from 'lucide-react';
 import MarkdownRenderer from '../MarkdownRenderer';
 import LifeTimeline from './LifeTimeline';
 import ZiweiPalaceGrid from '../ziwei/ZiweiPalaceGrid';
@@ -255,6 +256,23 @@ export default function LifeReportView({
             {/* 移动端命盘 */}
             <div className="lg:hidden">
               <ChartPanel baziChart={baziChart} ziweiChart={ziweiChart} />
+            </div>
+
+            {/* 引导：深入单盘分析 */}
+            <div className="bg-amber-50/60 dark:bg-amber-900/10 rounded-2xl p-4 border border-amber-200/60 dark:border-amber-900/30">
+              <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 text-center">
+                想看完整命盘的深度分析？前往单盘工具
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <Link to="/bazi"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:border-amber-400 dark:hover:border-amber-600 transition-colors">
+                  <Star className="w-4 h-4" />八字排盘<ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link to="/ziwei"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:border-amber-400 dark:hover:border-amber-600 transition-colors">
+                  <Crown className="w-4 h-4" />紫微斗数<ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
 
             <div className="text-center pb-2">
