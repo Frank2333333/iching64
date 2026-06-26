@@ -4,6 +4,7 @@
  */
 import OpenAI from 'openai';
 import { SKILL_CONTENT, REFERENCES_CONTENT } from './skill-content';
+import { STAR_IN_FUQI_GU, SIHUA_IN_FUQI_GU, MARRIAGE_KEYWORDS } from './ziwei-heming-data';
 
 // ==================== 类型定义 ====================
 
@@ -146,6 +147,31 @@ function buildChartPrompt(input: ZiweiInput): string {
 
   if (input.question) {
     prompt += `用户问题：${input.question}\n`;
+
+    // 婚姻类问题：注入夫妻宫专家断语（倪师体系 + 古典断语）
+    const isMarriageQuestion = MARRIAGE_KEYWORDS.some(kw => input.question!.includes(kw));
+    if (isMarriageQuestion) {
+      const fuqiPalace = c.palaces.find(p => p.name === '夫妻宫');
+      if (fuqiPalace && fuqiPalace.majorStars.length > 0) {
+        prompt += `\n=== 夫妻宫专家断语参考（倪海厦体系 + 《紫微斗数全书》）===\n`;
+        for (const star of fuqiPalace.majorStars) {
+          const duan = STAR_IN_FUQI_GU[star.name];
+          if (!duan) continue;
+          prompt += `【${star.name}在夫妻宫${star.brightness ? `(${star.brightness})` : ''}】\n`;
+          prompt += `核心：${duan.summary}\n`;
+          prompt += `吉象：${duan.good}\n`;
+          prompt += `凶象：${duan.bad}\n`;
+          prompt += `配偶特征：${duan.spouse_traits}\n`;
+          prompt += `婚期：${duan.timing}\n`;
+          if (duan.ni_quote) prompt += `倪师原话：${duan.ni_quote}\n`;
+          if (star.mutagen && SIHUA_IN_FUQI_GU[`化${star.mutagen}`]) {
+            prompt += `此星化${star.mutagen}在夫妻宫：${SIHUA_IN_FUQI_GU[`化${star.mutagen}`]}\n`;
+          }
+          prompt += `\n`;
+        }
+        prompt += `请结合以上专家断语与命主实际命盘（夫妻宫+福德宫双宫联参）进行婚姻分析，不要照搬断语，要落到命主具体情况。\n\n`;
+      }
+    }
   }
 
   prompt += `

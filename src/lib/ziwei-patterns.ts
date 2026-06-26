@@ -158,6 +158,19 @@ function getStarSiHua(palace: Palace, starName: string): string | undefined {
   return star?.mutagen;
 }
 
+/** 地支名称（0=子, 1=丑, ..., 11=亥） */
+const BRANCH_NAMES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+/** 命宫对宫（迁移宫方向） */
+function getDuiGong(chart: ZiweiChart, branch: number): Palace | undefined {
+  return getPalaceByBranch(chart, (branch + 6) % 12);
+}
+
+/** 宫位主星名列表 */
+function getMajorStarNames(palace: Palace): string[] {
+  return palace.majorStars.map(s => s.name);
+}
+
 // ────────────────────────────────────────────
 // 格局检测器
 // ────────────────────────────────────────────
@@ -789,6 +802,294 @@ function detectKuiYueTongHui(chart: ZiweiChart): Pattern | null {
 }
 
 // ────────────────────────────────────────────
+// 扩展格局（移植自 Renhuai123/ziwei-doushu patterns.ts）
+// ────────────────────────────────────────────
+
+/** 廉贞天相格：廉贞天相同宫 */
+function detectLianXiang(chart: ZiweiChart): Pattern | null {
+  const lian = findStarPalace(chart, '廉贞');
+  const xiang = findStarPalace(chart, '天相');
+  if (!lian || !xiang || lian.index !== xiang.index) return null;
+
+  const inMing = lian.name === '命宫';
+  const sanFang = sanFangAllStars(chart);
+  const required = ['廉贞天相同宫'];
+  const bonus: string[] = [];
+  const breaking: string[] = [];
+  if (hasStar(lian, '禄存') || getStarSiHua(lian, '廉贞') === '禄') bonus.push('见禄存或廉贞化禄');
+  if (sanFang.has('左辅')) bonus.push('左辅会照');
+  if (hasStar(lian, '擎羊')) breaking.push('廉相宫坐擎羊（廉杀羊倾向）');
+  if (getStarSiHua(lian, '廉贞') === '忌') breaking.push('廉贞化忌');
+
+  return {
+    name: '廉贞天相格',
+    level: breaking.length > 0 ? 'caution' : (inMing ? 'good' : 'neutral'),
+    description: '廉贞天相同宫，印绶格局，主秉公处事、清廉之名，宜任公职、行政管理、法务、企划。怕见擎羊化忌，则反主官非。',
+    palaces: [lian.name],
+    conditions: { required, bonus: bonus.length > 0 ? bonus : undefined, breaking: breaking.length > 0 ? breaking : undefined },
+    source: '《紫微斗数全书》',
+  };
+}
+
+/** 武曲七杀：同宫，将星配财星 */
+function detectWuQiSha(chart: ZiweiChart): Pattern | null {
+  const wu = findStarPalace(chart, '武曲');
+  const qi = findStarPalace(chart, '七杀');
+  if (!wu || !qi || wu.index !== qi.index) return null;
+
+  const inMing = wu.name === '命宫';
+  const required = ['武曲七杀同宫'];
+  const bonus: string[] = [];
+  const breaking: string[] = [];
+  if (getStarSiHua(wu, '武曲') === '权') bonus.push('武曲化权');
+  if (getStarSiHua(wu, '武曲') === '禄') bonus.push('武曲化禄');
+  if (getStarSiHua(wu, '武曲') === '忌') breaking.push('武曲化忌（财劫之兆）');
+  if (hasShaInPalace(wu, SHA_HARD)) breaking.push('武杀宫煞星过多');
+
+  return {
+    name: '武曲七杀',
+    level: breaking.length > 0 ? 'caution' : (inMing ? 'excellent' : 'good'),
+    description: '武曲七杀同宫，将星配财星，主果决刚毅、理财能力强，适合金融、军警、创业。但忌见化忌煞星，否则凶险。一生奋斗、积财但操心。',
+    palaces: [wu.name],
+    conditions: { required, bonus: bonus.length > 0 ? bonus : undefined, breaking: breaking.length > 0 ? breaking : undefined },
+    source: '《紫微斗数全书》',
+  };
+}
+
+/** 天同天梁格：同宫 */
+function detectTongLiang(chart: ZiweiChart): Pattern | null {
+  const tong = findStarPalace(chart, '天同');
+  const liang = findStarPalace(chart, '天梁');
+  if (!tong || !liang || tong.index !== liang.index) return null;
+
+  const sanFang = sanFangAllStars(chart);
+  const required = ['天同天梁同宫'];
+  const bonus: string[] = [];
+  const breaking: string[] = [];
+  if (sanFang.has('文昌')) bonus.push('文昌会照');
+  if (getStarSiHua(tong, '天同') === '禄') bonus.push('天同化禄');
+  if (hasShaInPalace(tong, SHA_HARD)) breaking.push('煞星同坐');
+
+  return {
+    name: '天同天梁格',
+    level: breaking.length > 0 ? 'neutral' : 'good',
+    description: '天同天梁同宫，福星与荫星共会，主宽厚和善、乐于助人，宜医疗、教育、宗教、社会公益。但偏温和保守，难成大富大贵之局。',
+    palaces: [tong.name],
+    conditions: { required, bonus: bonus.length > 0 ? bonus : undefined, breaking: breaking.length > 0 ? breaking : undefined },
+    source: '《紫微斗数全书》',
+  };
+}
+
+/** 日月同宫：太阳太阴丑或未宫同宫 */
+function detectRiYueTongGong(chart: ZiweiChart): Pattern | null {
+  const sun = findStarPalace(chart, '太阳');
+  const moon = findStarPalace(chart, '太阴');
+  if (!sun || !moon || sun.index !== moon.index) return null;
+  const sunBranch = toBranch(sun.index);
+  if (sunBranch !== 1 && sunBranch !== 7) return null;  // 丑(1) 或 未(7)
+
+  const inMing = sun.name === '命宫';
+  const sanFang = sanFangAllStars(chart);
+  const required = [`太阳太阴同入${BRANCH_NAMES[sunBranch]}宫`];
+  const bonus: string[] = [];
+  const breaking: string[] = [];
+  if (sunBranch === 7) bonus.push('未宫日月双美');
+  if (sanFang.has('文昌') && sanFang.has('文曲')) bonus.push('昌曲会照');
+  if (hasShaInPalace(sun, SHA_HARD)) breaking.push('日月宫煞星同坐');
+
+  return {
+    name: '日月同宫',
+    level: breaking.length > 0 ? 'good' : (inMing ? 'excellent' : 'good'),
+    description: `太阳太阴于${BRANCH_NAMES[sunBranch]}宫同宫，阴阳平衡，文武兼备。主异性缘佳、事业顺遂、名声远播。${sunBranch === 7 ? '未宫日月双美尤佳。' : '丑宫日月同宫力量较平。'}`,
+    palaces: [sun.name],
+    conditions: { required, bonus: bonus.length > 0 ? bonus : undefined, breaking: breaking.length > 0 ? breaking : undefined },
+    source: '《紫微斗数全书》',
+  };
+}
+
+/** 石中隐玉：巨门入命于子午宫 */
+function detectShiZhongYinYu(chart: ZiweiChart): Pattern | null {
+  const ming = getMingGong(chart);
+  if (!hasStar(ming, '巨门')) return null;
+  const mingBranch = toBranch(ming.index);
+  if (mingBranch !== 0 && mingBranch !== 6) return null;  // 子(0) 或 午(6)
+
+  const sanFang = sanFangAllStars(chart);
+  const required = [`巨门入命于${BRANCH_NAMES[mingBranch]}宫`];
+  const bonus: string[] = [];
+  const breaking: string[] = [];
+  if (getStarSiHua(ming, '巨门') === '禄' || getStarSiHua(ming, '巨门') === '权') bonus.push('巨门化禄/化权');
+  if (sanFang.has('文昌')) bonus.push('文昌会照（石中隐玉得明）');
+  if (getStarSiHua(ming, '巨门') === '忌') breaking.push('巨门化忌（玉藏深泥）');
+  if (hasShaInPalace(ming, SHA_HARD)) breaking.push('命坐煞星');
+
+  return {
+    name: '石中隐玉',
+    level: breaking.length > 0 ? 'caution' : 'excellent',
+    description: '巨门坐命子午，外表平凡而内蕴才学。早年默默无闻、中年方显贵气，宜走专业、研究、口才、传媒。需有禄权或文昌相助方能"凿石见玉"。',
+    palaces: ['命宫'],
+    conditions: { required, bonus: bonus.length > 0 ? bonus : undefined, breaking: breaking.length > 0 ? breaking : undefined },
+    source: '《紫微斗数骨髓赋·石中隐玉》',
+  };
+}
+
+/** 明珠出海：命宫在未空宫，对宫丑宫为太阳太阴 */
+function detectMingZhuChuHai(chart: ZiweiChart): Pattern | null {
+  const ming = getMingGong(chart);
+  if (toBranch(ming.index) !== 7) return null;   // 命在未
+  if (getMajorStarNames(ming).length > 0) return null;   // 命宫为空宫
+  const dui = getDuiGong(chart, toBranch(ming.index));
+  if (!dui) return null;
+  if (!hasStar(dui, '太阳') || !hasStar(dui, '太阴')) return null;
+
+  const sanFang = sanFangAllStars(chart);
+  const required = ['命宫在未为空宫', '对宫丑宫为太阳太阴同度'];
+  const bonus: string[] = [];
+  const breaking: string[] = [];
+  if (sanFang.has('文昌') || sanFang.has('文曲')) bonus.push('再会昌曲');
+  if (sanFang.has('左辅') || sanFang.has('右弼')) bonus.push('辅弼相助');
+  if (sanFangShaCount(chart, SHA_HARD) >= 2) breaking.push('煞星会照（珠光黯淡）');
+
+  return {
+    name: '明珠出海',
+    level: breaking.length > 0 ? 'good' : 'excellent',
+    description: '命未空宫，对宫丑宫日月同辉拱照，号"明珠出海"。主出生平凡、后天努力出头，宜远赴他乡、学术研究或大公司高位，主大富大贵。',
+    palaces: ['命宫', dui.name],
+    conditions: { required, bonus: bonus.length > 0 ? bonus : undefined, breaking: breaking.length > 0 ? breaking : undefined },
+    source: '《紫微斗数全集·明珠出海》',
+  };
+}
+
+/** 紫微入命：紫微独坐命宫（无天府同坐） */
+function detectZiWeiInMing(chart: ZiweiChart): Pattern | null {
+  const ming = getMingGong(chart);
+  if (!hasStar(ming, '紫微') || hasStar(ming, '天府')) return null;
+
+  const sanFang = sanFangAllStars(chart);
+  const required = ['紫微独坐命宫（无天府同坐）'];
+  const bonus: string[] = [];
+  const breaking: string[] = [];
+  if (sanFang.has('左辅') && sanFang.has('右弼')) bonus.push('左辅右弼同会');
+  if (sanFang.has('文昌') && sanFang.has('文曲')) bonus.push('文昌文曲同会');
+  if (!sanFang.has('左辅') && !sanFang.has('右弼')) breaking.push('无辅弼（孤君无臣）');
+  if (hasShaInPalace(ming, SHA_KONG)) breaking.push('紫微遇空劫（古书最忌）');
+
+  return {
+    name: '紫微入命',
+    level: breaking.length > 0 ? 'caution' : (bonus.length > 0 ? 'excellent' : 'good'),
+    description: '紫微独坐命宫，帝王之星，自尊心强、有领导魅力。但紫微最忌"在野孤君"——若无左右辅弼相会，反成孤高自傲、易招毁谤。',
+    palaces: ['命宫'],
+    conditions: { required, bonus: bonus.length > 0 ? bonus : undefined, breaking: breaking.length > 0 ? breaking : undefined },
+    source: '《紫微斗数全书》',
+  };
+}
+
+/** 魁钺夹命：天魁天钺分居命宫前后两宫 */
+function detectKuiYueJiaMing(chart: ZiweiChart): Pattern | null {
+  const mingBranch = toBranch(getMingGong(chart).index);
+  const { prev, next } = getJiaPalaces(chart, mingBranch);
+  if (!prev || !next) return null;
+  const okA = hasStar(prev, '天魁') && hasStar(next, '天钺');
+  const okB = hasStar(prev, '天钺') && hasStar(next, '天魁');
+  if (!okA && !okB) return null;
+
+  return {
+    name: '魁钺夹命',
+    level: 'good',
+    description: '天魁天钺夹命，男称天乙、女称玉堂，一生贵人提携。考试、求职、关键时刻常有意外贵人相助。',
+    palaces: ['命宫', prev.name, next.name],
+    conditions: { required: ['天魁天钺分居命宫前后两宫'] },
+    source: '《紫微斗数全书》',
+  };
+}
+
+/** 廉杀羊：廉贞、七杀、擎羊三星会照（流年大限最凶） */
+function detectLianShaYang(chart: ZiweiChart): Pattern | null {
+  const sanFang = sanFangAllStars(chart);
+  if (!(sanFang.has('廉贞') && sanFang.has('七杀') && sanFang.has('擎羊'))) return null;
+
+  return {
+    name: '廉杀羊',
+    level: 'caution',
+    description: '廉贞、七杀、擎羊三星会照命宫三方，古书警示之凶格。主血光、官非、意外。本命有此格不必惊慌，但流年大限再触发时需特别谨慎驾驶、避免冲突、注意手术风险。',
+    palaces: ['命宫'],
+    conditions: { required: ['廉贞、七杀、擎羊三星会照三方四正'] },
+    source: '《紫微斗数全书·廉杀羊》',
+  };
+}
+
+/** 巨火羊：巨门、火星、擎羊会照 */
+function detectJuHuoYang(chart: ZiweiChart): Pattern | null {
+  const sanFang = sanFangAllStars(chart);
+  if (!(sanFang.has('巨门') && sanFang.has('火星') && sanFang.has('擎羊'))) return null;
+
+  return {
+    name: '巨火羊',
+    level: 'caution',
+    description: '巨门、火星、擎羊三星会照，古书云"巨火羊，终身缢死"——古时凶格。现代理解为：易因口舌、激烈冲突而招大祸。需修身养性、慎言慎行，避免极端情绪。',
+    palaces: ['命宫'],
+    conditions: { required: ['巨门、火星、擎羊三星会照三方四正'] },
+    source: '《紫微斗数骨髓赋·巨火羊》',
+  };
+}
+
+/** 铃昌陀武：铃星、文昌、陀罗、武曲会照（限至投河） */
+function detectLingChangTuoWu(chart: ZiweiChart): Pattern | null {
+  const sanFang = sanFangAllStars(chart);
+  if (!(sanFang.has('铃星') && sanFang.has('文昌') && sanFang.has('陀罗') && sanFang.has('武曲'))) return null;
+
+  return {
+    name: '铃昌陀武',
+    level: 'caution',
+    description: '铃星、文昌、陀罗、武曲四星齐会，古书云"铃昌陀武，限至投河"——古时大凶格。本命有此组合本身不必恐慌，但流年大限触发时需高度警觉重大决策、情绪起伏、水边活动。',
+    palaces: ['命宫'],
+    conditions: { required: ['铃星、文昌、陀罗、武曲四星会照三方四正'] },
+    source: '《紫微斗数骨髓赋·铃昌陀武》',
+  };
+}
+
+/** 机月同梁三星会（降级版）：四星中任3星齐入三方四正 */
+function detectJiYueTongLiangPartial(chart: ZiweiChart): Pattern | null {
+  const sanFang = sanFangAllStars(chart);
+  const full = ['天机', '太阴', '天同', '天梁'];
+  const has = full.filter(s => sanFang.has(s));
+  if (has.length !== 3) return null;  // 4星齐由 detectJiYueTongLiang 处理
+  const missing = full.filter(s => !sanFang.has(s));
+
+  return {
+    name: '机月同梁三星会',
+    level: 'neutral',
+    description: `三方四正会齐${has.join('、')}，差${missing.join('、')}未会。机月同梁不全格，文质带谋，但稳定度不如四星齐。仍宜公职、教研、医疗、服务等需要积累与稳定的行业，关键看缺位星与四化的配合。`,
+    palaces: getSanFangPalaces(chart).filter(p => has.some(s => getMajorStarNames(p).includes(s))).map(p => p.name),
+    conditions: { required: [`三方四正会${has.join('、')}（机月同梁缺${missing.join('、')}）`] },
+    source: '《紫微斗数全书·机月同梁格》（降级版）',
+  };
+}
+
+/** 科权双会：化科与化权同会命宫三方四正 */
+function detectKeQuanShuangHui(chart: ZiweiChart): Pattern | null {
+  const sanFangPalaces = getSanFangPalaces(chart);
+  let hasKe = false;
+  let hasQuan = false;
+  for (const p of sanFangPalaces) {
+    for (const s of [...p.majorStars, ...p.minorStars]) {
+      if (s.mutagen === '科') hasKe = true;
+      if (s.mutagen === '权') hasQuan = true;
+    }
+  }
+  if (!hasKe || !hasQuan) return null;
+
+  return {
+    name: '科权双会',
+    level: 'good',
+    description: '化科与化权同会命宫三方四正，主名声与权柄兼具。化科主科名贵人，化权主掌控执行，二者并见利于学业晋升、职场掌权，宜走专业权威路线。',
+    palaces: ['命宫'],
+    conditions: { required: ['化科与化权同会三方四正'] },
+    source: '《紫微斗数全书·四化论》',
+  };
+}
+
+// ────────────────────────────────────────────
 // 主函数
 // ────────────────────────────────────────────
 
@@ -832,6 +1133,21 @@ export function detectPatterns(chart: ZiweiChart): Pattern[] {
   const p25 = detectChangQuTongHui(chart); if (p25) patterns.push(p25);
   const p26 = detectFuBiTongHui(chart); if (p26) patterns.push(p26);
   const p27 = detectKuiYueTongHui(chart); if (p27) patterns.push(p27);
+
+  // 扩展格局（移植自 Renhuai123/ziwei-doushu）
+  const p28 = detectLianXiang(chart); if (p28) patterns.push(p28);
+  const p29 = detectWuQiSha(chart); if (p29) patterns.push(p29);
+  const p30 = detectTongLiang(chart); if (p30) patterns.push(p30);
+  const p31 = detectRiYueTongGong(chart); if (p31) patterns.push(p31);
+  const p32 = detectShiZhongYinYu(chart); if (p32) patterns.push(p32);
+  const p33 = detectMingZhuChuHai(chart); if (p33) patterns.push(p33);
+  const p34 = detectZiWeiInMing(chart); if (p34) patterns.push(p34);
+  const p35 = detectKuiYueJiaMing(chart); if (p35) patterns.push(p35);
+  const p36 = detectLianShaYang(chart); if (p36) patterns.push(p36);
+  const p37 = detectJuHuoYang(chart); if (p37) patterns.push(p37);
+  const p38 = detectLingChangTuoWu(chart); if (p38) patterns.push(p38);
+  const p39 = detectJiYueTongLiangPartial(chart); if (p39) patterns.push(p39);
+  const p40 = detectKeQuanShuangHui(chart); if (p40) patterns.push(p40);
 
   return patterns;
 }

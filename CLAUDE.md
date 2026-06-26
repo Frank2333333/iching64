@@ -137,14 +137,16 @@ D1 表结构见 `migrations/0001_initial.sql`。
 - **依赖**：`iztro`（核心排盘：14主星+辅星+煞星安位、命宫身宫、大限、四化、亮度）
 - **常量表**：`src/data/ziwei-constants.ts`（星曜分类展示映射、四化颜色、宫位网格映射、hourToTimeIndex 转换、SI_HUA_TABLE 十天干四化表、PALACE_SVG_POS 三方四正 SVG 坐标、PALACE_ROLES 宫位领域映射）
 - **星曜描述**：`src/data/ziwei-star-descriptions.ts`（14 主星五行/性质/关键词/倪海厦解读/事业感情财运健康分析，辅星简述，ALL_STAR_ENTRIES 知识库条目，getStarByName 查询函数）
-- **格局检测**：`src/lib/ziwei-patterns.ts`（27 种格局检测器，含君臣庆会/紫府同宫/火贪格/杀破狼等，按级别 excellent/good/neutral/caution 分级）
+- **夫妻宫断语**：`src/data/ziwei-heming.ts`（移植自开源 Renhuai123/ziwei-doushu，含 14 主星在夫妻宫五段式断语 STAR_IN_FUQI_GU、四化在夫妻宫 SIHUA_IN_FUQI_GU、合盘方法论 HEMING_METHODOLOGY、婚姻辅助表；供星曜详情面板与未来合盘功能使用）
+- **格局检测**：`src/lib/ziwei-patterns.ts`（40 种格局检测器，含君臣庆会/紫府同宫/火贪格/杀破狼等，按级别 excellent/good/neutral/caution 分级；其中 13 种扩展格局移植自 Renhuai123/ziwei-doushu，如廉贞天相格/武曲七杀/日月同宫/石中隐玉/明珠出海/魁钺夹命/廉杀羊/巨火羊/铃昌陀武/机月同梁三星会/科权双会等）
 - **城市经纬度**：复用 `src/data/cities.ts`（真太阳时修正）
 - **计算流程**：真太阳时修正 → hour→timeIndex 转换 → `astro.bySolar()` → FunctionalAstrolabe → 转换为纯对象 ZiweiChart → 提取生年四化 → 后处理（三方四正索引、空宫/借宫、当前大限、DaXianInfo 列表）→ 计算运限数据(horoscopeData)
 - **数据结构**：`ZiweiChart` 接口包含12宫(Palace[])、生年四化(SiHua)、五行局、命主/身主、真太阳时修正、currentAge、currentDaXianIndex、daXians(DaXianInfo[])、natalYearStemIndex、horoscopeData(HoroscopeData：含大限/流年旋转宫名、天干地支、四化星名、流耀星名)；每宫含主星/辅星/杂耀(Star[])、大限信息、oppositeIndex、sanFangIndices、isEmpty、borrowedFromIndex/borrowedStars、isCurrentDaXian
 - **星曜分类**：iztro 的 8 种 type（major/soft/tough/adjective/flower/helper/lucun/tianma），四化直接用 star.mutagen
 - **交互状态**：`ZiweiPalaceContext.tsx` 管理宫位选中、星曜选中、时间视图（本命/大限/流年）、叠加四化、运限宫名(scopePalaceNames)、运限流耀(scopeHoroscopeStars)、选中大限索引(selectedDaXianIndex)
 - **UI 组件**：`ZiweiPalaceGrid`（4×4宫位网格+三方四正SVG叠加+交互选中+运限宫名旋转+流耀星显示+入场动画）、`ZiweiTimeNav`（本命/大限/流年切换+大限步进器+流年步进器+四化叠加+运限宫名/流耀传入Context）、`ZiweiSummaryCards`（命格总览+四化+大限运程+格局概览）、`ZiweiPatternsCard`（格局识别详情卡片）、`ZiweiStarDetailPanel`（星曜详情滑入面板+知识库链接）、`ZiweiPalaceAITrigger`（宫位点击自动触发 AI 分析，含运限上下文注入）、`ZiweiForm`（4步向导：日期→时间+时辰→性别→问题）
-- **AI 集成**：`ZiweiInput.chart` 字段注入后端，`ziwei-ai.ts` 的 `buildChartPrompt` 格式化12宫+四化为文本 prompt；宫位/四化/话题快捷按钮均通过客户端构建 prompt + 现有 chat API 实现；大限/流年视图下自动注入运限四化和命宫信息到 AI prompt；运限专用话题按钮（大限总运/事业/感情、流年运势/提醒）
+- **AI 集成**：`ZiweiInput.chart` 字段注入后端，`ziwei-ai.ts` 的 `buildChartPrompt` 格式化12宫+四化为文本 prompt；宫位/四化/话题快捷按钮均通过客户端构建 prompt + 现有 chat API 实现；大限/流年视图下自动注入运限四化和命宫信息到 AI prompt；运限专用话题按钮（大限总运/事业/感情、流年运势/提醒）；婚姻类问题（命中 MARRIAGE_KEYWORDS）自动注入夫妻宫主星的专家断语（来自后端 `server-workers/services/ziwei-heming-data.ts`，倪师体系+《全书》断语），并提示夫妻+福德双宫联参
+- **星曜详情面板**：`ZiweiStarDetailPanel` 点击星曜滑入展示；当星曜所在宫位为夫妻宫时，追加展示 `STAR_IN_FUQI_GU` 五段式断语（核心/吉象/凶象/配偶特征/婚期/倪师原话）
 - **序列化边界**：iztro 的 FunctionalAstrolabe 有方法和循环引用，calculator 层一步转换为纯对象
 - **星曜图鉴**：`/ziwei-knowledge` 路由，ZiweiKnowledge 页面，卡片网格浏览14主星+8吉星+6煞星，点击展开详情
 

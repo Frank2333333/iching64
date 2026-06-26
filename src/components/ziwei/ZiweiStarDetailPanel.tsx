@@ -10,6 +10,7 @@ import { useZiweiPalace } from './ZiweiPalaceContext';
 import { useNavigate } from 'react-router-dom';
 import { STAR_TYPE_STYLES, SIHUA_STYLES } from '../../data/ziwei-constants';
 import { STAR_DESCRIPTIONS, MINOR_STAR_DESCRIPTIONS } from '../../data/ziwei-star-descriptions';
+import { STAR_IN_FUQI_GU } from '../../data/ziwei-heming';
 import type { Star } from '../../lib/ziwei-calculator';
 
 interface ZiweiStarDetailPanelProps {
@@ -173,6 +174,39 @@ export default function ZiweiStarDetailPanel({ chart }: ZiweiStarDetailPanelProp
               ))}
             </div>
           )}
+
+          {/* 夫妻宫专属断语（仅当星曜在夫妻宫时） */}
+          {palaceName === '夫妻宫' && STAR_IN_FUQI_GU[starData.name] && (() => {
+            const fuqi = STAR_IN_FUQI_GU[starData.name];
+            const sections = [
+              { label: '核心', text: fuqi.summary, color: 'text-amber-700 dark:text-amber-300' },
+              { label: '吉象', text: fuqi.good, color: 'text-green-600 dark:text-green-400' },
+              { label: '凶象', text: fuqi.bad, color: 'text-red-600 dark:text-red-400' },
+              { label: '配偶特征', text: fuqi.spouse_traits, color: 'text-pink-600 dark:text-pink-400' },
+              { label: '婚期', text: fuqi.timing, color: 'text-blue-600 dark:text-blue-400' },
+            ];
+            return (
+              <div className="rounded-lg border border-pink-200/60 dark:border-pink-900/30 overflow-hidden">
+                <div className="bg-pink-50/70 dark:bg-pink-900/20 px-3 py-2 text-[11px] font-medium text-pink-700 dark:text-pink-300">
+                  夫妻宫断语 · {starData.name}
+                </div>
+                <div className="p-3 space-y-2 bg-white dark:bg-neutral-800">
+                  {sections.map(s => (
+                    <div key={s.label}>
+                      <span className={`text-[11px] font-medium ${s.color}`}>{s.label}：</span>
+                      <span className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">{s.text}</span>
+                    </div>
+                  ))}
+                  {fuqi.ni_quote && (
+                    <div className="mt-1 pt-2 border-t border-amber-100 dark:border-amber-900/20">
+                      <span className="text-[11px] font-medium text-amber-700 dark:text-amber-300">倪师：</span>
+                      <span className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed italic">{fuqi.ni_quote}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* 查看完整解读链接 */}
           {(desc || minorDesc) && (
