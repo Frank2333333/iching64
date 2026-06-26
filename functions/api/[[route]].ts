@@ -598,7 +598,7 @@ app.post('/api/profiles', authMiddleware, async (c) => {
     await c.env.DB.prepare(
       `INSERT OR REPLACE INTO profiles
         (id, user_id, name, input_mode, gender, year, month, day, hour, minute, birthplace, use_solar_time, pillars, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       id, userId, name.trim(), inputMode,
       gender ?? null, year ?? null, month ?? null, day ?? null, hour ?? null, minute ?? null,
