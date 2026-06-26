@@ -207,6 +207,49 @@ export default function BaziForm({ onSubmit, loading, initialData, onClearInitia
     }
   };
 
+  // 保存为档案（生辰模式与直接八字模式均可用）
+  const handleSave = () => {
+    if (!onSave) return;
+    if (inputMode === 'birthdate') {
+      const y = parseInt(year);
+      const m = parseInt(month);
+      const d = parseInt(day);
+      const h = parseInt(hour);
+      const min = parseInt(minute);
+      if (isNaN(y) || isNaN(m) || isNaN(d) || isNaN(h) || isNaN(min)) {
+        setErrors({ year: '请先填完出生日期时间再保存' });
+        return;
+      }
+      onSave({
+        year: y,
+        month: m,
+        day: d,
+        hour: h,
+        minute: min,
+        gender,
+        birthplace: birthplace.trim() || undefined,
+        useSolarTime,
+        question: question.trim() || undefined,
+      });
+    } else {
+      if (!yearPillar.gan || !yearPillar.zhi || !monthPillar.gan || !monthPillar.zhi || !dayPillar.gan || !dayPillar.zhi || !hourPillar.gan || !hourPillar.zhi) {
+        setErrors({ yearPillar: '请先选完四柱再保存' });
+        return;
+      }
+      onSave({
+        gender,
+        birthplace: birthplace.trim() || undefined,
+        question: question.trim() || undefined,
+        pillars: {
+          year: yearPillar.gan + yearPillar.zhi,
+          month: monthPillar.gan + monthPillar.zhi,
+          day: dayPillar.gan + dayPillar.zhi,
+          hour: hourPillar.gan + hourPillar.zhi,
+        },
+      });
+    }
+  };
+
   const PillarSelect = ({
     label,
     gan,
@@ -484,29 +527,6 @@ export default function BaziForm({ onSubmit, loading, initialData, onClearInitia
                   {errors.yearPillar || errors.monthPillar || errors.dayPillar || errors.hourPillar}
                 </p>
               )}
-              {onSave && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSave({
-                      gender,
-                      birthplace: birthplace.trim() || undefined,
-                      question: question.trim() || undefined,
-                      pillars: {
-                        year: yearPillar.gan + yearPillar.zhi,
-                        month: monthPillar.gan + monthPillar.zhi,
-                        day: dayPillar.gan + dayPillar.zhi,
-                        hour: hourPillar.gan + hourPillar.zhi,
-                      },
-                    });
-                  }}
-                  disabled={!yearPillar.gan || !yearPillar.zhi || !monthPillar.gan || !monthPillar.zhi || !dayPillar.gan || !dayPillar.zhi || !hourPillar.gan || !hourPillar.zhi}
-                  className="w-full py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 rounded-lg text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Save className="w-4 h-4" />
-                  保存此八字
-                </button>
-              )}
             </div>
           )}
 
@@ -568,6 +588,18 @@ export default function BaziForm({ onSubmit, loading, initialData, onClearInitia
                        resize-none"
             />
           </div>
+
+          {/* 保存为档案 */}
+          {onSave && (
+            <button
+              type="button"
+              onClick={handleSave}
+              className="w-full py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 rounded-lg text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              保存为档案
+            </button>
+          )}
 
           {/* 提交按钮 */}
           <button

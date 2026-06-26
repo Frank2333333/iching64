@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Compass } from 'lucide-react';
+import { Compass, Save, Loader2 } from 'lucide-react';
 import MainHeaderTabs from '../components/MainHeaderTabs';
 import ZiweiForm from '../components/ziwei/ZiweiForm';
 import ZiweiPalaceGrid from '../components/ziwei/ZiweiPalaceGrid';
@@ -20,6 +20,17 @@ import {
   type ZiweiInput,
   type ChatMessage,
 } from '../lib/ziwei-api';
+import { useProfile } from '../context/ProfileContext';
+import type { ProfileInput } from '../lib/profile-api';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { Label } from '../components/ui/label';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 
 interface ChatContextSummary {
   initialInterpretationSummary: string;
@@ -60,6 +71,28 @@ export default function ZiweiDivination() {
   // 本地排盘结果
   const [chart, setChart] = useState<ZiweiChart | null>(null);
 
+  // 档案（全局 ProfileContext）
+  const { currentProfile, saveProfile: saveProfileCtx } = useProfile();
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [pendingSaveData, setPendingSaveData] = useState<ZiweiInput | null>(null);
+
+  // 当前选中档案 → ZiweiForm 预填（仅 birthdate 档案；pillars 档案无法排紫微盘）
+  const initialFormData = useMemo<ZiweiInput | undefined>(() => {
+    if (!currentProfile || currentProfile.inputMode !== 'birthdate') return undefined;
+    return {
+      year: currentProfile.year ?? undefined,
+      month: currentProfile.month ?? undefined,
+      day: currentProfile.day ?? undefined,
+      hour: currentProfile.hour ?? undefined,
+      minute: currentProfile.minute ?? undefined,
+      gender: (currentProfile.gender ?? 'male') as 'male' | 'female',
+      birthplace: currentProfile.birthplace ?? undefined,
+      useSolarTime: currentProfile.useSolarTime ?? false,
+    };
+  }, [currentProfile]);
+
   // 检查 AI 服务状态
   useEffect(() => {
     checkZiweiAIStatus().then(setAiAvailable);
@@ -72,6 +105,18 @@ export default function ZiweiDivination() {
     setChatError(null);
     setChatContextSummary(null);
   };
+
+  // 切换档案时若在结果页，回到输入页载入新档案
+  useEffect(() => {
+    if (currentProfile && step === 'result') {
+      setStep('input');
+      setResult(null);
+      setChart(null);
+      resetChat();
+      setAiError(null);
+      setAiLoading(false);
+    }
+  }, [currentProfile, step]);
 
   const handleGoHome = () => navigate('/');
 
@@ -109,6 +154,33 @@ export default function ZiweiDivination() {
     resetChat();
     setAiError(null);
     setAiLoading(false);
+  };
+
+  // 保存档案（紫微仅生辰录入，inputMode 固定 birthdate）
+  const handleSaveProfile = async () => {
+    if (!pendingSaveData || !profileName.trim()) return;
+    setSaveLoading(true);
+    const payload: ProfileInput = {
+      name: profileName.trim(),
+      inputMode: 'birthdate',
+      gender: pendingSaveData.gender,
+      year: pendingSaveData.year,
+      month: pendingSaveData.month,
+      day: pendingSaveData.day,
+      hour: pendingSaveData.hour,
+      minute: pendingSaveData.minute,
+      birthplace: pendingSaveData.birthplace,
+      useSolarTime: pendingSaveData.useSolarTime,
+    };
+    const ok = await saveProfileCtx(payload);
+    setSaveLoading(false);
+    if (ok) {
+      setSaveDialogOpen(false);
+      setProfileName('');
+      setPendingSaveData(null);
+    } else {
+      alert('保存失败，请重试');
+    }
   };
 
   // AI 解读
@@ -236,7 +308,7 @@ export default function ZiweiDivination() {
     <div className="h-dvh flex flex-col overflow-hidden bg-gradient-to-br from-[#FFF8F3] via-[#FFFDFC] to-[#F7EFE7]
       dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950
       iching-pattern-bg iching-cloud-bg transition-colors duration-500">
-      {/* Header */}
+      {/* Header — 登录与档案入口已由 MainHeaderTabs 内的 GlobalUserMenu 全局提供 */}
       <header className="flex-none border-b border-amber-200/80 bg-white/82
         text-amber-900 shadow-[0_14px_45px_-34px_rgba(180,83,9,0.35)]
         backdrop-blur-xl transition-colors duration-500
@@ -272,7 +344,12 @@ export default function ZiweiDivination() {
                   "紫微垣中窥天命，十二宫里辨吉凶"
                 </p>
               </div>
-              <ZiweiForm onSubmit={handleSubmit} loading={aiLoading} />
+              <ZiweiForm
+                onSubmit={handleSubmit}
+                loading={aiLoading}
+                initialData={initialFormData}
+                onSave={(data) => { setPendingSaveData(data); setSaveDialogOpen(true); }}
+              />
             </div>
           </div>
         )}
@@ -314,6 +391,40 @@ export default function ZiweiDivination() {
           </ZiweiPalaceProvider>
         )}
       </main>
+
+      {/* Save Profile Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-white dark:bg-neutral-900 border-amber-200 dark:border-amber-900/30">
+          <DialogHeader>
+            <DialogTitle className="text-amber-900 dark:text-amber-100 flex items-center gap-2">
+              <Save className="w-5 h-5" />
+              保存档案
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="ziwei-profile-name" className="text-amber-800 dark:text-amber-400">
+                档案名称
+              </Label>
+              <Input
+                id="ziwei-profile-name"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                placeholder="例如：自己的命盘、配偶命盘..."
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveProfile()}
+                className="mt-2 border-amber-200 dark:border-amber-700/50 focus-visible:ring-amber-500"
+              />
+            </div>
+            <Button
+              onClick={handleSaveProfile}
+              disabled={saveLoading || !profileName.trim()}
+              className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-semibold"
+            >
+              {saveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : '保存'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Calendar, Clock, MapPin, User, Sparkles, Compass, Check, ChevronRight, ChevronLeft } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Calendar, Clock, MapPin, User, Sparkles, Compass, Check, ChevronRight, ChevronLeft, Save } from 'lucide-react';
 import type { ZiweiInput } from '../../lib/ziwei-api';
 import { hourToTimeIndex } from '../../data/ziwei-constants';
 
@@ -23,6 +23,8 @@ const SHICHEN_NAMES: Record<number, { name: string; range: string }> = {
 interface ZiweiFormProps {
   onSubmit: (data: ZiweiInput) => void;
   loading: boolean;
+  initialData?: ZiweiInput;
+  onSave?: (data: ZiweiInput) => void;
 }
 
 const STEPS = [
@@ -32,7 +34,7 @@ const STEPS = [
   { key: 'question', label: '问题', icon: Sparkles },
 ] as const;
 
-export default function ZiweiForm({ onSubmit, loading }: ZiweiFormProps) {
+export default function ZiweiForm({ onSubmit, loading, initialData, onSave }: ZiweiFormProps) {
   const today = new Date();
   const [step, setStep] = useState(0); // 0-3
 
@@ -46,6 +48,19 @@ export default function ZiweiForm({ onSubmit, loading }: ZiweiFormProps) {
   const [useSolarTime, setUseSolarTime] = useState(false);
   const [question, setQuestion] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // 载入档案预填数据
+  useEffect(() => {
+    if (!initialData) return;
+    if (initialData.year !== undefined) setYear(initialData.year.toString());
+    if (initialData.month !== undefined) setMonth(initialData.month.toString());
+    if (initialData.day !== undefined) setDay(initialData.day.toString());
+    if (initialData.hour !== undefined) setHour(initialData.hour.toString());
+    if (initialData.minute !== undefined) setMinute(initialData.minute.toString());
+    if (initialData.gender) setGender(initialData.gender);
+    if (initialData.birthplace !== undefined) setBirthplace(initialData.birthplace);
+    if (initialData.useSolarTime !== undefined) setUseSolarTime(initialData.useSolarTime);
+  }, [initialData]);
 
   // 时辰自动计算
   const shichenInfo = useMemo(() => {
@@ -111,6 +126,32 @@ export default function ZiweiForm({ onSubmit, loading }: ZiweiFormProps) {
     const min = parseInt(minute);
 
     onSubmit({
+      year: y,
+      month: m,
+      day: d,
+      hour: h,
+      minute: min,
+      gender,
+      birthplace: birthplace.trim() || undefined,
+      useSolarTime,
+      question: question.trim() || undefined,
+    });
+  };
+
+  // 保存为档案（生辰档案，全平台可用）
+  const handleSave = () => {
+    if (!onSave) return;
+    const y = parseInt(year);
+    const m = parseInt(month);
+    const d = parseInt(day);
+    const h = parseInt(hour);
+    const min = parseInt(minute);
+    if (isNaN(y) || isNaN(m) || isNaN(d) || isNaN(h) || isNaN(min)) {
+      setErrors({ year: '请先填完出生日期时间再保存' });
+      setStep(0);
+      return;
+    }
+    onSave({
       year: y,
       month: m,
       day: d,
@@ -309,6 +350,18 @@ export default function ZiweiForm({ onSubmit, loading }: ZiweiFormProps) {
                 <div>{gender === 'male' ? '♂ 男' : '♀ 女'}{birthplace ? ` · ${birthplace}` : ''}{useSolarTime ? ' · 真太阳时' : ''}</div>
               </div>
             </div>
+          )}
+
+          {/* 保存为档案（最后一步显示） */}
+          {onSave && step === STEPS.length - 1 && (
+            <button
+              type="button"
+              onClick={handleSave}
+              className="w-full py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 rounded-lg text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors flex items-center justify-center gap-2"
+            >
+              <Save className="w-4 h-4" />
+              保存为档案
+            </button>
           )}
 
           {/* 导航按钮 */}

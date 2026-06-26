@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Grid3X3, Sparkles, Calculator, HelpCircle, Star, Menu, X, Crown, BookOpen, Flame } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
+import GlobalUserMenu from './GlobalUserMenu';
 
 interface MainHeaderTabsProps {
   desktopPrefix?: ReactNode;
@@ -88,10 +89,12 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix }: MainHead
             <span>{item.label}</span>
           </NavLink>
         ))}
+        <GlobalUserMenu />
         <ThemeToggle />
       </div>
 
       <div className="flex items-center gap-2 md:hidden">
+        <GlobalUserMenu />
         <ThemeToggle />
         <button
           onClick={() => setIsMenuOpen((prev) => !prev)}

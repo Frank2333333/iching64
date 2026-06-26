@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Compass, LogIn, LogOut, Save, User, ChevronDown, Loader2, Archive } from 'lucide-react';
+import { Compass, Save, Loader2 } from 'lucide-react';
 import MainHeaderTabs from '../components/MainHeaderTabs';
 import BaziForm from '../components/bazi/BaziForm';
 import BaziMessageList from '../components/bazi/BaziMessageList';
 import BaziChatInput from '../components/bazi/BaziChatInput';
-import LoginDialog from '../components/auth/LoginDialog';
 import { calculateBaziChart, type BaziChart } from '../lib/bazi-calculator';
 import BaziChartTable from '../components/bazi/BaziChartTable';
 import BaziSummaryCards from '../components/bazi/BaziSummaryCards';
@@ -17,8 +16,8 @@ import {
   type BaziInput,
   type ChatMessage,
 } from '../lib/bazi-api';
-import { useAuth } from '../hooks/useAuth';
-import { getProfiles, saveProfile, deleteProfile, type BaziProfile } from '../lib/bazi-profile-api';
+import { useProfile } from '../context/ProfileContext';
+import type { ProfileInput } from '../lib/profile-api';
 import {
   Dialog,
   DialogContent,
@@ -28,12 +27,6 @@ import {
 import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../components/ui/dropdown-menu';
 
 interface ChatContextSummary {
   initialInterpretationSummary: string;
@@ -74,18 +67,36 @@ export default function BaziDivination() {
   // 本地排盘结果
   const [chart, setChart] = useState<BaziChart | null>(null);
 
-  // 认证
-  const { user, token, isLoggedIn, login, logout } = useAuth();
-  const [loginOpen, setLoginOpen] = useState(false);
-
-  // 档案
-  const [profiles, setProfiles] = useState<BaziProfile[]>([]);
-  const [, setProfilesLoading] = useState(false);
+  // 档案（全局 ProfileContext；登录/档案入口由 MainHeaderTabs 内的 GlobalUserMenu 提供）
+  const { currentProfile, saveProfile: saveProfileCtx } = useProfile();
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [profileName, setProfileName] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
-  const [initialFormData, setInitialFormData] = useState<BaziInput | undefined>(undefined);
   const [pendingSaveData, setPendingSaveData] = useState<BaziInput | null>(null);
+
+  // 当前选中档案 → BaziForm 预填数据
+  const initialFormData = useMemo<BaziInput | undefined>(() => {
+    if (!currentProfile) return undefined;
+    const gender = (currentProfile.gender ?? 'male') as 'male' | 'female';
+    if (currentProfile.inputMode === 'pillars' && currentProfile.pillars) {
+      return {
+        gender,
+        birthplace: currentProfile.birthplace ?? undefined,
+        useSolarTime: currentProfile.useSolarTime ?? false,
+        pillars: currentProfile.pillars,
+      };
+    }
+    return {
+      year: currentProfile.year ?? undefined,
+      month: currentProfile.month ?? undefined,
+      day: currentProfile.day ?? undefined,
+      hour: currentProfile.hour ?? undefined,
+      minute: currentProfile.minute ?? undefined,
+      gender,
+      birthplace: currentProfile.birthplace ?? undefined,
+      useSolarTime: currentProfile.useSolarTime ?? false,
+    };
+  }, [currentProfile]);
 
   // 检查 AI 服务状态
   useEffect(() => {
@@ -99,6 +110,18 @@ export default function BaziDivination() {
     setChatError(null);
     setChatContextSummary(null);
   };
+
+  // 切换档案时若在结果页，回到输入页载入新档案
+  useEffect(() => {
+    if (currentProfile && step === 'result') {
+      setStep('input');
+      setResult(null);
+      setChart(null);
+      resetChat();
+      setAiError(null);
+      setAiLoading(false);
+    }
+  }, [currentProfile, step]);
 
   const handleGoHome = () => {
     navigate('/');
@@ -145,61 +168,34 @@ export default function BaziDivination() {
     setAiLoading(false);
   };
 
-  // 加载档案列表
-  const loadProfiles = useCallback(async () => {
-    if (!token) return;
-    setProfilesLoading(true);
-    const res = await getProfiles(token);
-    setProfilesLoading(false);
-    if (res.success && res.data) {
-      setProfiles(res.data);
-    }
-  }, [token]);
-
-  // 保存档案
-  const handleSaveProfile = useCallback(async () => {
-    if (!token || !pendingSaveData || !profileName.trim()) return;
+  // 保存档案（登录走云端，未登录走本地，由 ProfileContext 决定）
+  const handleSaveProfile = async () => {
+    if (!pendingSaveData || !profileName.trim()) return;
     setSaveLoading(true);
-    const inputMode = pendingSaveData.pillars ? 'pillars' : 'birthdate';
-    const res = await saveProfile(token, {
+    const inputMode: 'birthdate' | 'pillars' = pendingSaveData.pillars ? 'pillars' : 'birthdate';
+    const payload: ProfileInput = {
       name: profileName.trim(),
       inputMode,
-      data: pendingSaveData,
-    });
+      gender: pendingSaveData.gender,
+      year: pendingSaveData.year,
+      month: pendingSaveData.month,
+      day: pendingSaveData.day,
+      hour: pendingSaveData.hour,
+      minute: pendingSaveData.minute,
+      birthplace: pendingSaveData.birthplace,
+      useSolarTime: pendingSaveData.useSolarTime,
+      pillars: pendingSaveData.pillars,
+    };
+    const ok = await saveProfileCtx(payload);
     setSaveLoading(false);
-    if (res.success) {
+    if (ok) {
       setSaveDialogOpen(false);
       setProfileName('');
       setPendingSaveData(null);
-      loadProfiles();
-      if (res.overwritten) {
-        alert('已覆盖同名档案');
-      }
-    }
-  }, [token, pendingSaveData, profileName, loadProfiles]);
-
-  // 载入档案到表单
-  const handleLoadProfile = useCallback((profile: BaziProfile) => {
-    setInitialFormData(profile.data);
-    setStep('input');
-    setResult(null);
-    setChart(null);
-    resetChat();
-    setAiError(null);
-    setAiLoading(false);
-  }, []);
-
-  // 删除档案
-  const handleDeleteProfile = useCallback(async (id: string) => {
-    if (!token) return;
-    if (!window.confirm('确定删除此档案？')) return;
-    const res = await deleteProfile(token, id);
-    if (res.success) {
-      loadProfiles();
     } else {
-      alert(res.error || '删除失败');
+      alert('保存失败，请重试');
     }
-  }, [token, loadProfiles]);
+  };
 
   // AI 解读（接受参数，避免竞态）
   const handleAIInterpretation = async (input: BaziInput) => {
@@ -294,7 +290,7 @@ export default function BaziDivination() {
     <div className="h-dvh flex flex-col overflow-hidden bg-gradient-to-br from-[#FFF8F3] via-[#FFFDFC] to-[#F7EFE7]
                   dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950
                   iching-pattern-bg iching-cloud-bg transition-colors duration-500">
-      {/* Header */}
+      {/* Header — 登录与档案入口已由 MainHeaderTabs 内的 GlobalUserMenu 全局提供 */}
       <header className="flex-none border-b border-amber-200/80 bg-white/82
                        text-amber-900 shadow-[0_14px_45px_-34px_rgba(180,83,9,0.35)]
                        backdrop-blur-xl transition-colors duration-500
@@ -320,35 +316,6 @@ export default function BaziDivination() {
             </button>
             <div className="flex items-center gap-3">
               <MainHeaderTabs />
-              {isLoggedIn ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-2 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
-                      <User className="w-4 h-4" />
-                      <span className="max-w-[120px] truncate">{user?.email}</span>
-                      <ChevronDown className="w-3 h-3" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-white dark:bg-neutral-900 border-amber-200 dark:border-amber-900/30">
-                    <DropdownMenuItem onClick={() => { loadProfiles(); setStep('input'); }} className="text-amber-700 dark:text-amber-300 cursor-pointer">
-                      <Archive className="w-4 h-4 mr-2" />
-                      我的档案
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={logout} className="text-red-600 dark:text-red-400 cursor-pointer">
-                      <LogOut className="w-4 h-4 mr-2" />
-                      退出登录
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <button
-                  onClick={() => setLoginOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                >
-                  <LogIn className="w-4 h-4" />
-                  登录
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -364,43 +331,11 @@ export default function BaziDivination() {
                   "知命者，不立于岩墙之下"
                 </p>
               </div>
-              {isLoggedIn && profiles.length > 0 && (
-                <div className="mb-4 animate-fadeIn">
-                  <div className="bg-white dark:bg-neutral-800 rounded-xl p-4 border border-amber-200 dark:border-amber-900/30 shadow-sm">
-                    <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-400 mb-2 flex items-center gap-2">
-                      <Archive className="w-4 h-4" />
-                      我的档案
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {profiles.map((p) => (
-                        <div key={p.id} className="relative group">
-                          <button
-                            type="button"
-                            onClick={() => handleLoadProfile(p)}
-                            className="px-3 py-1.5 rounded-lg text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
-                          >
-                            {p.name}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); handleDeleteProfile(p.id); }}
-                            className="absolute -top-1.5 -right-1.5 w-4 h-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10 leading-none"
-                            title="删除"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
               <BaziForm
                 onSubmit={handleSubmit}
                 loading={aiLoading}
                 initialData={initialFormData}
-                onClearInitialData={() => setInitialFormData(undefined)}
-                onSave={isLoggedIn ? (data) => { setPendingSaveData(data); setSaveDialogOpen(true); } : undefined}
+                onSave={(data) => { setPendingSaveData(data); setSaveDialogOpen(true); }}
               />
             </div>
           </div>
@@ -442,16 +377,13 @@ export default function BaziDivination() {
         )}
       </main>
 
-      {/* Login Dialog */}
-      <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} onLogin={login} />
-
       {/* Save Profile Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogContent className="sm:max-w-md bg-white dark:bg-neutral-900 border-amber-200 dark:border-amber-900/30">
           <DialogHeader>
             <DialogTitle className="text-amber-900 dark:text-amber-100 flex items-center gap-2">
               <Save className="w-5 h-5" />
-              保存八字档案
+              保存档案
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">

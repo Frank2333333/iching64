@@ -542,6 +542,104 @@ app.delete('/api/bazi/profiles/:id', authMiddleware, async (c) => {
   }
 });
 
+// ==================== 通用档案 API（八字/紫微等全平台共用）====================
+
+app.get('/api/profiles', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM profiles WHERE user_id = ? ORDER BY created_at DESC'
+    ).bind(userId).all();
+
+    const profiles = (results || []).map((p: Record<string, unknown>) => ({
+      id: p.id as string,
+      userId: p.user_id as string,
+      name: p.name as string,
+      inputMode: p.input_mode as 'birthdate' | 'pillars',
+      gender: (p.gender ?? null) as 'male' | 'female' | null,
+      year: (p.year ?? null) as number | null,
+      month: (p.month ?? null) as number | null,
+      day: (p.day ?? null) as number | null,
+      hour: (p.hour ?? null) as number | null,
+      minute: (p.minute ?? null) as number | null,
+      birthplace: (p.birthplace ?? null) as string | null,
+      useSolarTime: !!p.use_solar_time,
+      pillars: p.pillars ? (typeof p.pillars === 'string' ? JSON.parse(p.pillars as string) : p.pillars) : null,
+      createdAt: p.created_at as number,
+    }));
+
+    return c.json({ success: true, data: profiles });
+  } catch (error) {
+    console.error('获取档案失败:', error);
+    return c.json({ success: false, error: '获取失败' }, 500);
+  }
+});
+
+app.post('/api/profiles', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { name, inputMode, gender, year, month, day, hour, minute, birthplace, useSolarTime, pillars } = await c.req.json();
+
+    if (!name || !name.trim()) {
+      return c.json({ success: false, error: '档案名称不能为空' }, 400);
+    }
+    if (!inputMode || !['birthdate', 'pillars'].includes(inputMode)) {
+      return c.json({ success: false, error: 'inputMode 无效' }, 400);
+    }
+
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM profiles WHERE user_id = ? AND name = ?'
+    ).bind(userId, name.trim()).first();
+    const overwritten = !!existing;
+
+    await c.env.DB.prepare(
+      `INSERT OR REPLACE INTO profiles
+        (id, user_id, name, input_mode, gender, year, month, day, hour, minute, birthplace, use_solar_time, pillars, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      id, userId, name.trim(), inputMode,
+      gender ?? null, year ?? null, month ?? null, day ?? null, hour ?? null, minute ?? null,
+      birthplace ?? null, useSolarTime ? 1 : 0,
+      pillars ? JSON.stringify(pillars) : null,
+      Date.now()
+    ).run();
+
+    return c.json({
+      success: true,
+      data: {
+        id, userId, name: name.trim(), inputMode,
+        gender: gender ?? null, year: year ?? null, month: month ?? null, day: day ?? null,
+        hour: hour ?? null, minute: minute ?? null,
+        birthplace: birthplace ?? null, useSolarTime: !!useSolarTime,
+        pillars: pillars ?? null,
+        createdAt: Date.now(),
+      },
+      overwritten,
+    });
+  } catch (error) {
+    console.error('保存档案失败:', error);
+    return c.json({ success: false, error: '保存失败' }, 500);
+  }
+});
+
+app.delete('/api/profiles/:id', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { id } = c.req.param();
+
+    await c.env.DB.prepare(
+      'DELETE FROM profiles WHERE id = ? AND user_id = ?'
+    ).bind(id, userId).run();
+
+    return c.json({ success: true, message: '已删除' });
+  } catch (error) {
+    console.error('删除档案失败:', error);
+    return c.json({ success: false, error: '删除失败' }, 500);
+  }
+});
+
 // ==================== 导出 ====================
 
 // Cloudflare Pages Functions 使用 EventContext，需要适配为 Hono 的 fetch 签名

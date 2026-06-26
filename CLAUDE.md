@@ -99,11 +99,23 @@ API 路由（与原 Express 完全对应，响应格式 `{ success, data?, error
 
 | 存储 | 用途 | 替代 |
 |------|------|------|
-| Cloudflare D1 | 用户、反馈、八字档案（结构化数据） | 原 data/*.json 文件 |
+| Cloudflare D1 | 用户、反馈、通用档案 profiles（结构化数据） | 原 data/*.json 文件 |
 | Cloudflare KV | 验证码（带 TTL 自动过期） | 原内存 Map |
+| 浏览器 localStorage | 未登录用户的本地档案 + 当前选中档案 + 登录 token | — |
 | 构建时打包 | 玄学技能 SKILL.md + references/*.md | 原 fs.readFileSync 运行时读取 |
 
-D1 表结构见 `migrations/0001_initial.sql`。
+D1 表结构见 `migrations/0001_initial.sql`（users/feedback/bazi_profiles）与 `migrations/0002_profiles.sql`（通用 profiles 表 + 从 bazi_profiles 迁移）。
+
+### 通用档案系统（全平台共用）
+
+八字/紫微等所有生辰类功能复用同一份"人物档案"，用户输入一次生辰全平台可用。
+
+- **后端**：`profiles` 表（`migrations/0002_profiles.sql`）以生辰为核心，生辰字段独立列 + `pillars` JSON 列 + `UNIQUE(user_id,name)`；`/api/profiles`（GET/POST/DELETE，`authMiddleware` 保护）在 `functions/api/[[route]].ts`。旧 `bazi_profiles` 表与 `/api/bazi/profiles` 路由保留作备份/兼容，前端不再调用。
+- **前端全局状态**：`src/context/AuthContext.tsx`（`AuthProvider`，登录态全局共享，token 存 `localStorage` 的 `iching_token`，初始化时从旧 `bazi_token` 迁移）+ `src/context/ProfileContext.tsx`（`ProfileProvider`，管理档案列表/当前选中档案/保存/删除/上传本地到云端）。`main.tsx` 注入 `AuthProvider > ProfileProvider > App`。`src/hooks/useAuth.ts` 已改为从 AuthContext 重新导出（向后兼容）。
+- **本地+云端双层**：未登录档案存 `localStorage(iching_local_profiles)`，当前选中档案存 `iching_current_profile`；登录后 `uploadLocalToCloud` 逐个上传（按 name 去重，失败保留本地），云端档案存 D1。
+- **全局入口**：`src/components/GlobalUserMenu.tsx`（登录按钮/邮箱菜单 + 档案切换器 + 上传本地 + 删除）嵌入 `MainHeaderTabs`，所有页面自动生效；`LoginDialog` 在此全局渲染。
+- **档案数据结构**：`Profile`（`src/context/ProfileContext.tsx`）= `{id, name, inputMode:'birthdate'|'pillars', gender, year/month/day/hour/minute, birthplace, useSolarTime, pillars?, createdAt, source:'local'|'cloud'}`。`birthdate` 全平台可用；`pillars`（直接四柱）仅八字可用，紫微不可选（四柱无法反推紫微盘）。
+- **页面接入**：`BaziDivination`/`ZiweiDivination` 从 `useProfile().currentProfile` 派生 `initialData` 预填表单（`useMemo`，切换档案自动回输入页）；保存走 `ProfileContext.saveProfile`（登录云端/未登录本地）。`BaziForm` 生辰模式与直接八字模式均可"保存为档案"；`ZiweiForm` 新增 `initialData`/`onSave` props。
 
 ### 玄学技能内容打包
 
