@@ -11,6 +11,7 @@ const BaziDivination = lazy(() => import('./pages/BaziDivination'));
 const ZiweiDivination = lazy(() => import('./pages/ZiweiDivination'));
 const ClassicsPage = lazy(() => import('./pages/ClassicsPage'));
 const ZiweiKnowledge = lazy(() => import('./pages/ZiweiKnowledge'));
+const LifeReport = lazy(() => import('./pages/LifeReport'));
 
 function LoadingFallback() {
   return (
@@ -59,6 +60,7 @@ function AppContent() {
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/" element={<QuestionDivination />} />
+          <Route path="/life-report" element={<LifeReport />} />
           <Route path="/hexagrams" element={<GuaList />} />
           <Route path="/divination" element={<Divination />} />
           <Route path="/question" element={<QuestionDivination />} />

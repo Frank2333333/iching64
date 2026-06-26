@@ -1,41 +1,41 @@
 ## 当前目标
-将"档案存储 + 登录"从八字页扩展到全平台：用户输入一次生辰，八字/紫微等所有生辰类功能复用同一档案；未登录可本地存档案，登录后同步云端。
+新增"人生发展报告"功能：输入生辰→前端排八字+紫微双盘→AI 以"人生规划师"身份输出叙事性人生发展报告。
+
+## 主线
+C 为主干（八字定框架+紫微填细节）+ D 时间轴（纯数据双盘对齐）+ B 呈现（分维度叙事）。分章节流式生成。普通层大白话叙事，深度层折叠命盘详情。
 
 ## 当前步骤（STEP列表）
-1. [x] 后端：migrations/0002_profiles.sql（通用 profiles 表 + 从 bazi_profiles 迁移）
-2. [x] 后端：functions/api/[[route]].ts 新增 GET/POST/DELETE /api/profiles 路由
-3. [x] 前端：AuthContext（useAuth 改造为 Context，token key bazi_token→iching_token 迁移）
-4. [x] 前端：ProfileContext（本地+云端合并、currentProfile、save/delete/uploadLocalToCloud）
-5. [x] 前端：main.tsx 注入 AuthProvider > ProfileProvider > App
-6. [x] 前端：GlobalUserMenu（登录+档案切换器+上传本地+删除）嵌入 MainHeaderTabs
-7. [x] 前端：BaziDivination/BaziForm 接入 ProfileContext（预填+保存，移除页面内登录UI/档案列表）
-8. [x] 前端：ZiweiDivination/ZiweiForm 接入 ProfileContext（initialData+保存，仅 birthdate 档案）
-9. [x] 本地+云端同步逻辑（uploadLocalToCloud 失败保留本地）
-10. [x] 构建验证：npm run build 通过、tsc -b 通过
+1. [x] 后端 life-report-ai.ts ✅
+2. [x] 后端 [[route]].ts 加 /api/life-report/{overview,section,chat} 3 路由 ✅
+3. [x] 前端 life-report-api.ts + LifeReportForm.tsx ✅
+4. [x] 前端 LifeTimeline.tsx（双盘时间轴）✅
+5. [x] 前端 LifeReportView.tsx（渐进渲染+折叠区+追问）✅
+6. [x] 前端 LifeReport.tsx 页面 + 路由(/life-report) + 导航(置顶"人生报告") ✅
+7. [x] 构建验证 ✅ npm run build 通过；tsc -b 通过
 
 ## 当前进展
-- 后端：profiles 表 + /api/profiles 路由完成，本地迁移已应用
-- 前端：全局 AuthContext/ProfileContext + 导航栏 GlobalUserMenu + 八字/紫微页接入完成
-- 构建：npm run build 通过；tsc -b 通过
-- lint：47 error 均为预存问题（setState-in-effect / prefer-const / 未使用变量 / D1 any 等），本次未引入新 error
+- 全部 7 STEP 完成，构建通过
+- bazi-calculator/ziwei-calculator 被正确拆为独立 chunk（314KB+479KB），LifeReport 页本身 27.5KB
+- 代码分割良好，无新 chunk 警告
 
 ## 关键决策
-- 通用人物档案（生辰为核心），八字+紫微共用 profiles 表；旧 bazi_profiles 迁移后保留作备份
-- 全局导航栏入口（GlobalUserMenu 嵌入 MainHeaderTabs），AuthProvider > ProfileProvider 全局共享
-- 支持本地档案：未登录存 localStorage(iching_local_profiles)，登录后 uploadLocalToCloud 同步云端
-- pillars 档案（直接八字）仅八字可用，紫微不可选（技术限制：四柱无法反推紫微盘）
-- token key 从 bazi_token 迁移到 iching_token（初始化时自动迁移老 key）
+- 人生规划师调性（非铁口直断），大白话叙事，markdown 输出
+- 分章节流式：overview(max_tokens 2000,3-5s)→并行5 sections(max_tokens 1500,各带 overview 保证一致)
+- 时间轴纯本地数据，不调 AI
+- 前端编排：LifeReport.tsx 用 overviewRef 存最新总览，章节请求读取
+- 深度层命盘详情自渲染简化双盘（八字四柱表+紫微十二宫列表），不引入 ZiweiPalaceGrid 避免耦合
+- 导航"人生报告"置顶作为核心入口
 
 ## 验证状态
-- ✅ TypeScript 编译通过
-- ✅ Vite 生产构建通过
-- ✅ 本地 D1 迁移 0002 应用成功，profiles 表结构正确（14 列）
-- ⏳ 需手动测试：未登录本地存档 / 登录云端同步 / 八字紫微跨功能复用 / 旧档案迁移
+- ✅ tsc -b 通过
+- ✅ npm run build 通过
+- ⏳ 需手动联调：dev 模式跑通 overview→sections 流式、时间轴对齐、追问、保存档案
 
 ## 下一步（手动测试清单）
-1. 未登录：导航栏档案切换器新增/选择/删除本地档案
-2. 八字页选档案自动填生辰；紫微页选 birthdate 档案自动填
-3. 登录：云端档案拉取，本地档案"上传到云端"
-4. 退出登录：本地档案保留，云端不可见
-5. 直接八字保存为 pillars 档案（仅八字可选）
-6. 部署前：npm run db:migrate（远程）应用 0002 迁移到生产 D1
+1. /life-report 输入生辰 → 3-5s 出本命总览
+2. 5 个章节陆续出现（事业/财富/感情/健康/运势）
+3. 时间轴展示双盘十年段对齐，当前段高亮
+4. 展开"命盘详情"看八字四柱+紫微十二宫
+5. 底部追问对话可用
+6. 保存为档案
+7. 部署：无需新迁移（复用 profiles 表），构建+deploy 即可

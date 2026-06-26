@@ -9,6 +9,7 @@ import { getAIDivination, chatWithAI } from '../../server-workers/services/divin
 import { getBaziFortune, chatWithBazi } from '../../server-workers/services/bazi-ai';
 import { getZiweiFortune, chatWithZiwei } from '../../server-workers/services/ziwei-ai';
 import { interpretParagraph } from '../../server-workers/services/classics-ai';
+import { getLifeReportOverview, getLifeReportSection, chatWithLifeReport, type SectionType } from '../../server-workers/services/life-report-ai';
 
 // ==================== 类型定义 ====================
 
@@ -637,6 +638,69 @@ app.delete('/api/profiles/:id', authMiddleware, async (c) => {
   } catch (error) {
     console.error('删除档案失败:', error);
     return c.json({ success: false, error: '删除失败' }, 500);
+  }
+});
+
+// ==================== 人生发展报告 API（双盘合参）====================
+
+app.post('/api/life-report/overview', async (c) => {
+  try {
+    const input = await c.req.json();
+    if (!input || !input.baziChart || !input.ziweiChart) {
+      return c.json({ success: false, error: '生辰排盘数据不完整' }, 400);
+    }
+    if (!c.env.OPENAI_API_KEY || c.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return c.json({ success: false, error: 'AI 服务未配置' }, 503);
+    }
+    const result = await getLifeReportOverview(input, c.env);
+    return c.json({ success: true, data: { interpretation: result, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() } });
+  } catch (error: unknown) {
+    console.error('人生报告总览失败:', error);
+    return c.json({ success: false, error: (error as Error).message || '生成失败' }, 500);
+  }
+});
+
+app.post('/api/life-report/section', async (c) => {
+  try {
+    const req = await c.req.json();
+    if (!req || !req.sectionType || !req.overview || !req.baziChart || !req.ziweiChart) {
+      return c.json({ success: false, error: '章节请求参数不完整' }, 400);
+    }
+    const validSections: SectionType[] = ['career', 'wealth', 'marriage', 'health', 'trend'];
+    if (!validSections.includes(req.sectionType)) {
+      return c.json({ success: false, error: '章节类型无效' }, 400);
+    }
+    if (!c.env.OPENAI_API_KEY || c.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return c.json({ success: false, error: 'AI 服务未配置' }, 503);
+    }
+    const result = await getLifeReportSection(req, c.env);
+    return c.json({ success: true, data: { interpretation: result, sectionType: req.sectionType, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() } });
+  } catch (error: unknown) {
+    console.error('人生报告章节失败:', error);
+    return c.json({ success: false, error: (error as Error).message || '生成失败' }, 500);
+  }
+});
+
+app.post('/api/life-report/chat', async (c) => {
+  try {
+    const { message, input, history, reportSummary } = await c.req.json();
+    if (!message || !message.trim()) {
+      return c.json({ success: false, error: '消息内容不能为空' }, 400);
+    }
+    if (!input || !input.baziChart || !input.ziweiChart) {
+      return c.json({ success: false, error: '排盘数据不完整' }, 400);
+    }
+    if (!c.env.OPENAI_API_KEY || c.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return c.json({ success: false, error: 'AI 服务未配置' }, 503);
+    }
+    const result = await chatWithLifeReport(
+      { message: message.trim(), input, history: history || [], reportSummary },
+      c.env,
+    );
+    return c.json({ success: true, data: { message: result, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() } });
+  } catch (error: unknown) {
+    console.error('人生报告对话失败:', error);
+    return c.json({ success: false, error: (error as Error).message || '对话失败' }, 500);
   }
 });
 

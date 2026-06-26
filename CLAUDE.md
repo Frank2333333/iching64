@@ -55,6 +55,7 @@ npm run lint
 ### 前端（HashRouter）
 
 路由定义见 `src/App.tsx`（**lazy import** 代码分割）：
+- `/life-report` → `LifeReport`（人生发展报告，双盘合参，核心入口）
 - `/` → `QuestionDivination`（问事解卦，默认页）
 - `/hexagrams` → `GuaList`（六十四卦浏览）
 - `/divination` → `Divination`（数字起卦）
@@ -91,6 +92,7 @@ API 路由（与原 Express 完全对应，响应格式 `{ success, data?, error
 - `/api/bazi/ai` + `/api/bazi/chat` — 八字排盘 AI 解读与对话
 - `/api/ziwei/ai` + `/api/ziwei/chat` — 紫微斗数 AI 解读与对话
 - `/api/classics/ai` — 经典文献 AI 解读
+- `/api/life-report/overview` + `/api/life-report/section` + `/api/life-report/chat` — 人生发展报告（双盘合参，分章节流式生成）
 - `/api/bazi/profiles` — 八字档案 CRUD（JWT 认证，D1 持久化，同名覆盖用 `INSERT OR REPLACE`）
 - `/api/auth/send-code` + `/api/auth/verify-code` + `/api/auth/me` — 邮箱验证码登录，验证码存 KV（TTL 600s），JWT 认证
 - `/api/health` — 服务健康检查
@@ -161,6 +163,19 @@ D1 表结构见 `migrations/0001_initial.sql`（users/feedback/bazi_profiles）�
 - **星曜详情面板**：`ZiweiStarDetailPanel` 点击星曜滑入展示；当星曜所在宫位为夫妻宫时，追加展示 `STAR_IN_FUQI_GU` 五段式断语（核心/吉象/凶象/配偶特征/婚期/倪师原话）
 - **序列化边界**：iztro 的 FunctionalAstrolabe 有方法和循环引用，calculator 层一步转换为纯对象
 - **星曜图鉴**：`/ziwei-knowledge` 路由，ZiweiKnowledge 页面，卡片网格浏览14主星+8吉星+6煞星，点击展开详情
+
+### 人生发展报告核心逻辑（双盘合参）
+
+`src/pages/LifeReport.tsx` + `src/lib/life-report-api.ts` + `server-workers/services/life-report-ai.ts`，定位"人生规划师"而非命盘分析师，输出叙事性人生发展报告。
+
+- **主线**：八字定框架（日主/格局/用神/大运气候=人生基调）+ 紫微填细节（宫位/星曜/四化=具体领域呈现）+ 时间轴对齐双盘十年段 + 分维度叙事呈现
+- **分章节流式生成**（前端编排）：用户提交 → 前端同时排双盘（`calculateBaziChart` + `calculateZiweiChart`，输入参数一致）→ 调 `/api/life-report/overview` 出"本命总览"（首屏 3-5s）→ 总览回来后**并行**调 5 个 `/api/life-report/section`（career/wealth/marriage/health/trend，各带 overview 保证一致性）→ 每个回来就渲染。各请求独立 30s 互不影响
+- **AI 调性**：`life-report-ai.ts` 的 system prompt 是"资深人生规划师"，温暖笃定不宿命，命理术语转大白话，markdown 叙事输出（非铁口直断六段式）。目标：解释权/决策信心/情绪安慰/身份认同
+- **一致性约束**：总览确定的核心结论（日主特质/用神朝向/命宫格局/四化落点）通过 overview 注入各 section prompt + chat 的 reportSummary，禁止自相矛盾
+- **数据结构**：`LifeReportInput` = 生辰 + `baziChart` + `ziweiChart` + `focus?`（用户关注点，影响侧重）；`SectionType` = career/wealth/marriage/health/trend
+- **呈现**：`LifeReportView` 渐进渲染 6 个章节位（loading 占位→markdown）+ `LifeTimeline`（纯本地双盘数据，八字大运↔紫微大限按 startAge 对齐，当前段高亮）+ 命盘详情折叠区（自渲染简化八字四柱表+紫微十二宫列表，深度用户可展开，不引入 ZiweiPalaceGrid 避免耦合）+ 追问对话（复用 `BaziChatInput`）
+- **追问**：`/api/life-report/chat`，reportSummary = 总览+各章节内容拼接，保证追问与报告一致
+- **档案复用**：复用通用 profiles 表（inputMode='birthdate'），无需新迁移；`LifeReportForm` 从 `ProfileContext.currentProfile` 预填
 
 ### 结构化经典文献
 
