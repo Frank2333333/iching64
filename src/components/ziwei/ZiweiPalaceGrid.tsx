@@ -9,6 +9,8 @@ import { useZiweiPalace } from './ZiweiPalaceContext';
 
 interface ZiweiPalaceGridProps {
   chart: ZiweiChart;
+  /** 紧凑模式：网格最小宽度等比缩小 1/5（用于窄栏场景，如人生报告左栏） */
+  compact?: boolean;
 }
 
 /** 四化徽章 */
@@ -91,7 +93,7 @@ function PalaceCell({ palace, isSelected, isSanFang, overlaySiHua, overlayLabel,
   return (
     <div
       className={`relative p-1.5 sm:p-2 border border-amber-200/60 dark:border-amber-800/30
-        min-h-[100px] sm:min-h-[120px] flex flex-col cursor-pointer
+        h-[120px] sm:h-[140px] flex flex-col cursor-pointer overflow-hidden
         transition-all duration-200 palace-cell-animate
         ${(isMing || isScopeMing) ? 'bg-amber-50/80 dark:bg-amber-900/20' : 'bg-white/50 dark:bg-neutral-800/50'}
         ${isSelected ? 'ring-2 ring-blue-500/70 ring-inset' : ''}
@@ -102,7 +104,7 @@ function PalaceCell({ palace, isSelected, isSanFang, overlaySiHua, overlayLabel,
       onClick={handleClick}
     >
       {/* 宫名+天干地支 */}
-      <div className="flex items-center justify-between mb-0.5">
+      <div className="flex items-center justify-between mb-0.5 flex-none">
         <span className={`text-xs font-bold ${isScopeMing ? 'text-blue-600 dark:text-blue-300' : isMing ? 'text-amber-700 dark:text-amber-300' : 'text-amber-800/80 dark:text-amber-400/80'}`}>
           {displayName}
           {isBody && <span className="text-[10px] ml-0.5 text-purple-600 dark:text-purple-400">身</span>}
@@ -113,11 +115,13 @@ function PalaceCell({ palace, isSelected, isSanFang, overlaySiHua, overlayLabel,
       </div>
       {/* 运限视角下显示本命宫名 */}
       {scopePalaceName && scopePalaceName !== palace.name && (
-        <div className="text-[9px] text-gray-400 dark:text-gray-500 mb-0.5">
+        <div className="text-[9px] text-gray-400 dark:text-gray-500 mb-0.5 flex-none">
           本命：{palace.name}
         </div>
       )}
 
+      {/* 星曜区（可滚动，防止流年视图内容多撑高宫格） */}
+      <div className="flex-1 overflow-y-auto min-h-0">
       {/* 主星 */}
       {palace.majorStars.length > 0 ? (
         <div className="flex flex-wrap gap-x-1.5 gap-y-0.5">
@@ -179,9 +183,10 @@ function PalaceCell({ palace, isSelected, isSanFang, overlaySiHua, overlayLabel,
           ))}
         </div>
       )}
+      </div>
 
       {/* 长生十二神 + 大限 */}
-      <div className="mt-auto pt-0.5 flex items-center justify-between">
+      <div className="mt-auto pt-0.5 flex items-center justify-between flex-none">
         <span className="text-[9px] text-gray-400 dark:text-gray-600">{palace.changsheng12}</span>
         {palace.decadal && (
           <span className={`text-[9px] ${palace.isCurrentDaXian ? 'text-purple-500 dark:text-purple-400 font-bold' : 'text-blue-500/70 dark:text-blue-400/50'}`}>
@@ -334,7 +339,7 @@ function CenterInfo({ chart }: { chart: ZiweiChart }) {
   );
 }
 
-export default function ZiweiPalaceGrid({ chart }: ZiweiPalaceGridProps) {
+export default function ZiweiPalaceGrid({ chart, compact = false }: ZiweiPalaceGridProps) {
   const { selectedPalaceIndex, overlaySiHua, timeView, scopePalaceNames, scopeHoroscopeStars } = useZiweiPalace();
 
   // 宫格入场动画延迟：巳→午→...→辰，每宫递增 40ms
@@ -376,7 +381,7 @@ export default function ZiweiPalaceGrid({ chart }: ZiweiPalaceGridProps) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <div className="min-w-[480px] sm:min-w-[560px]">
+      <div className={compact ? 'min-w-[384px] sm:min-w-[448px]' : 'min-w-[480px] sm:min-w-[560px]'}>
         <div className="grid grid-cols-4 gap-0 border border-amber-300/50 dark:border-amber-700/40
           rounded-lg overflow-hidden bg-amber-50/30 dark:bg-neutral-900/30 relative">
           {grid.map((row, ri) =>

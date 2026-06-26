@@ -82,7 +82,7 @@ function ChartPanel({ baziChart, ziweiChart }: { baziChart: BaziChart | null; zi
         <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-amber-200 dark:border-amber-900/30 p-3">
           <ZiweiTimeNav chart={ziweiChart} />
           <div className="mt-2 overflow-x-auto">
-            <ZiweiPalaceGrid chart={ziweiChart} />
+            <ZiweiPalaceGrid chart={ziweiChart} compact />
           </div>
         </div>
       </div>
@@ -214,8 +214,8 @@ export default function LifeReportView({
   return (
     <div className="flex-1 overflow-hidden p-3 sm:p-4" onMouseMove={onMouseMove} onMouseUp={onMouseUp}>
       <div className="h-full max-w-[1600px] mx-auto flex gap-0">
-        {/* 左栏：八字卡片 + 紫微命盘（完整交互） + 运势时间轴，固定占 1/3 */}
-        <aside className="hidden lg:flex flex-col min-h-0 overflow-y-auto pr-2" style={{ flex: '1 1 0', minWidth: 0 }}>
+        {/* 左栏：八字卡片 + 紫微命盘（完整交互） + 运势时间轴，宽度刚好容下命盘 */}
+        <aside className="hidden lg:flex flex-col min-h-0 overflow-y-auto pr-2" style={{ flex: '0 0 512px' }}>
           <ChartPanel baziChart={baziChart} ziweiChart={ziweiChart} />
           <div className="mt-3">
             <LifeTimeline baziChart={baziChart} ziweiChart={ziweiChart} />
