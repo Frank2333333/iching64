@@ -135,26 +135,29 @@ export default function LifeReport() {
       const content = ovRes.data.interpretation;
       overviewRef.current = content;
       setOverview({ loading: false, error: null, content });
-
-      // 2. 总览回来，并行调 5 章节（各带 overview 保证一致性）
-      for (const st of SECTION_TYPES) {
-        setSections((prev) => ({ ...prev, [st]: { loading: true, error: null, content: null } }));
-        getLifeReportSection(input, st, content)
-          .then((res) => {
-            if (res.success && res.data) {
-              setSections((prev) => ({ ...prev, [st]: { loading: false, error: null, content: res.data!.interpretation } }));
-            } else {
-              setSections((prev) => ({ ...prev, [st]: { loading: false, error: res.error || '生成失败', content: null } }));
-            }
-          })
-          .catch(() => {
-            setSections((prev) => ({ ...prev, [st]: { loading: false, error: '网络错误', content: null } }));
-          });
-      }
+      // 各章节改为用户点击后按需生成（见 handleGenerateSection）
     } else {
       setOverview({ loading: false, error: ovRes.error || '生成失败', content: null });
     }
   };
+
+  // 按需生成单个章节（用户点击触发）
+  const handleGenerateSection = useCallback(async (st: SectionType) => {
+    if (!reportInput || !overviewRef.current) return;
+    const sectionState = sections[st];
+    if (sectionState.loading) return; // 防重复点击
+    setSections((prev) => ({ ...prev, [st]: { loading: true, error: null, content: null } }));
+    try {
+      const res = await getLifeReportSection(reportInput, st, overviewRef.current);
+      if (res.success && res.data) {
+        setSections((prev) => ({ ...prev, [st]: { loading: false, error: null, content: res.data!.interpretation } }));
+      } else {
+        setSections((prev) => ({ ...prev, [st]: { loading: false, error: res.error || '生成失败', content: null } }));
+      }
+    } catch {
+      setSections((prev) => ({ ...prev, [st]: { loading: false, error: '网络错误', content: null } }));
+    }
+  }, [reportInput, sections]);
 
   const handleBackToInput = () => {
     setStep('input');
@@ -299,6 +302,7 @@ export default function LifeReport() {
             onSendChat={handleSendChat}
             onChatKeyDown={handleChatKeyDown}
             onBackToInput={handleBackToInput}
+            onGenerateSection={handleGenerateSection}
           />
         )}
       </main>

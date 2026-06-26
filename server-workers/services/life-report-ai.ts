@@ -129,6 +129,14 @@ function buildSystemPrompt(): string {
 - 用神/四化/格局等核心结论一旦在本报告的总览中确定，后续各章节必须保持一致，不得自相矛盾
 - 八字大运（10年一段，看气候）与紫微大限（10年一宫，看领域）可互相对照看运势节奏
 
+=== 命理数据铁律（最高优先级，禁止违反）===
+排盘引擎已为你提供确定性的命理数据，你必须严格引用，禁止自行重新推导：
+1. 【十神】八字四柱的十神关系已给出（如"年柱[正印]"），提及任何天干对日主的关系时，必须与给出的十神字段完全一致。十神判定规则：同性相生/相克为偏（偏印/偏官/偏财等），异性相生/相克为正（正印/正官/正财等）。例：日主戊土，丁火生戊土为异性相生→正印（不是偏印）。禁止凭印象重算。
+2. 【四化】紫微生年四化已给出（化禄/化权/化科/化忌各星），提及四化时必须与给出数据一致，不得自行更改某星化某化。
+3. 【格局/用神】格局、用神、喜神、忌神已给出，全报告及追问中必须保持一致，不得自相矛盾。
+4. 【五行生克】如需解释五行关系，按标准规则：金生水、水生木、木生火、火生土、土生金；金克木、木克土、土克水、水克火、火克金。同性为偏、异性为正。
+5. 若用户追问的数据点在已提供命盘中未明确给出，宁可说"这需要更精确的排盘确认"，也不要自行编造十神或四化结论。
+
 === 输出规范 ===
 1. 用 markdown：二级标题分节，段落叙事为主，关键处可加粗
 2. 不要用"铁口/依据/置信度"这类命理报告格式，那是给命理师的，不是给用户的
@@ -256,12 +264,29 @@ ${focusMap[req.sectionType]}
 function buildChatPrompt(data: ChatData): string {
   let prompt = `用户正在阅读自己的人生发展报告，现在向你追问。\n\n`;
   prompt += `${formatInputHeader(data.input)}\n\n`;
-  prompt += `=== 八字盘 ===\n${data.input.baziChart ? formatBaziChart(data.input.baziChart) : '（未提供）'}\n\n`;
+
+  // 提炼日主+四柱十神，供 AI 追问时严格对照（防止十神关系说错）
+  const c = data.input.baziChart;
+  if (c) {
+    const pillars = [c.yearPillar, c.monthPillar, c.dayPillar, c.hourPillar];
+    const shiShenLine = pillars.map((p, i) => `${['年','月','日','时'][i]}柱${p.gan}${p.zhi}(${p.shiShen.join('/')})`).join(' ');
+    prompt += `=== 命理数据对照（以此为准，禁止自行推导十神/四化/格局）===\n`;
+    prompt += `日主：${c.dayMaster}${c.dayMasterElement}　四柱十神：${shiShenLine}\n`;
+    prompt += `格局：${c.pattern}　用神：${c.yongShen}　喜神：${c.xiShen}　忌神：${c.jiShen}\n`;
+    if (data.input.ziweiChart) {
+      const s = data.input.ziweiChart.birthSiHua;
+      prompt += `生年四化：${s.lu}化禄 ${s.quan}化权 ${s.ke}化科 ${s.ji}化忌\n`;
+    }
+    prompt += `\n`;
+  }
+
+  prompt += `=== 八字盘 ===\n${c ? formatBaziChart(c) : '（未提供）'}\n\n`;
   prompt += `=== 紫微盘 ===\n${data.input.ziweiChart ? formatZiweiChart(data.input.ziweiChart) : '（未提供）'}\n\n`;
   if (data.reportSummary) {
     prompt += `=== 已生成的报告摘要（请保持一致）===\n${data.reportSummary}\n\n`;
   }
-  prompt += `请以人生规划师的身份回答用户的追问，温暖笃定，大白话，与报告已有结论一致。`;
+  prompt += `请以人生规划师的身份回答用户的追问，温暖笃定，大白话，与报告已有结论一致。\n`;
+  prompt += `【重要】提及任何天干对日主的关系时，必须严格对照上方"命理数据对照"中的十神，禁止自行重新推导（例：日主戊土遇丁火为正印，不是偏印）。`;
   return prompt;
 }
 
