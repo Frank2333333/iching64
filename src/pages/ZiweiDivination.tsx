@@ -309,7 +309,7 @@ export default function ZiweiDivination() {
       dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950
       iching-pattern-bg iching-cloud-bg transition-colors duration-500">
       {/* Header — 登录与档案入口已由 MainHeaderTabs 内的 GlobalUserMenu 全局提供 */}
-      <header className="flex-none border-b border-amber-200/80 bg-white/82
+      <header className="relative z-50 flex-none border-b border-amber-200/80 bg-white/82
         text-amber-900 shadow-[0_14px_45px_-34px_rgba(180,83,9,0.35)]
         backdrop-blur-xl transition-colors duration-500
         dark:border-amber-900/30 dark:bg-neutral-950/80 dark:text-amber-50

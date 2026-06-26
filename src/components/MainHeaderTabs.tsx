@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Grid3X3, Sparkles, Calculator, HelpCircle, Menu, X, BookOpen, Flame, Compass } from 'lucide-react';
+import { Sparkles, Calculator, HelpCircle, Menu, X, BookOpen, Flame, Compass, Grid3X3, Library, ChevronDown } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import GlobalUserMenu from './GlobalUserMenu';
 
@@ -16,6 +16,7 @@ interface NavItem {
   match: (pathname: string) => boolean;
 }
 
+/** 顶部平级导航项 */
 const navItems: NavItem[] = [
   {
     to: '/life-report',
@@ -23,6 +24,22 @@ const navItems: NavItem[] = [
     icon: <Compass className="h-4 w-4" />,
     match: (pathname) => pathname === '/life-report',
   },
+  {
+    to: '/divination',
+    label: '数字起卦',
+    icon: <Calculator className="h-4 w-4" />,
+    match: (pathname) => pathname === '/divination',
+  },
+  {
+    to: '/',
+    label: '问事解卦',
+    icon: <HelpCircle className="h-4 w-4" />,
+    match: (pathname) => pathname === '/' || pathname === '/question',
+  },
+];
+
+/** 知识库子项（下拉菜单） */
+const knowledgeItems: NavItem[] = [
   {
     to: '/hexagrams',
     label: '六十四卦',
@@ -47,19 +64,9 @@ const navItems: NavItem[] = [
     icon: <Sparkles className="h-4 w-4" />,
     match: (pathname) => pathname === '/transformer',
   },
-  {
-    to: '/divination',
-    label: '数字起卦',
-    icon: <Calculator className="h-4 w-4" />,
-    match: (pathname) => pathname === '/divination',
-  },
-  {
-    to: '/',
-    label: '问事解卦',
-    icon: <HelpCircle className="h-4 w-4" />,
-    match: (pathname) => pathname === '/' || pathname === '/question',
-  },
 ];
+
+const knowledgeMatch = (pathname: string) => knowledgeItems.some((it) => it.match(pathname));
 
 const inactiveTabClass =
   'inline-flex items-center gap-2 rounded-full border border-white/75 bg-white/82 px-4 py-2.5 text-sm font-medium text-[#6B5549] shadow-[0_12px_26px_-24px_rgba(146,64,14,0.35)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-[#D7B7A4] hover:text-[#B56F62] dark:border-white/10 dark:bg-neutral-950/60 dark:text-yellow-50/82 dark:shadow-none dark:hover:border-yellow-500/30 dark:hover:text-yellow-100';
@@ -69,13 +76,15 @@ const activeTabClass =
 
 export default function MainHeaderTabs({ desktopPrefix, mobilePrefix }: MainHeaderTabsProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const { pathname } = useLocation();
 
   const getTabClassName = (item: NavItem) => (item.match(pathname) ? activeTabClass : inactiveTabClass);
+  const knowledgeActive = knowledgeMatch(pathname);
 
   return (
     <>
-      <div className="hidden items-center gap-3 md:flex">
+      <div className="relative z-50 hidden items-center gap-3 md:flex">
         {desktopPrefix}
         {navItems.map((item) => (
           <NavLink key={item.to} to={item.to} className={getTabClassName(item)}>
@@ -83,6 +92,37 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix }: MainHead
             <span>{item.label}</span>
           </NavLink>
         ))}
+
+        {/* 知识库下拉（hover 展开） */}
+        <div className="group relative inline-flex" style={{ zIndex: 100 }}>
+          <button
+            className={knowledgeActive ? activeTabClass : inactiveTabClass}
+            aria-label="知识库"
+          >
+            <Library className="h-4 w-4" />
+            <span>知识库</span>
+            <ChevronDown className="h-3 w-3 opacity-70 transition-transform duration-300 group-hover:rotate-180" />
+          </button>
+          <div className="pointer-events-none absolute left-0 top-full z-[100] pt-2 opacity-0 transition-all duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+            <div className="min-w-[180px] rounded-xl border border-amber-200/80 bg-white/95 p-1.5 shadow-[0_18px_40px_-20px_rgba(146,64,14,0.4)] backdrop-blur-xl dark:border-amber-900/30 dark:bg-neutral-900/95">
+              {knowledgeItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors ${
+                    item.match(pathname)
+                      ? 'bg-amber-50 font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-200'
+                      : 'text-[#6B5549] hover:bg-amber-50/70 hover:text-[#B56F62] dark:text-yellow-50/82 dark:hover:bg-amber-900/20 dark:hover:text-yellow-100'
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </NavLink>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <GlobalUserMenu />
         <ThemeToggle />
       </div>
@@ -118,6 +158,33 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix }: MainHead
                 <span>{item.label}</span>
               </NavLink>
             ))}
+
+            {/* 知识库折叠分组 */}
+            <button
+              onClick={() => setKnowledgeOpen((prev) => !prev)}
+              className={knowledgeActive ? activeTabClass + ' justify-between' : inactiveTabClass + ' justify-between'}
+            >
+              <span className="inline-flex items-center gap-2">
+                <Library className="h-4 w-4" />
+                <span>知识库</span>
+              </span>
+              <ChevronDown className={`h-3 w-3 opacity-70 transition-transform duration-300 ${knowledgeOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {knowledgeOpen && (
+              <div className="ml-4 flex flex-col gap-2 border-l border-amber-200/60 pl-3 dark:border-amber-900/30">
+                {knowledgeItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={getTabClassName(item)}
+                    onClick={() => { setIsMenuOpen(false); setKnowledgeOpen(false); }}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
