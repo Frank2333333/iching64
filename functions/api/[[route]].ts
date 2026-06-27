@@ -704,6 +704,94 @@ app.post('/api/life-report/chat', async (c) => {
   }
 });
 
+// ==================== 人生报告历史 API（登录用户跨设备同步）====================
+
+app.get('/api/life-history', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM life_history WHERE user_id = ? ORDER BY created_at DESC'
+    ).bind(userId).all();
+    const list = (results || []).map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      createdAt: r.created_at as number,
+      name: (r.name ?? null) as string | null,
+      birth: JSON.parse(r.birth as string),
+      overview: (r.overview ?? null) as string | null,
+      sections: JSON.parse(r.sections as string),
+      chats: JSON.parse(r.chats as string),
+      activeChatIndex: r.active_chat_index as number,
+    }));
+    return c.json({ success: true, data: list });
+  } catch (error) {
+    console.error('获取历史失败:', error);
+    return c.json({ success: false, error: '获取失败' }, 500);
+  }
+});
+
+app.post('/api/life-history', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { id, name, birth, overview, sections, chats, activeChatIndex } = await c.req.json();
+    if (!birth) {
+      return c.json({ success: false, error: '生辰不能为空' }, 400);
+    }
+
+    const now = Date.now();
+    const birthStr = JSON.stringify(birth);
+    const sectionsStr = JSON.stringify(sections ?? { career: null, wealth: null, marriage: null, health: null, trend: null });
+    const chatsStr = JSON.stringify(chats ?? [[]]);
+    const activeIdx = typeof activeChatIndex === 'number' ? activeChatIndex : 0;
+
+    if (id) {
+      // 更新已有
+      await c.env.DB.prepare(
+        `UPDATE life_history SET name = ?, birth = ?, overview = ?, sections = ?, chats = ?, active_chat_index = ?
+         WHERE id = ? AND user_id = ?`
+      ).bind(name ?? null, birthStr, overview ?? null, sectionsStr, chatsStr, activeIdx, id, userId).run();
+      return c.json({ success: true, data: { id } });
+    }
+
+    // 新建
+    const newId = `${now}-${Math.random().toString(36).substr(2, 9)}`;
+    await c.env.DB.prepare(
+      `INSERT INTO life_history (id, user_id, created_at, name, birth, overview, sections, chats, active_chat_index)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(newId, userId, now, name ?? null, birthStr, overview ?? null, sectionsStr, chatsStr, activeIdx).run();
+
+    // 淘汰：保留最近10条，删除最旧
+    const { results: all } = await c.env.DB.prepare(
+      'SELECT id FROM life_history WHERE user_id = ? ORDER BY created_at DESC'
+    ).bind(userId).all();
+    const ids = (all || []).map((r: Record<string, unknown>) => r.id as string);
+    if (ids.length > 10) {
+      const toDelete = ids.slice(10); // 超出10条的最旧部分
+      for (const oldId of toDelete) {
+        await c.env.DB.prepare('DELETE FROM life_history WHERE id = ? AND user_id = ?').bind(oldId, userId).run();
+      }
+    }
+
+    return c.json({ success: true, data: { id: newId } });
+  } catch (error) {
+    console.error('保存历史失败:', error);
+    return c.json({ success: false, error: '保存失败' }, 500);
+  }
+});
+
+app.delete('/api/life-history/:id', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { id } = c.req.param();
+    await c.env.DB.prepare(
+      'DELETE FROM life_history WHERE id = ? AND user_id = ?'
+    ).bind(id, userId).run();
+    return c.json({ success: true, message: '已删除' });
+  } catch (error) {
+    console.error('删除历史失败:', error);
+    return c.json({ success: false, error: '删除失败' }, 500);
+  }
+});
+
 // ==================== 导出 ====================
 
 // Cloudflare Pages Functions 使用 EventContext，需要适配为 Hono 的 fetch 签名

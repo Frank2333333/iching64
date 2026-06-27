@@ -2,7 +2,6 @@ import { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 
-const Divination = lazy(() => import('./pages/Divination'));
 const GuaList = lazy(() => import('./pages/GuaList'));
 const FeedbackAdmin = lazy(() => import('./pages/FeedbackAdmin'));
 const GuaTransformer = lazy(() => import('./pages/GuaTransformer'));
@@ -59,10 +58,9 @@ function AppContent() {
     }`}>
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
-          <Route path="/" element={<QuestionDivination />} />
+          <Route path="/" element={<LifeReport />} />
           <Route path="/life-report" element={<LifeReport />} />
           <Route path="/hexagrams" element={<GuaList />} />
-          <Route path="/divination" element={<Divination />} />
           <Route path="/question" element={<QuestionDivination />} />
           <Route path="/transformer" element={<GuaTransformer />} />
           <Route path="/admin/feedback" element={<FeedbackAdmin />} />

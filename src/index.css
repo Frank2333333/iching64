@@ -10,7 +10,7 @@
     --card-foreground: 20 19% 25%;
     --popover: 20 100% 99%;
     --popover-foreground: 20 19% 25%;
-    --primary: 11 45% 61%;
+    --primary: 10 46% 61%;
     --primary-foreground: 0 0% 100%;
     --secondary: 24 47% 91%;
     --secondary-foreground: 20 19% 25%;
@@ -22,28 +22,64 @@
     --destructive-foreground: 0 0% 98%;
     --border: 27 43% 85%;
     --input: 27 43% 85%;
-    --ring: 11 45% 61%;
+    --ring: 10 46% 61%;
     --radius: 0.625rem;
     --sidebar-background: 24 100% 98%;
     --sidebar-foreground: 20 19% 25%;
-    --sidebar-primary: 11 45% 61%;
+    --sidebar-primary: 10 46% 61%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 24 47% 91%;
     --sidebar-accent-foreground: 20 19% 25%;
     --sidebar-border: 27 43% 85%;
-    --sidebar-ring: 11 45% 61%;
+    --sidebar-ring: 10 46% 61%;
     
-    /* 易经主题变量 - 浅色模式（琥珀色） */
+    /* 易经主题变量 - 浅色模式（陶土棕，对齐问事解卦） */
     --iching-bg: 24 100% 98%;
     --iching-bg-secondary: 24 60% 95%;
     --iching-card: 20 100% 99%;
     --iching-text: 20 19% 25%;
     --iching-text-secondary: 20 24% 44%;
-    --iching-accent: 11 45% 61%;
+    --iching-accent: 10 46% 61%;
     --iching-border: 27 43% 85%;
-    --iching-header-from: 11 45% 61%;
+    --iching-header-from: 10 46% 61%;
     --iching-header-via: 32 49% 69%;
-    --iching-header-to: 128 15% 61%;
+    --iching-header-to: 10 46% 61%;
+
+    /* 全局配色色板 - 浅色模式（陶土棕系 = 问事解卦浅色）
+       amber/orange/rose 由 tailwind.config.js 引用，覆盖 Tailwind 默认琥珀色板 */
+    --amber-50: 255 248 243;
+    --amber-100: 248 238 229;
+    --amber-200: 233 216 200;
+    --amber-300: 215 183 164;
+    --amber-400: 201 124 109;
+    --amber-500: 181 111 98;
+    --amber-600: 201 124 109;
+    --amber-700: 138 102 88;
+    --amber-800: 107 85 73;
+    --amber-900: 75 58 51;
+    --amber-950: 58 45 39;
+    --orange-50: 255 243 236;
+    --orange-100: 252 227 212;
+    --orange-200: 240 201 176;
+    --orange-300: 229 169 136;
+    --orange-400: 216 138 96;
+    --orange-500: 199 116 74;
+    --orange-600: 181 97 61;
+    --orange-700: 154 79 48;
+    --orange-800: 122 61 36;
+    --orange-900: 92 46 26;
+    --orange-950: 61 30 16;
+    --rose-50: 251 240 238;
+    --rose-100: 247 224 220;
+    --rose-200: 240 192 188;
+    --rose-300: 228 152 148;
+    --rose-400: 213 110 106;
+    --rose-500: 176 90 74;
+    --rose-600: 150 74 62;
+    --rose-700: 124 62 54;
+    --rose-800: 100 52 46;
+    --rose-900: 80 44 40;
+    --rose-950: 54 30 28;
   }
 
   /* 墨黑金韵 - 深色模式 */
@@ -87,6 +123,42 @@
     --iching-header-from: 0 0% 10%;
     --iching-header-via: 0 0% 8%;
     --iching-header-to: 0 0% 10%;
+
+    /* 全局配色色板 - 深色模式（yellow 金系 = 问事解卦深色）
+       高阶（700-950）反向用亮值，保证深色背景下文字/图标可读 */
+    --amber-50: 254 252 232;
+    --amber-100: 254 249 195;
+    --amber-200: 254 230 138;
+    --amber-300: 253 224 71;
+    --amber-400: 250 204 21;
+    --amber-500: 234 179 8;
+    --amber-600: 202 138 4;
+    --amber-700: 253 224 71;
+    --amber-800: 254 230 138;
+    --amber-900: 254 249 195;
+    --amber-950: 254 252 232;
+    --orange-50: 255 247 237;
+    --orange-100: 255 237 213;
+    --orange-200: 254 215 170;
+    --orange-300: 253 186 116;
+    --orange-400: 251 146 60;
+    --orange-500: 249 115 22;
+    --orange-600: 251 146 60;
+    --orange-700: 253 186 116;
+    --orange-800: 254 215 170;
+    --orange-900: 255 237 213;
+    --orange-950: 255 247 237;
+    --rose-50: 254 242 242;
+    --rose-100: 254 226 226;
+    --rose-200: 254 202 202;
+    --rose-300: 252 165 165;
+    --rose-400: 248 113 113;
+    --rose-500: 239 68 68;
+    --rose-600: 248 113 113;
+    --rose-700: 252 165 165;
+    --rose-800: 254 202 202;
+    --rose-900: 254 226 226;
+    --rose-950: 254 242 242;
   }
 }
 
@@ -186,7 +258,7 @@
 .ripple {
   position: absolute;
   border-radius: 50%;
-  background: rgba(217, 119, 6, 0.3);
+  background: rgba(201, 124, 109, 0.3);
   transform: scale(0);
   animation: ripple-animation 0.6s ease-out;
   pointer-events: none;

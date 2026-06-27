@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Sparkles, Calculator, HelpCircle, Menu, X, BookOpen, Flame, Compass, Grid3X3, Library, ChevronDown } from 'lucide-react';
+import { Sparkles, HelpCircle, Menu, X, BookOpen, Flame, Compass, Grid3X3, Library, ChevronDown } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 import GlobalUserMenu from './GlobalUserMenu';
 
@@ -19,22 +19,16 @@ interface NavItem {
 /** 顶部平级导航项 */
 const navItems: NavItem[] = [
   {
-    to: '/life-report',
+    to: '/',
     label: '人生报告',
     icon: <Compass className="h-4 w-4" />,
-    match: (pathname) => pathname === '/life-report',
+    match: (pathname) => pathname === '/' || pathname === '/life-report',
   },
   {
-    to: '/divination',
-    label: '数字起卦',
-    icon: <Calculator className="h-4 w-4" />,
-    match: (pathname) => pathname === '/divination',
-  },
-  {
-    to: '/',
+    to: '/question',
     label: '问事解卦',
     icon: <HelpCircle className="h-4 w-4" />,
-    match: (pathname) => pathname === '/' || pathname === '/question',
+    match: (pathname) => pathname === '/question',
   },
 ];
 

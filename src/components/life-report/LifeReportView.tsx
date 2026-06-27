@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Loader2, User, Compass, ChevronRight, Star, Crown, ArrowRight } from 'lucide-react';
+import { Sparkles, Loader2, User, Compass, ChevronRight, Star, Crown, ArrowRight, Plus } from 'lucide-react';
 import MarkdownRenderer from '../MarkdownRenderer';
 import LifeTimeline from './LifeTimeline';
 import ZiweiPalaceGrid from '../ziwei/ZiweiPalaceGrid';
@@ -23,12 +23,17 @@ interface LifeReportViewProps {
   overview: SectionState;
   sections: Record<SectionType, SectionState>;
   chatMessages: ChatMessage[];
+  chats: ChatMessage[][];
+  activeChatIndex: number;
   chatLoading: boolean;
   chatError: string | null;
   chatInput: string;
   onChatInputChange: (v: string) => void;
   onSendChat: () => void;
   onChatKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onNewChat: () => void;
+  onSwitchChat: (idx: number) => void;
+  onDeleteChat: (idx: number) => void;
   onBackToInput: () => void;
   onGenerateSection: (sectionType: SectionType) => void;
 }
@@ -128,20 +133,62 @@ function SectionBlock({
 
 /** 右栏：追问对话 */
 function ChatPanel({
-  chatMessages, chatLoading, chatError, chatInput,
-  onChatInputChange, onSendChat, onChatKeyDown, overviewLoading,
+  chatMessages, chats, activeChatIndex, chatLoading, chatError, chatInput,
+  onChatInputChange, onSendChat, onChatKeyDown,
+  onNewChat, onSwitchChat, onDeleteChat, overviewLoading,
 }: {
-  chatMessages: ChatMessage[]; chatLoading: boolean; chatError: string | null;
+  chatMessages: ChatMessage[]; chats: ChatMessage[][]; activeChatIndex: number;
+  chatLoading: boolean; chatError: string | null;
   chatInput: string; onChatInputChange: (v: string) => void; onSendChat: () => void;
-  onChatKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void; overviewLoading: boolean;
+  onChatKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onNewChat: () => void; onSwitchChat: (idx: number) => void; onDeleteChat: (idx: number) => void;
+  overviewLoading: boolean;
 }) {
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-amber-200 dark:border-amber-900/30 flex flex-col overflow-hidden h-full">
       <div className="px-4 py-3 border-b border-amber-100 dark:border-amber-900/30 flex-none">
-        <h2 className="flex items-center gap-2 text-base font-bold text-amber-900 dark:text-amber-100">
-          <Sparkles className="w-4 h-4" />继续聊聊
-        </h2>
-        <p className="text-[11px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">对报告有疑问，随时问</p>
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-base font-bold text-amber-900 dark:text-amber-100">
+            <Sparkles className="w-4 h-4" />继续聊聊
+          </h2>
+          <button
+            onClick={onNewChat}
+            disabled={overviewLoading}
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors disabled:opacity-40"
+            title="新建聊天"
+          >
+            <Plus className="w-3.5 h-3.5" />新聊天
+          </button>
+        </div>
+        {/* 聊天切换栏 */}
+        {chats.length > 1 && (
+          <div className="flex items-center gap-1 mt-2 overflow-x-auto">
+            {chats.map((c, i) => (
+              <div key={i} className="group relative flex-none">
+                <button
+                  onClick={() => onSwitchChat(i)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] transition-colors ${
+                    i === activeChatIndex
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                  }`}
+                >
+                  聊天{i + 1}{c.length > 0 && <span className="opacity-70">({c.length})</span>}
+                </button>
+                {chats.length > 1 && (
+                  <button
+                    onClick={() => onDeleteChat(i)}
+                    className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="删除该聊天"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-[11px] text-amber-600/70 dark:text-amber-400/70 mt-1.5">对报告有疑问，随时问（保留最近5个聊天）</p>
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
         {chatMessages.length === 0 && !chatLoading && (
@@ -188,8 +235,10 @@ function ChatPanel({
 
 export default function LifeReportView({
   input, baziChart, ziweiChart, overview, sections,
-  chatMessages, chatLoading, chatError, chatInput,
-  onChatInputChange, onSendChat, onChatKeyDown, onBackToInput, onGenerateSection,
+  chatMessages, chats, activeChatIndex, chatLoading, chatError, chatInput,
+  onChatInputChange, onSendChat, onChatKeyDown,
+  onNewChat, onSwitchChat, onDeleteChat,
+  onBackToInput, onGenerateSection,
 }: LifeReportViewProps) {
   const genderText = input.gender === 'male' ? '男' : '女';
   const overviewReady = !!overview.content;
@@ -290,13 +339,19 @@ export default function LifeReportView({
 
         {/* 右栏：对话 */}
         <aside className="hidden lg:flex flex-col min-h-0 overflow-hidden flex-none" style={{ width: rightWidth }}>
-          <ChatPanel chatMessages={chatMessages} chatLoading={chatLoading} chatError={chatError} chatInput={chatInput}
-            onChatInputChange={onChatInputChange} onSendChat={onSendChat} onChatKeyDown={onChatKeyDown} overviewLoading={overview.loading} />
+          <ChatPanel chatMessages={chatMessages} chats={chats} activeChatIndex={activeChatIndex}
+            chatLoading={chatLoading} chatError={chatError} chatInput={chatInput}
+            onChatInputChange={onChatInputChange} onSendChat={onSendChat} onChatKeyDown={onChatKeyDown}
+            onNewChat={onNewChat} onSwitchChat={onSwitchChat} onDeleteChat={onDeleteChat}
+            overviewLoading={overview.loading} />
         </aside>
 
         <div className="lg:hidden h-[400px] mt-3">
-          <ChatPanel chatMessages={chatMessages} chatLoading={chatLoading} chatError={chatError} chatInput={chatInput}
-            onChatInputChange={onChatInputChange} onSendChat={onSendChat} onChatKeyDown={onChatKeyDown} overviewLoading={overview.loading} />
+          <ChatPanel chatMessages={chatMessages} chats={chats} activeChatIndex={activeChatIndex}
+            chatLoading={chatLoading} chatError={chatError} chatInput={chatInput}
+            onChatInputChange={onChatInputChange} onSendChat={onSendChat} onChatKeyDown={onChatKeyDown}
+            onNewChat={onNewChat} onSwitchChat={onSwitchChat} onDeleteChat={onDeleteChat}
+            overviewLoading={overview.loading} />
         </div>
       </div>
     </div>
