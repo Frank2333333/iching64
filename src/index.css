@@ -80,6 +80,16 @@
     --rose-800: 100 52 46;
     --rose-900: 80 44 40;
     --rose-950: 54 30 28;
+
+    /* 五行功能色 - 浅色（仅五行出现处使用，非装饰） */
+    --wx-jin: 230 184 30;
+    --wx-mu: 46 139 74;
+    --wx-shui: 50 120 200;
+    --wx-huo: 210 72 42;
+    --wx-tu: 139 99 58;
+
+    /* 命名阴影色（浅棕微染） */
+    --shadow-color: 107 74 58;
   }
 
   /* 墨黑金韵 - 深色模式 */
@@ -159,6 +169,16 @@
     --rose-800: 254 202 202;
     --rose-900: 254 226 226;
     --rose-950: 254 242 242;
+
+    /* 五行功能色 - 深色（提亮以保证暗底可读） */
+    --wx-jin: 245 197 66;
+    --wx-mu: 86 171 116;
+    --wx-shui: 96 165 230;
+    --wx-huo: 232 108 82;
+    --wx-tu: 184 140 86;
+
+    /* 命名阴影色（深金微染） */
+    --shadow-color: 234 179 8;
   }
 }
 
@@ -167,7 +187,14 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer components {
+  /* display 字体 alias（卦名/标题/卦辞），指向楷书 serif 栈，便于以后整体换脸 */
+  .font-display {
+    @apply font-serif;
   }
 }
 

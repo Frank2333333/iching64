@@ -1206,13 +1206,25 @@ export function getGuaByName(name: string): Gua | undefined {
 
 export function getWuxingColor(wuxing: string): string {
   const colors: Record<string, string> = {
-    '金': '#FFD700',
-    '木': '#228B22',
-    '水': '#1E90FF',
-    '火': '#FF4500',
-    '土': '#8B4513',
+    '金': '#E6B81E',
+    '木': '#2E8B4A',
+    '水': '#3278C8',
+    '火': '#D2482A',
+    '土': '#8B633A',
   };
   return colors[wuxing] || '#666';
+}
+
+// 五行功能色（tailwind 类串版本，跟随浅/深主题变量；首选此函数，inline hex 仅作回退）
+export function getWuxingClasses(wuxing: string): { solid: string; text: string; border: string; soft: string } {
+  const map: Record<string, { solid: string; text: string; border: string; soft: string }> = {
+    '金': { solid: 'bg-wx-jin text-white', text: 'text-wx-jin', border: 'border-wx-jin/40', soft: 'bg-wx-jin/15 text-wx-jin' },
+    '木': { solid: 'bg-wx-mu text-white', text: 'text-wx-mu', border: 'border-wx-mu/40', soft: 'bg-wx-mu/15 text-wx-mu' },
+    '水': { solid: 'bg-wx-shui text-white', text: 'text-wx-shui', border: 'border-wx-shui/40', soft: 'bg-wx-shui/15 text-wx-shui' },
+    '火': { solid: 'bg-wx-huo text-white', text: 'text-wx-huo', border: 'border-wx-huo/40', soft: 'bg-wx-huo/15 text-wx-huo' },
+    '土': { solid: 'bg-wx-tu text-white', text: 'text-wx-tu', border: 'border-wx-tu/40', soft: 'bg-wx-tu/15 text-wx-tu' },
+  };
+  return map[wuxing] || { solid: 'bg-gray-400 text-white', text: 'text-gray-500', border: 'border-gray-400/40', soft: 'bg-gray-400/15 text-gray-500' };
 }
 
 // 根据6个爻的阴阳属性查找对应的卦象

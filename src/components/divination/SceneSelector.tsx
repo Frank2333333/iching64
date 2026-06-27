@@ -205,7 +205,7 @@ function getSelectSceneCardMood(sceneId: string) {
 export default function SceneSelector({ scenes, onSelectScene }: SceneSelectorProps) {
   return (
     <div className="animate-slideInUp space-y-7">
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/70 px-6 py-8 shadow-[0_30px_80px_-50px_rgba(146,64,14,0.4)] backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900/55 dark:shadow-[0_30px_80px_-50px_rgba(234,179,8,0.2)] sm:px-8 sm:py-10">
+      <div className="relative overflow-hidden rounded-3xl border border-white/70 bg-white/70 px-6 py-8 shadow-card backdrop-blur-xl dark:border-white/10 dark:bg-neutral-900/55 sm:px-8 sm:py-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.92),_transparent_62%)] dark:bg-[radial-gradient(circle_at_top,_rgba(250,204,21,0.12),_transparent_58%)]" />
         <div className="absolute -right-12 top-0 h-36 w-36 rounded-full bg-[#D8B38A]/38 blur-3xl dark:bg-rose-500/10" />
         <div className="absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-[#F3E7DC]/50 blur-3xl dark:bg-amber-400/10" />
@@ -214,7 +214,7 @@ export default function SceneSelector({ scenes, onSelectScene }: SceneSelectorPr
           <span className="inline-flex items-center rounded-full border border-white/70 bg-white/80 px-4 py-1.5 text-xs font-medium tracking-[0.25em] text-[#6B5549] shadow-sm dark:border-white/10 dark:bg-neutral-950/60 dark:text-yellow-200/85">
             轻轻起一念
           </span>
-          <h2 className="mt-5 text-3xl font-semibold tracking-[0.08em] text-[#4B3A33] dark:text-yellow-50 sm:text-4xl">
+          <h2 className="mt-5 text-3xl font-display font-semibold tracking-[0.08em] text-[#4B3A33] dark:text-yellow-50 sm:text-4xl">
             把想问的事，轻轻放进卦里
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#6B5549] dark:text-yellow-100/70 sm:text-base">
@@ -249,7 +249,7 @@ export default function SceneSelector({ scenes, onSelectScene }: SceneSelectorPr
         <p className="text-xs tracking-[0.35em] text-[#C97C6D] dark:text-yellow-600/80">
           CHOOSE A SCENE
         </p>
-        <h3 className="mt-3 text-2xl font-semibold text-[#4B3A33] dark:text-yellow-100">
+        <h3 className="mt-3 text-2xl font-display font-semibold text-[#4B3A33] dark:text-yellow-100">
           从一个最贴近的问题开始
         </h3>
         <p className="mt-2 text-sm text-[#8A6658] dark:text-yellow-200/65">

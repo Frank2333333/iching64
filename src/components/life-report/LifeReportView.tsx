@@ -58,13 +58,13 @@ function BaziCard({ baziChart }: { baziChart: BaziChart | null }) {
   if (!baziChart) return null;
   const pillars = [baziChart.yearPillar, baziChart.monthPillar, baziChart.dayPillar, baziChart.hourPillar];
   return (
-    <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-amber-200 dark:border-amber-900/30 p-3">
+    <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-card border border-amber-200 dark:border-amber-900/30 p-3">
       <h3 className="flex items-center gap-1.5 text-sm font-bold text-amber-900 dark:text-amber-100 mb-2">
         <Star className="w-3.5 h-3.5" />八字四柱
       </h3>
       <div className="grid grid-cols-4 gap-1 mb-2">
         {pillars.map((p, i) => (
-          <div key={i} className="text-center">
+          <div key={i} className="text-center tabular-nums">
             <div className="text-base font-bold text-amber-900 dark:text-amber-100">{p.gan}{p.zhi}</div>
             <div className="text-[10px] text-amber-600/70 dark:text-amber-400/70">{p.shiShen.join('/')}</div>
           </div>
@@ -85,7 +85,7 @@ function ChartPanel({ baziChart, ziweiChart }: { baziChart: BaziChart | null; zi
     <ZiweiPalaceProvider>
       <div className="space-y-3">
         <BaziCard baziChart={baziChart} />
-        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-amber-200 dark:border-amber-900/30 p-3">
+        <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-card border border-amber-200 dark:border-amber-900/30 p-3">
           <ZiweiTimeNav chart={ziweiChart} />
           <div className="mt-2 overflow-x-auto">
             <ZiweiPalaceGrid chart={ziweiChart} compact />
@@ -105,8 +105,8 @@ function SectionBlock({
 }) {
   const idle = !state.loading && !state.content && !state.error;
   return (
-    <section className="bg-white dark:bg-neutral-800 rounded-2xl p-5 shadow-md border border-amber-200 dark:border-amber-900/30">
-      <h2 className="flex items-center gap-2 text-lg font-bold text-amber-900 dark:text-amber-100 mb-1">
+    <section className="bg-white dark:bg-neutral-800 rounded-2xl p-5 shadow-card border border-amber-200 dark:border-amber-900/30">
+      <h2 className="flex items-center gap-2 text-lg font-display font-bold text-amber-900 dark:text-amber-100 mb-1">
         <span>{icon}</span>{title}
       </h2>
       <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mb-3">{hint}</p>
@@ -145,10 +145,10 @@ function ChatPanel({
   overviewLoading: boolean;
 }) {
   return (
-    <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-md border border-amber-200 dark:border-amber-900/30 flex flex-col overflow-hidden h-full">
+    <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-card border border-amber-200 dark:border-amber-900/30 flex flex-col overflow-hidden h-full">
       <div className="px-4 py-3 border-b border-amber-100 dark:border-amber-900/30 flex-none">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-base font-bold text-amber-900 dark:text-amber-100">
+          <h2 className="flex items-center gap-2 text-base font-display font-bold text-amber-900 dark:text-amber-100">
             <Sparkles className="w-4 h-4" />继续聊聊
           </h2>
           <button
@@ -276,7 +276,7 @@ export default function LifeReportView({
         <main className="overflow-y-auto min-h-0 px-3" style={{ flex: '1 1 0', minWidth: 0 }}>
           <div className="space-y-4 pb-6">
             <div className="text-center mb-2">
-              <h1 className="text-2xl font-serif font-bold text-amber-900 dark:text-amber-100 flex items-center justify-center gap-2">
+              <h1 className="text-2xl font-display font-bold text-amber-900 dark:text-amber-100 flex items-center justify-center gap-2">
                 <Compass className="w-6 h-6" />你的人生发展报告
               </h1>
               <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
@@ -284,8 +284,8 @@ export default function LifeReportView({
               </p>
             </div>
 
-            <section className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 rounded-2xl p-6 shadow-md border border-amber-200 dark:border-amber-900/30">
-              <h2 className="flex items-center gap-2 text-xl font-bold text-amber-900 dark:text-amber-100 mb-3">
+            <section className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 rounded-2xl p-6 shadow-card border border-amber-200 dark:border-amber-900/30">
+              <h2 className="flex items-center gap-2 text-xl font-display font-bold text-amber-900 dark:text-amber-100 mb-3">
                 <User className="w-5 h-5" />本命总览
               </h2>
               {overview.loading && (

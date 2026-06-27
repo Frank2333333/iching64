@@ -11,6 +11,25 @@ interface LifeReportFormProps {
 
 const FOCUS_OPTIONS = ['事业方向', '财富', '感情', '健康', '整体了解'];
 
+// 12 时辰（子时拆早/晚子，因排盘区分 0 时与 23 时）；选定后映射为代表小时，分钟仍单独输入（真太阳时需精确到分）
+const SHICHEN_OPTIONS: { label: string; hour: number }[] = [
+  { label: '子时·早子', hour: 0 }, { label: '子时·晚子', hour: 23 },
+  { label: '丑时', hour: 1 }, { label: '寅时', hour: 3 },
+  { label: '卯时', hour: 5 }, { label: '辰时', hour: 7 },
+  { label: '巳时', hour: 9 }, { label: '午时', hour: 11 },
+  { label: '未时', hour: 13 }, { label: '申时', hour: 15 },
+  { label: '酉时', hour: 17 }, { label: '戌时', hour: 19 },
+  { label: '亥时', hour: 21 },
+];
+
+// 当前小时对应的时辰 label（用于高亮选中态）
+function hourToShichenLabel(hourStr: string): string | null {
+  const h = parseInt(hourStr);
+  if (isNaN(h)) return null;
+  const found = SHICHEN_OPTIONS.find((o) => o.hour === h);
+  return found ? found.label : null;
+}
+
 export default function LifeReportForm({ onSubmit, loading, initialData, onSave }: LifeReportFormProps) {
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear().toString());
@@ -133,7 +152,7 @@ export default function LifeReportForm({ onSubmit, loading, initialData, onSave 
               { label: '月', value: month, set: setMonth, min: 1, max: 12, error: errors.month },
               { label: '日', value: day, set: setDay, min: 1, max: 31, error: errors.day },
             ].map(({ label, value, set, min, max, error }) => (
-              <div key={label}>
+              <div key={label} className="tabular-nums">
                 <label className="block text-sm font-medium text-amber-800 dark:text-amber-400 mb-2">{label}</label>
                 <input type="number" value={value} onChange={(e) => set(e.target.value)} min={min} max={max} required className={inputClass} />
                 {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
@@ -141,22 +160,38 @@ export default function LifeReportForm({ onSubmit, loading, initialData, onSave 
             ))}
           </div>
 
-          {/* 出生时间 */}
+          {/* 出生时间：12 时辰选择器（主） + 精确时分（真太阳时需精确到分） */}
           <div>
             <label className="block text-sm font-medium text-amber-800 dark:text-amber-400 mb-2">
-              <Clock className="w-4 h-4 inline mr-1" />出生时间
+              <Clock className="w-4 h-4 inline mr-1" />出生时辰
             </label>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {SHICHEN_OPTIONS.map((opt) => {
+                const active = hourToShichenLabel(hour) === opt.label;
+                return (
+                  <button key={opt.label} type="button" onClick={() => setHour(opt.hour.toString())}
+                    className={`px-3 py-1.5 rounded-lg text-sm border transition-all tabular-nums ${
+                      active ? 'border-amber-500 bg-amber-500 text-white dark:bg-amber-600 shadow-sm'
+                             : 'border-amber-200 dark:border-amber-800/30 text-amber-600 dark:text-amber-400 hover:border-amber-400 bg-white dark:bg-neutral-900'}`}>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
             <div className="flex gap-4">
               <div className="flex-1">
+                <label className="block text-xs text-amber-600 dark:text-amber-400 mb-1">时（0-23，可微调）</label>
                 <input type="number" value={hour} onChange={(e) => setHour(e.target.value)} min="0" max="23" required placeholder="时" className={inputClass} />
                 {errors.hour && <p className="text-sm text-red-600 mt-1">{errors.hour}</p>}
               </div>
-              <div className="flex items-center text-amber-600 dark:text-amber-400 text-lg">:</div>
+              <div className="flex items-end text-amber-600 dark:text-amber-400 text-lg pb-3">:</div>
               <div className="flex-1">
+                <label className="block text-xs text-amber-600 dark:text-amber-400 mb-1">分（0-59）</label>
                 <input type="number" value={minute} onChange={(e) => setMinute(e.target.value)} min="0" max="59" required placeholder="分" className={inputClass} />
                 {errors.minute && <p className="text-sm text-red-600 mt-1">{errors.minute}</p>}
               </div>
             </div>
+            <p className="text-xs text-amber-500/70 dark:text-amber-400/70 mt-1.5">不确定具体分钟可填 0；真太阳时会按出生地经度校正。</p>
           </div>
 
           {/* 出生地点 */}

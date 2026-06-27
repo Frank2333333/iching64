@@ -436,7 +436,7 @@ export default function LifeReport() {
                 <Compass className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg font-semibold tracking-[0.14em] text-amber-900 dark:text-amber-50 sm:text-xl">
+                <h1 className="text-lg font-display font-semibold tracking-[0.14em] text-amber-900 dark:text-amber-50 sm:text-xl">
                   人生报告
                 </h1>
               </div>
@@ -452,7 +452,7 @@ export default function LifeReport() {
           <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             <div className="max-w-5xl mx-auto">
               <div className="text-center mb-6 animate-fadeIn">
-                <p className="text-xl md:text-2xl font-serif text-amber-800 dark:text-amber-300/90 tracking-wider italic">
+                <p className="text-xl md:text-2xl font-display text-amber-800 dark:text-amber-300/90 tracking-wider italic">
                   "认识你自己，是所有智慧的开端"
                 </p>
                 <p className="text-sm text-amber-600/70 dark:text-amber-400/70 mt-2">
@@ -478,7 +478,7 @@ export default function LifeReport() {
                       const doneCount = Object.values(entry.sections).filter(Boolean).length;
                       const isEditing = editingId === entry.id;
                       return (
-                        <div key={entry.id} className="group relative bg-white dark:bg-neutral-800 rounded-xl p-4 border border-amber-200 dark:border-amber-900/30 shadow-sm hover:border-amber-400 dark:hover:border-amber-600 transition-colors">
+                        <div key={entry.id} className="group relative bg-white dark:bg-neutral-800 rounded-2xl p-4 border border-amber-200 dark:border-amber-900/30 shadow-card hover:border-amber-400 dark:hover:border-amber-600 transition-colors">
                           {isEditing ? (
                             <input
                               autoFocus

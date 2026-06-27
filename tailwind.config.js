@@ -4,6 +4,12 @@ module.exports = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        // 楷书 display（卦名/标题/卦辞），自托管，font-display:swap
+        serif: ['"LXGW WenKai"', '"LXGW WenKai Screen"', 'Songti SC', 'STSong', 'SimSun', 'serif'],
+        // 正文用系统无衬线栈，零下载
+        sans: ['"PingFang SC"', '"Microsoft YaHei"', '"Hiragino Sans GB"', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -90,8 +96,18 @@ module.exports = {
           900: "rgb(var(--rose-900) / <alpha-value>)",
           950: "rgb(var(--rose-950) / <alpha-value>)",
         },
+        // 五行功能色（金木水火土），仅五行出现处使用；alpha 修饰支持 /15 /40 等浅底
+        wx: {
+          jin: "rgb(var(--wx-jin) / <alpha-value>)",
+          mu: "rgb(var(--wx-mu) / <alpha-value>)",
+          shui: "rgb(var(--wx-shui) / <alpha-value>)",
+          huo: "rgb(var(--wx-huo) / <alpha-value>)",
+          tu: "rgb(var(--wx-tu) / <alpha-value>)",
+        },
       },
       borderRadius: {
+        "3xl": "1.75rem",
+        "2xl": "1.25rem",
         xl: "calc(var(--radius) + 4px)",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -100,6 +116,10 @@ module.exports = {
       },
       boxShadow: {
         xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        // 命名阴影：柔浮、品牌色微染，颜色由 --shadow-color 变量驱动（浅棕/深金）
+        card: "0 24px 50px -38px rgb(var(--shadow-color) / 0.42)",
+        float: "0 34px 68px -44px rgb(var(--shadow-color) / 0.45)",
+        pop: "0 18px 40px -20px rgb(var(--shadow-color) / 0.4)",
       },
       keyframes: {
         "accordion-down": {

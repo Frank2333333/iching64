@@ -61,8 +61,8 @@ export default function LifeTimeline({ baziChart, ziweiChart }: LifeTimelineProp
   if (rows.length === 0) return null;
 
   return (
-    <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 shadow-md border border-amber-200 dark:border-amber-900/30">
-      <h3 className="flex items-center gap-2 text-base font-bold text-amber-900 dark:text-amber-100 mb-1">
+    <div className="bg-white dark:bg-neutral-800 rounded-2xl p-5 shadow-card border border-amber-200 dark:border-amber-900/30">
+      <h3 className="flex items-center gap-2 text-base font-display font-bold text-amber-900 dark:text-amber-100 mb-1">
         <TrendingUp className="w-5 h-5" />
         运势时间轴
       </h3>
@@ -80,7 +80,7 @@ export default function LifeTimeline({ baziChart, ziweiChart }: LifeTimelineProp
             }`}
           >
             {/* 年龄 */}
-            <div className="flex w-20 flex-none flex-col justify-center">
+            <div className="flex w-20 flex-none flex-col justify-center tabular-nums">
               <span className={`text-sm font-semibold ${row.isCurrent ? 'text-amber-700 dark:text-amber-300' : 'text-amber-600 dark:text-amber-400'}`}>
                 {row.ageLabel}
               </span>
@@ -93,7 +93,7 @@ export default function LifeTimeline({ baziChart, ziweiChart }: LifeTimelineProp
             <div className="flex-1 min-w-0">
               <div className="text-[10px] text-amber-500/70 dark:text-amber-400/70 mb-0.5">八字大运</div>
               {row.bazi ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 tabular-nums">
                   <span className="text-base font-bold text-amber-800 dark:text-amber-200">{row.bazi.gan}{row.bazi.zhi}</span>
                   <span className="text-xs text-amber-600 dark:text-amber-400">{row.bazi.shiShen}</span>
                 </div>
@@ -106,7 +106,7 @@ export default function LifeTimeline({ baziChart, ziweiChart }: LifeTimelineProp
             <div className="flex-1 min-w-0">
               <div className="text-[10px] text-amber-500/70 dark:text-amber-400/70 mb-0.5">紫微大限</div>
               {row.ziwei ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 tabular-nums">
                   <span className="text-base font-bold text-amber-800 dark:text-amber-200">{row.ziwei.palaceName}</span>
                   <span className="text-xs text-amber-600 dark:text-amber-400">{row.ziwei.heavenlyStem}{row.ziwei.earthlyBranch}</span>
                 </div>

@@ -1,4 +1,4 @@
-import { getWuxingColor } from '../../data/guaxiang';
+import { getWuxingClasses } from '../../data/guaxiang';
 import type { Gua } from '../../data/guaxiang';
 import type { DivinationResult } from '../../lib/meihua-divination';
 
@@ -8,10 +8,11 @@ interface GuaOverviewProps {
 }
 
 export default function GuaOverview({ gua, dongYao }: GuaOverviewProps) {
+  const wx = getWuxingClasses(gua.wuxing);
   return (
     <div className="bg-gradient-to-br from-[#F7EFE8] to-[#EEDFD1]
                  dark:from-neutral-800 dark:to-neutral-900
-                 rounded-2xl p-6 shadow-lg border border-[#E9D8C8] dark:border-yellow-900/30">
+                 rounded-3xl p-6 shadow-card border border-[#E9D8C8] dark:border-yellow-900/30">
       <div className="flex flex-col md:flex-row items-center gap-6">
         {/* 卦画 */}
         <div className="bg-[#FFFDFC] dark:bg-amber-950/50 rounded-xl p-6 shadow-inner">
@@ -23,7 +24,7 @@ export default function GuaOverview({ gua, dongYao }: GuaOverviewProps) {
                   key={yao.position}
                   className={`h-3 rounded-full transition-all duration-500
                             ${yao.yinYang === 'yang'
-                              ? `w-20 ${isDongYao ? 'bg-red-500' : 'bg-[#8C6B57] dark:bg-amber-400'}`
+                              ? `w-20 ${isDongYao ? 'bg-wx-huo' : 'bg-[#8C6B57] dark:bg-amber-400'}`
                               : 'w-20 flex justify-between'
                             }`}
                   style={{
@@ -33,8 +34,8 @@ export default function GuaOverview({ gua, dongYao }: GuaOverviewProps) {
                 >
                   {yao.yinYang === 'yin' && (
                     <>
-                      <div className={`w-8 h-3 rounded-full ${isDongYao ? 'bg-red-500' : 'bg-[#8C6B57] dark:bg-amber-400'}`} />
-                      <div className={`w-8 h-3 rounded-full ${isDongYao ? 'bg-red-500' : 'bg-[#8C6B57] dark:bg-amber-400'}`} />
+                      <div className={`w-8 h-3 rounded-full ${isDongYao ? 'bg-wx-huo' : 'bg-[#8C6B57] dark:bg-amber-400'}`} />
+                      <div className={`w-8 h-3 rounded-full ${isDongYao ? 'bg-wx-huo' : 'bg-[#8C6B57] dark:bg-amber-400'}`} />
                     </>
                   )}
                 </div>
@@ -43,7 +44,7 @@ export default function GuaOverview({ gua, dongYao }: GuaOverviewProps) {
           </div>
           {/* 动爻标记 */}
           <div className="mt-4 text-center">
-            <span className="inline-block px-3 py-1 bg-red-500 text-white dark:bg-red-600
+            <span className="inline-block px-3 py-1 bg-wx-huo text-white
                            text-sm font-bold rounded-full shadow-md">
               动爻：{dongYao?.name}
             </span>
@@ -53,7 +54,7 @@ export default function GuaOverview({ gua, dongYao }: GuaOverviewProps) {
         {/* 卦名信息 */}
         <div className="flex-1 text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
-            <span className="text-5xl font-bold text-[#4B3A33] dark:text-yellow-100
+            <span className="text-5xl font-display font-bold text-[#4B3A33] dark:text-yellow-100
                            dark:drop-shadow-[0_0_15px_rgba(234,179,8,0.3)]">
               {gua.chineseName}
             </span>
@@ -63,10 +64,7 @@ export default function GuaOverview({ gua, dongYao }: GuaOverviewProps) {
             </div>
           </div>
           <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-            <span
-              className="inline-block px-3 py-1 rounded-full text-white text-sm font-bold shadow-md"
-              style={{ backgroundColor: getWuxingColor(gua.wuxing) }}
-            >
+            <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold shadow-md ${wx.solid}`}>
               五行：{gua.wuxing}
             </span>
           </div>

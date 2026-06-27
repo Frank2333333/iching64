@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import type { Gua } from '../data/guaxiang';
-import { getWuxingColor } from '../data/guaxiang';
+import { getWuxingClasses } from '../data/guaxiang';
 
 interface GuaCardProps {
   gua: Gua;
@@ -11,6 +11,7 @@ interface GuaCardProps {
 export default React.memo(function GuaCard({ gua, onClick, index = 0 }: GuaCardProps) {
   const cardRef = useRef<HTMLButtonElement>(null);
   const [ripples, setRipples] = useState<Array<{ id: number; x: number; y: number }>>([]);
+  const wx = getWuxingClasses(gua.wuxing);
 
   // 创建波纹效果
   const createRipple = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -40,10 +41,10 @@ export default React.memo(function GuaCard({ gua, onClick, index = 0 }: GuaCardP
     <button
       ref={cardRef}
       onClick={handleClick}
-      className={`group relative bg-white/90 dark:bg-neutral-800 
-                 rounded-[28px] shadow-[0_24px_50px_-38px_rgba(107,74,58,0.42)] hover:shadow-[0_28px_58px_-36px_rgba(107,74,58,0.48)] 
-                 transition-all duration-300 p-5 
-                 border border-[#E9D8C8] dark:border-yellow-900/30 
+      className={`group relative bg-white/90 dark:bg-neutral-800
+                 rounded-3xl shadow-card hover:shadow-float
+                 transition-all duration-300 p-5
+                 border border-[#E9D8C8] dark:border-yellow-900/30
                  hover:border-[#DABAA8] dark:hover:border-yellow-600/50
                  hover:-translate-y-0.5 hover:scale-[1.01]
                  active:scale-[0.98] active:duration-100
@@ -68,8 +69,8 @@ export default React.memo(function GuaCard({ gua, onClick, index = 0 }: GuaCardP
       ))}
 
       {/* 悬停光效 */}
-      <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-[#C97C6D]/0 via-[#C97C6D]/0 to-[#C97C6D]/0 
-                     group-hover:from-[#C97C6D]/6 group-hover:via-[#D8B38A]/0 group-hover:to-[#D8B38A]/14 
+      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#C97C6D]/0 via-[#C97C6D]/0 to-[#C97C6D]/0
+                     group-hover:from-[#C97C6D]/6 group-hover:via-[#D8B38A]/0 group-hover:to-[#D8B38A]/14
                      dark:group-hover:from-yellow-500/5 dark:group-hover:to-yellow-500/10
                      transition-all duration-500" />
       
@@ -81,11 +82,8 @@ export default React.memo(function GuaCard({ gua, onClick, index = 0 }: GuaCardP
       </div>
       
       {/* 五行标识 */}
-      <div 
-        className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center 
-                 text-xs font-bold text-white shadow-sm"
-        style={{ backgroundColor: getWuxingColor(gua.wuxing) }}
-      >
+      <div className={`absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center
+                 text-xs font-bold shadow-sm ${wx.solid}`}>
         {gua.wuxing}
       </div>
 
@@ -118,7 +116,7 @@ export default React.memo(function GuaCard({ gua, onClick, index = 0 }: GuaCardP
 
       {/* 卦名 */}
       <div className="mt-3 text-center">
-        <h3 className="text-lg font-bold text-[#4B3A33] dark:text-yellow-100 
+        <h3 className="text-lg font-display font-bold text-[#4B3A33] dark:text-yellow-100
                      group-hover:text-[#6B5549] dark:group-hover:text-yellow-300
                      transition-colors">
           {gua.chineseName}
