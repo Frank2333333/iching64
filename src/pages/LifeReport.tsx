@@ -192,30 +192,41 @@ export default function LifeReport() {
 
   // 按需生成单个章节（用户点击触发）
   // 写回云端历史（章节/聊天/重命名变化时）
-  const persistHistory = useCallback(async (patch: Partial<LifeHistoryEntry>) => {
-    if (!token || !currentHistoryId || !reportInput) return;
-    const birth: LifeHistoryBirth = {
-      year: reportInput.year, month: reportInput.month, day: reportInput.day,
-      hour: reportInput.hour, minute: reportInput.minute, gender: reportInput.gender,
-      birthplace: reportInput.birthplace, useSolarTime: reportInput.useSolarTime, focus: reportInput.focus,
+  // ref 镜像最新 state：persistHistory 读 ref 而非闭包，避免过期闭包覆盖（修「回答丢失」竞态）
+  const sectionsRef = useRef(sections); sectionsRef.current = sections;
+  const chatsRef = useRef(chats); chatsRef.current = chats;
+  const activeChatIndexRef = useRef(activeChatIndex); activeChatIndexRef.current = activeChatIndex;
+  const currentHistoryIdRef = useRef(currentHistoryId); currentHistoryIdRef.current = currentHistoryId;
+  // 串行化持久化：多次调用按入队顺序执行，防止乱序完成互相覆盖
+  const persistChainRef = useRef<Promise<unknown>>(Promise.resolve());
+  const persistHistory = useCallback((patch: Partial<LifeHistoryEntry>) => {
+    const run = async () => {
+      const hid = currentHistoryIdRef.current;
+      if (!token || !hid || !reportInput) return;
+      const birth: LifeHistoryBirth = {
+        year: reportInput.year, month: reportInput.month, day: reportInput.day,
+        hour: reportInput.hour, minute: reportInput.minute, gender: reportInput.gender,
+        birthplace: reportInput.birthplace, useSolarTime: reportInput.useSolarTime, focus: reportInput.focus,
+      };
+      const fullEntry: Partial<LifeHistoryEntry> & { birth: LifeHistoryBirth; id: string } = {
+        id: hid,
+        birth,
+        overview: overviewRef.current,
+        sections: {
+          career: sectionsRef.current.career.content,
+          wealth: sectionsRef.current.wealth.content,
+          marriage: sectionsRef.current.marriage.content,
+          health: sectionsRef.current.health.content,
+          trend: sectionsRef.current.trend.content,
+        },
+        chats: chatsRef.current,
+        activeChatIndex: activeChatIndexRef.current,
+        ...patch,
+      };
+      await saveLifeHistory(token, fullEntry);
     };
-    const fullEntry: Partial<LifeHistoryEntry> & { birth: LifeHistoryBirth; id: string } = {
-      id: currentHistoryId,
-      birth,
-      overview: overviewRef.current,
-      sections: {
-        career: sections.career.content,
-        wealth: sections.wealth.content,
-        marriage: sections.marriage.content,
-        health: sections.health.content,
-        trend: sections.trend.content,
-      },
-      chats,
-      activeChatIndex,
-      ...patch,
-    };
-    await saveLifeHistory(token, fullEntry);
-  }, [token, currentHistoryId, reportInput, sections, chats, activeChatIndex]);
+    persistChainRef.current = persistChainRef.current.then(run, run);
+  }, [token, reportInput]);
 
   const handleGenerateSection = useCallback(async (st: SectionType) => {
     if (!reportInput || !overviewRef.current) return;
