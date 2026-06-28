@@ -371,7 +371,7 @@ export default function LifeReportView({
     return (
       <div className="flex-1 overflow-hidden flex flex-col">
         {/* 顶部 tab 指示器 */}
-        <div className="flex-none flex items-center justify-center gap-1 p-2 border-b border-amber-200/70 dark:border-amber-900/30">
+        <div className="flex-none flex items-center justify-center gap-1 p-2 border-b border-amber-200/70 dark:border-amber-900/30 bg-white/85 dark:bg-neutral-900/85 backdrop-blur sticky top-0 z-10">
           {tabs.map((t, i) => (
             <button key={t} onClick={() => goToView(i)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${

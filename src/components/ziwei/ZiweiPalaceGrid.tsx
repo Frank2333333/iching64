@@ -381,7 +381,7 @@ export default function ZiweiPalaceGrid({ chart, compact = false }: ZiweiPalaceG
 
   return (
     <div className="w-full overflow-x-auto">
-      <div className={compact ? 'min-w-[384px] sm:min-w-[448px]' : 'min-w-[480px] sm:min-w-[560px]'}>
+      <div className={compact ? 'w-full' : 'min-w-[480px] sm:min-w-[560px]'}>
         <div className="grid grid-cols-4 gap-0 border border-amber-300/50 dark:border-amber-700/40
           rounded-lg overflow-hidden bg-amber-50/30 dark:bg-neutral-900/30 relative">
           {grid.map((row, ri) =>

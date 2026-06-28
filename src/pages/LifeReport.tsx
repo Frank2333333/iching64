@@ -89,17 +89,24 @@ export default function LifeReport() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
-  // 布局模式：电脑(三栏) / 手机(swipe 3视图)。首次按屏宽自动选，用户切换后 localStorage 记住
+  // 布局模式：电脑(三栏) / 手机(swipe 3视图)。按设备类型分键记忆偏好，避免跨设备冲突
+  // （手机读 iching_layout_mobile，桌面读 iching_layout_desktop，互不干扰；首次按屏宽自动选）
   const [layoutMode, setLayoutMode] = useState<'desktop' | 'mobile'>(() => {
     if (typeof window === 'undefined') return 'desktop';
-    const saved = localStorage.getItem('iching_layout_mode');
+    const isNarrow = window.matchMedia('(max-width: 1023px)').matches;
+    const deviceKey = isNarrow ? 'iching_layout_mobile' : 'iching_layout_desktop';
+    const saved = localStorage.getItem(deviceKey);
     if (saved === 'desktop' || saved === 'mobile') return saved;
-    return window.matchMedia('(max-width: 1023px)').matches ? 'mobile' : 'desktop';
+    return isNarrow ? 'mobile' : 'desktop';
   });
   const toggleLayoutMode = useCallback(() => {
     setLayoutMode((prev) => {
       const next = prev === 'desktop' ? 'mobile' : 'desktop';
-      try { localStorage.setItem('iching_layout_mode', next); } catch { /* 忽略隐私模式 */ }
+      try {
+        const isNarrow = window.matchMedia('(max-width: 1023px)').matches;
+        const deviceKey = isNarrow ? 'iching_layout_mobile' : 'iching_layout_desktop';
+        localStorage.setItem(deviceKey, next);
+      } catch { /* 忽略隐私模式 */ }
       return next;
     });
   }, []);
