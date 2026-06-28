@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { User, ChevronDown, Trash2, LogIn, LogOut, Upload, Files } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { User, ChevronDown, Trash2, LogIn, LogOut, Upload, Files, Crown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -106,6 +107,19 @@ export default function GlobalUserMenu() {
               <DropdownMenuLabel className="truncate text-xs font-normal text-muted-foreground">
                 {user?.email}
               </DropdownMenuLabel>
+              {user?.plan === 'member' ? (
+                <DropdownMenuItem disabled>
+                  <Crown className="mr-2 h-4 w-4 text-amber-500" />
+                  会员{user?.memberExpiresAt ? ` · ${new Date(user.memberExpiresAt).toLocaleDateString('zh-CN')}到期` : ''}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link to="/upgrade">
+                    <Crown className="mr-2 h-4 w-4 text-amber-500" />
+                    升级会员
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 退出登录

@@ -3,6 +3,8 @@
  * 调用后端 OpenAI 解卦接口
  */
 
+import { authHeaders } from './api-auth';
+
 const API_BASE_URL = import.meta.env.VITE_FEEDBACK_API_URL || '/api';
 
 export interface DivinationData {
@@ -73,11 +75,13 @@ export interface AIDivinationResponse {
  */
 export async function getAIDivination(data: DivinationData): Promise<AIDivinationResponse> {
   try {
+    const headers = authHeaders();
+    if (!headers) {
+      return { success: false, error: '请先登录后使用' };
+    }
     const response = await fetch(`${API_BASE_URL}/divination/ai`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
@@ -185,11 +189,13 @@ export interface ChatResponse {
  */
 export async function sendChatMessage(data: ChatRequestData): Promise<ChatResponse> {
   try {
+    const headers = authHeaders();
+    if (!headers) {
+      return { success: false, error: '请先登录后使用' };
+    }
     const response = await fetch(`${API_BASE_URL}/divination/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     });
 

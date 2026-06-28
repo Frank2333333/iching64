@@ -14,9 +14,21 @@ export interface AuthResponse {
   error?: string;
 }
 
+export interface QuotaInfo {
+  report: { used: number; limit: number };
+  chat: { used: number; limit: number };
+  profiles: { used: number; limit: number };
+}
+
 export interface MeResponse {
   success: boolean;
-  data?: { id: string; email: string };
+  data?: {
+    id: string;
+    email: string;
+    plan?: 'free' | 'member';
+    memberExpiresAt?: number | null;
+    quota?: QuotaInfo;
+  };
   error?: string;
 }
 

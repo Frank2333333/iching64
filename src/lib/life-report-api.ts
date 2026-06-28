@@ -5,6 +5,7 @@
 
 import type { BaziChart } from './bazi-calculator';
 import type { ZiweiChart } from './ziwei-calculator';
+import { authHeaders } from './api-auth';
 
 const API_BASE_URL = import.meta.env.VITE_FEEDBACK_API_URL || '/api';
 
@@ -48,10 +49,14 @@ interface ChatResponse extends BaseResponse {
 }
 
 async function postJSON(url: string, body: unknown): Promise<{ ok: boolean; json: any | null; text: string }> {
+  const headers = authHeaders();
+  if (!headers) {
+    return { ok: false, json: { success: false, error: '请先登录后使用', code: 'UNAUTHORIZED' }, text: '{"success":false}' };
+  }
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(body),
     });
     const text = await response.text();

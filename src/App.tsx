@@ -11,6 +11,7 @@ const ZiweiDivination = lazy(() => import('./pages/ZiweiDivination'));
 const ClassicsPage = lazy(() => import('./pages/ClassicsPage'));
 const ZiweiKnowledge = lazy(() => import('./pages/ZiweiKnowledge'));
 const LifeReport = lazy(() => import('./pages/LifeReport'));
+const Upgrade = lazy(() => import('./pages/Upgrade'));
 
 function LoadingFallback() {
   return (
@@ -68,6 +69,7 @@ function AppContent() {
           <Route path="/ziwei" element={<ZiweiDivination />} />
           <Route path="/classics" element={<ClassicsPage />} />
           <Route path="/ziwei-knowledge" element={<ZiweiKnowledge />} />
+          <Route path="/upgrade" element={<Upgrade />} />
         </Routes>
       </Suspense>
     </div>

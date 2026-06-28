@@ -1,9 +1,12 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { getCurrentUser } from '../lib/auth-api';
+import { getCurrentUser, type QuotaInfo } from '../lib/auth-api';
 
 export interface AuthUser {
   id: string;
   email: string;
+  plan?: 'free' | 'member';
+  memberExpiresAt?: number | null;
+  quota?: QuotaInfo;
 }
 
 interface AuthContextValue {
@@ -14,6 +17,8 @@ interface AuthContextValue {
   isInitialized: boolean;
   login: (newToken: string, userData: AuthUser) => void;
   logout: () => void;
+  /** 刷新用户信息（plan/quota），AI 调用后刷新剩余额度 */
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -44,30 +49,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const fetchUser = useCallback(async (tok: string) => {
+    try {
+      const res = await getCurrentUser(tok);
+      if (res.success && res.data) {
+        setUser(res.data);
+        return true;
+      } else {
+        localStorage.removeItem(TOKEN_KEY);
+        setToken(null);
+        return false;
+      }
+    } catch {
+      localStorage.removeItem(TOKEN_KEY);
+      setToken(null);
+      return false;
+    }
+  }, []);
+
   useEffect(() => {
     if (!token) {
       setIsInitialized(true);
       return;
     }
     setIsLoading(true);
-    getCurrentUser(token)
-      .then((res) => {
-        if (res.success && res.data) {
-          setUser(res.data);
-        } else {
-          localStorage.removeItem(TOKEN_KEY);
-          setToken(null);
-        }
-      })
-      .catch(() => {
-        localStorage.removeItem(TOKEN_KEY);
-        setToken(null);
-      })
-      .finally(() => {
-        setIsLoading(false);
-        setIsInitialized(true);
-      });
-  }, [token]);
+    fetchUser(token).finally(() => {
+      setIsLoading(false);
+      setIsInitialized(true);
+    });
+  }, [token, fetchUser]);
 
   const login = useCallback((newToken: string, userData: AuthUser) => {
     localStorage.setItem(TOKEN_KEY, newToken);
@@ -81,10 +91,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    if (token) await fetchUser(token);
+  }, [token, fetchUser]);
+
   const isLoggedIn = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoggedIn, isLoading, isInitialized, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoggedIn, isLoading, isInitialized, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

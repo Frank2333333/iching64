@@ -4,6 +4,7 @@
  */
 
 import type { BaziChart } from './bazi-calculator';
+import { authHeaders } from './api-auth';
 
 const API_BASE_URL = import.meta.env.VITE_FEEDBACK_API_URL || '/api';
 
@@ -68,11 +69,13 @@ export interface ChatResponse {
  */
 export async function baziAIFortune(data: BaziInput): Promise<BaziFortuneResponse> {
   try {
+    const headers = authHeaders();
+    if (!headers) {
+      return { success: false, error: '请先登录后使用' };
+    }
     const response = await fetch(`${API_BASE_URL}/bazi/ai`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     });
 
@@ -147,11 +150,13 @@ export async function checkBaziAIStatus(): Promise<boolean> {
  */
 export async function baziChat(data: ChatRequestData): Promise<ChatResponse> {
   try {
+    const headers = authHeaders();
+    if (!headers) {
+      return { success: false, error: '请先登录后使用' };
+    }
     const response = await fetch(`${API_BASE_URL}/bazi/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(data),
     });
 

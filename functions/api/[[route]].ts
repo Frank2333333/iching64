@@ -55,6 +55,74 @@ const authMiddleware = async (c: any, next: () => Promise<void>) => {
   }
 };
 
+// ==================== 配额与会员体系 ====================
+
+// 等级额度（后台可调：改这里即生效）
+const QUOTA = {
+  free:   { profiles: 3, reportPerDay: 1, chatPerDay: 10 },
+  member: { profiles: 5, reportPerDay: 3, chatPerDay: 30 },
+};
+// 会员价格（分，后台可调）
+const PLAN_PRICE: Record<string, number> = { monthly: 1900, yearly: 12800 };
+
+/** 当天日期串（UTC+8），用于按天计数与跨天重置 */
+function getTodayDay(): string {
+  const now = new Date();
+  const utc8 = new Date(now.getTime() + 8 * 3600 * 1000);
+  const y = utc8.getUTCFullYear();
+  const m = String(utc8.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(utc8.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/** 判定用户当前有效等级：member 且未过期 → member，否则 free（过期自动降级，不删字段） */
+function effectivePlan(user: { plan?: string; member_expires_at?: number | null }): 'free' | 'member' {
+  if (user?.plan === 'member' && user?.member_expires_at && user.member_expires_at > Date.now()) {
+    return 'member';
+  }
+  return 'free';
+}
+
+/** 取当日用量 {report, chat}，无记录返回 0 */
+async function getDailyUsage(db: D1Database, userId: string): Promise<{ report: number; chat: number }> {
+  const day = getTodayDay();
+  const row = await db.prepare('SELECT report_count, chat_count FROM usage_daily WHERE user_id = ? AND day = ?').bind(userId, day).first();
+  return { report: (row?.report_count as number) || 0, chat: (row?.chat_count as number) || 0 };
+}
+
+/** 用量+1（report 或 chat）。成功后调用，避免失败请求也计数 */
+async function incrUsage(db: D1Database, userId: string, type: 'report' | 'chat'): Promise<void> {
+  const day = getTodayDay();
+  const col = type === 'report' ? 'report_count' : 'chat_count';
+  await db.prepare(
+    `INSERT INTO usage_daily (user_id, day, report_count, chat_count, updated_at) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(user_id, day) DO UPDATE SET ${col} = ${col} + 1, updated_at = ?`
+  ).bind(userId, day, type === 'report' ? 1 : 0, type === 'chat' ? 1 : 0, Date.now(), Date.now()).run();
+}
+
+/** 配额中间件：需先挂 authMiddleware。检查当日用量是否超限，超限返回 403 */
+const quotaMiddleware = (type: 'report' | 'chat') => async (c: any, next: () => Promise<void>) => {
+  const userId = c.get('userId') as string;
+  const user = await c.env.DB.prepare('SELECT plan, member_expires_at FROM users WHERE id = ?').bind(userId).first();
+  if (!user) return c.json({ success: false, error: '用户不存在' }, 401);
+  const plan = effectivePlan(user as any);
+  const limit = QUOTA[plan][type === 'report' ? 'reportPerDay' : 'chatPerDay'];
+  const usage = await getDailyUsage(c.env.DB, userId);
+  const used = type === 'report' ? usage.report : usage.chat;
+  if (used >= limit) {
+    return c.json({
+      success: false,
+      error: type === 'report' ? '今日报告生成额度已用完，明日重置' : '今日对话额度已用完，明日重置',
+      code: 'QUOTA_EXCEEDED',
+      quota: { type, used, limit, plan },
+    }, 403);
+  }
+  // 注入 plan 供路由内计数参考
+  c.set('userPlan', plan);
+  await next();
+};
+
+
 // ==================== 健康检查 ====================
 
 app.get('/api/health', (c) => {
@@ -140,7 +208,7 @@ app.delete('/api/feedback/:id', async (c) => {
 
 // ==================== AI 解卦 API ====================
 
-app.post('/api/divination/ai', async (c) => {
+app.post('/api/divination/ai', authMiddleware, quotaMiddleware('chat'), async (c) => {
   try {
     const divinationData = await c.req.json();
 
@@ -154,6 +222,7 @@ app.post('/api/divination/ai', async (c) => {
 
     console.log(`[API] AI 解卦请求: ${divinationData.gua?.name || 'unknown'}`);
     const aiResult = await getAIDivination(divinationData, c.env);
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
 
     return c.json({
       success: true,
@@ -166,7 +235,7 @@ app.post('/api/divination/ai', async (c) => {
   }
 });
 
-app.post('/api/divination/chat', async (c) => {
+app.post('/api/divination/chat', authMiddleware, quotaMiddleware('chat'), async (c) => {
   try {
     const { message, divinationData, history } = await c.req.json();
 
@@ -185,6 +254,7 @@ app.post('/api/divination/chat', async (c) => {
       { message: message.trim(), divinationData, history: history || [] },
       c.env,
     );
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
 
     return c.json({
       success: true,
@@ -199,7 +269,7 @@ app.post('/api/divination/chat', async (c) => {
 
 // ==================== 八字排盘 API ====================
 
-app.post('/api/bazi/ai', async (c) => {
+app.post('/api/bazi/ai', authMiddleware, quotaMiddleware('chat'), async (c) => {
   try {
     const input = await c.req.json();
 
@@ -216,6 +286,7 @@ app.post('/api/bazi/ai', async (c) => {
 
     console.log(`[API] 八字排盘请求`);
     const aiResult = await getBaziFortune(input, c.env);
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
 
     return c.json({
       success: true,
@@ -228,7 +299,7 @@ app.post('/api/bazi/ai', async (c) => {
   }
 });
 
-app.post('/api/bazi/chat', async (c) => {
+app.post('/api/bazi/chat', authMiddleware, quotaMiddleware('chat'), async (c) => {
   try {
     const { message, baziInput, history, initialInterpretationSummary } = await c.req.json();
 
@@ -247,6 +318,7 @@ app.post('/api/bazi/chat', async (c) => {
       { message: message.trim(), baziInput, history: history || [], initialInterpretationSummary },
       c.env,
     );
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
 
     return c.json({
       success: true,
@@ -261,7 +333,7 @@ app.post('/api/bazi/chat', async (c) => {
 
 // ==================== 紫微斗数 API ====================
 
-app.post('/api/ziwei/ai', async (c) => {
+app.post('/api/ziwei/ai', authMiddleware, quotaMiddleware('chat'), async (c) => {
   try {
     const input = await c.req.json();
 
@@ -277,6 +349,7 @@ app.post('/api/ziwei/ai', async (c) => {
 
     console.log(`[API] 紫微斗数请求`);
     const aiResult = await getZiweiFortune(input, c.env);
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
 
     return c.json({
       success: true,
@@ -289,7 +362,7 @@ app.post('/api/ziwei/ai', async (c) => {
   }
 });
 
-app.post('/api/ziwei/chat', async (c) => {
+app.post('/api/ziwei/chat', authMiddleware, quotaMiddleware('chat'), async (c) => {
   try {
     const { message, ziweiInput, history, initialInterpretationSummary } = await c.req.json();
 
@@ -308,6 +381,7 @@ app.post('/api/ziwei/chat', async (c) => {
       { message: message.trim(), ziweiInput, history: history || [], initialInterpretationSummary },
       c.env,
     );
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
 
     return c.json({
       success: true,
@@ -322,7 +396,7 @@ app.post('/api/ziwei/chat', async (c) => {
 
 // ==================== 经典文献 API ====================
 
-app.post('/api/classics/ai', async (c) => {
+app.post('/api/classics/ai', authMiddleware, quotaMiddleware('chat'), async (c) => {
   try {
     const { bookTitle, chapterTitle, text, question } = await c.req.json();
 
@@ -336,6 +410,7 @@ app.post('/api/classics/ai', async (c) => {
 
     console.log(`[API] 经典文献解读请求: ${bookTitle} · ${chapterTitle}`);
     const aiResult = await interpretParagraph({ bookTitle, chapterTitle, text, question }, c.env);
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
 
     return c.json({
       success: true,
@@ -459,7 +534,25 @@ app.get('/api/auth/me', authMiddleware, async (c) => {
       return c.json({ success: false, error: '用户不存在' }, 401);
     }
 
-    return c.json({ success: true, data: { id: user.id, email: user.email } });
+    const plan = effectivePlan(user as any);
+    const usage = await getDailyUsage(c.env.DB, userId);
+    const profileCnt = await c.env.DB.prepare('SELECT COUNT(*) as n FROM profiles WHERE user_id = ?').bind(userId).first();
+    const profileUsed = (profileCnt?.n as number) || 0;
+
+    return c.json({
+      success: true,
+      data: {
+        id: user.id,
+        email: user.email,
+        plan,
+        memberExpiresAt: (user as any).member_expires_at ?? null,
+        quota: {
+          report: { used: usage.report, limit: QUOTA[plan].reportPerDay },
+          chat:   { used: usage.chat,   limit: QUOTA[plan].chatPerDay },
+          profiles: { used: profileUsed, limit: QUOTA[plan].profiles },
+        },
+      },
+    });
   } catch (error) {
     console.error('获取用户信息失败:', error);
     return c.json({ success: false, error: '获取失败' }, 500);
@@ -595,6 +688,22 @@ app.post('/api/profiles', authMiddleware, async (c) => {
     ).bind(userId, name.trim()).first();
     const overwritten = !!existing;
 
+    // 非覆盖(新增)时检查档案数量上限
+    if (!overwritten) {
+      const user = await c.env.DB.prepare('SELECT plan, member_expires_at FROM users WHERE id = ?').bind(userId).first();
+      const plan = effectivePlan(user as any);
+      const cnt = await c.env.DB.prepare('SELECT COUNT(*) as n FROM profiles WHERE user_id = ?').bind(userId).first();
+      const count = (cnt?.n as number) || 0;
+      if (count >= QUOTA[plan].profiles) {
+        return c.json({
+          success: false,
+          error: `档案数量已达上限(${QUOTA[plan].profiles}个)，升级会员可保存更多`,
+          code: 'PROFILE_LIMIT',
+          quota: { used: count, limit: QUOTA[plan].profiles, plan },
+        }, 403);
+      }
+    }
+
     await c.env.DB.prepare(
       `INSERT OR REPLACE INTO profiles
         (id, user_id, name, input_mode, gender, year, month, day, hour, minute, birthplace, use_solar_time, pillars, created_at)
@@ -643,7 +752,7 @@ app.delete('/api/profiles/:id', authMiddleware, async (c) => {
 
 // ==================== 人生发展报告 API（双盘合参）====================
 
-app.post('/api/life-report/overview', async (c) => {
+app.post('/api/life-report/overview', authMiddleware, quotaMiddleware('report'), async (c) => {
   try {
     const input = await c.req.json();
     if (!input || !input.baziChart || !input.ziweiChart) {
@@ -653,6 +762,7 @@ app.post('/api/life-report/overview', async (c) => {
       return c.json({ success: false, error: 'AI 服务未配置' }, 503);
     }
     const result = await getLifeReportOverview(input, c.env);
+    await incrUsage(c.env.DB, c.get('userId'), 'report');
     return c.json({ success: true, data: { interpretation: result, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() } });
   } catch (error: unknown) {
     console.error('人生报告总览失败:', error);
@@ -660,7 +770,7 @@ app.post('/api/life-report/overview', async (c) => {
   }
 });
 
-app.post('/api/life-report/section', async (c) => {
+app.post('/api/life-report/section', authMiddleware, quotaMiddleware('chat'), async (c) => {
   try {
     const req = await c.req.json();
     if (!req || !req.sectionType || !req.overview || !req.baziChart || !req.ziweiChart) {
@@ -674,6 +784,7 @@ app.post('/api/life-report/section', async (c) => {
       return c.json({ success: false, error: 'AI 服务未配置' }, 503);
     }
     const result = await getLifeReportSection(req, c.env);
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
     return c.json({ success: true, data: { interpretation: result, sectionType: req.sectionType, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() } });
   } catch (error: unknown) {
     console.error('人生报告章节失败:', error);
@@ -681,7 +792,7 @@ app.post('/api/life-report/section', async (c) => {
   }
 });
 
-app.post('/api/life-report/chat', async (c) => {
+app.post('/api/life-report/chat', authMiddleware, quotaMiddleware('chat'), async (c) => {
   try {
     const { message, input, history, reportSummary } = await c.req.json();
     if (!message || !message.trim()) {
@@ -697,6 +808,7 @@ app.post('/api/life-report/chat', async (c) => {
       { message: message.trim(), input, history: history || [], reportSummary },
       c.env,
     );
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
     return c.json({ success: true, data: { message: result, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() } });
   } catch (error: unknown) {
     console.error('人生报告对话失败:', error);
@@ -789,6 +901,100 @@ app.delete('/api/life-history/:id', authMiddleware, async (c) => {
   } catch (error) {
     console.error('删除历史失败:', error);
     return c.json({ success: false, error: '删除失败' }, 500);
+  }
+});
+
+// ==================== 会员订单 API（支付渠道预留，本次不接具体第三方）====================
+
+/** 开通会员：monthly +30天，yearly +365天；若当前未过期则从过期时间续期 */
+async function activateMembership(db: D1Database, userId: string, plan: 'monthly' | 'yearly', orderId: string): Promise<number> {
+  const user = await db.prepare('SELECT member_expires_at FROM users WHERE id = ?').bind(userId).first();
+  const now = Date.now();
+  const cur = (user?.member_expires_at as number | undefined) ?? 0;
+  const base = cur > now ? cur : now; // 未过期则从到期时间续期，否则从现在起算
+  const days = plan === 'yearly' ? 365 : 30;
+  const expiresAt = base + days * 24 * 3600 * 1000;
+  await db.prepare(
+    'UPDATE users SET plan = ?, member_expires_at = ?, member_order_id = ? WHERE id = ?'
+  ).bind('member', expiresAt, orderId, userId).run();
+  return expiresAt;
+}
+
+/** 创建订单：写 pending 订单，返回订单号 + 占位支付信息（渠道未接） */
+app.post('/api/orders', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { plan } = await c.req.json();
+    if (!plan || !['monthly', 'yearly'].includes(plan)) {
+      return c.json({ success: false, error: '套餐无效，需为 monthly 或 yearly' }, 400);
+    }
+    const amount = PLAN_PRICE[plan];
+    const id = `ord_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    await c.env.DB.prepare(
+      'INSERT INTO orders (id, user_id, plan, amount, status, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(id, userId, plan, amount, 'pending', Date.now()).run();
+
+    // TODO: 支付渠道接入后，此处调用第三方下单接口，返回真实支付链接/二维码
+    // 现阶段返回占位信息，前端提示"支付渠道即将开通"
+    return c.json({
+      success: true,
+      data: {
+        orderId: id,
+        plan,
+        amount,            // 分
+        amountYuan: (amount / 100).toFixed(2),
+        status: 'pending',
+        payUrl: null,      // 渠道未接，无支付链接
+        notice: '支付渠道正在接入中，暂无法自助开通。如需开通会员请联系站长手动开通。',
+      },
+    });
+  } catch (error) {
+    console.error('创建订单失败:', error);
+    return c.json({ success: false, error: '创建订单失败' }, 500);
+  }
+});
+
+/** 支付回调：渠道接入后由第三方回调。当前预留，需验签（TODO） */
+app.post('/api/orders/callback', async (c) => {
+  // TODO: 接入支付渠道后，验证第三方签名 → 取订单号 → 更新订单为 paid → activateMembership
+  return c.json({ success: false, error: '支付回调未配置，渠道接入后启用' }, 503);
+});
+
+/** 查询我的订单 */
+app.get('/api/orders/mine', authMiddleware, async (c) => {
+  try {
+    const userId = c.get('userId');
+    const { results } = await c.env.DB.prepare(
+      'SELECT id, plan, amount, status, created_at, paid_at FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT 20'
+    ).bind(userId).all();
+    return c.json({ success: true, data: results || [] });
+  } catch (error) {
+    console.error('查询订单失败:', error);
+    return c.json({ success: false, error: '查询失败' }, 500);
+  }
+});
+
+/** 站长手动开通会员（管理接口）：body { email, plan } —— 支付未接前的开通方式
+ *  TODO: 接入支付后可移除或加管理员鉴权 */
+app.post('/api/orders/manual-activate', async (c) => {
+  try {
+    const { email, plan } = await c.req.json();
+    if (!email || !plan || !['monthly', 'yearly'].includes(plan)) {
+      return c.json({ success: false, error: '参数无效' }, 400);
+    }
+    // 简单管理口令校验（密钥在 wrangler secret 配 ADMIN_KEY，未配则禁止）
+    const adminKey = (c.env as any).ADMIN_KEY;
+    const provided = c.req.header('X-Admin-Key');
+    if (!adminKey || provided !== adminKey) {
+      return c.json({ success: false, error: '无权限' }, 403);
+    }
+    const user = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
+    if (!user) return c.json({ success: false, error: '用户不存在' }, 404);
+    const expiresAt = await activateMembership(c.env.DB, user.id as string, plan as 'monthly' | 'yearly', `manual_${Date.now()}`);
+    return c.json({ success: true, data: { email, plan, memberExpiresAt: expiresAt } });
+  } catch (error) {
+    console.error('手动开通失败:', error);
+    return c.json({ success: false, error: '开通失败' }, 500);
   }
 });
 
