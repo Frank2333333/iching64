@@ -240,12 +240,14 @@ export default function LifeReport() {
         setSections((prev) => ({ ...prev, [st]: { loading: false, error: null, content: sectionContent } }));
         // 写回历史（存各章节内容字符串）
         if (currentHistoryId) {
+          // 其他章节读 sectionsRef（最新已提交值），避免并发生成时闭包 sections 过期覆盖
+          const s = sectionsRef.current;
           const historySections: Record<SectionType, string | null> = {
-            career: st === 'career' ? sectionContent : sections.career.content,
-            wealth: st === 'wealth' ? sectionContent : sections.wealth.content,
-            marriage: st === 'marriage' ? sectionContent : sections.marriage.content,
-            health: st === 'health' ? sectionContent : sections.health.content,
-            trend: st === 'trend' ? sectionContent : sections.trend.content,
+            career: st === 'career' ? sectionContent : s.career.content,
+            wealth: st === 'wealth' ? sectionContent : s.wealth.content,
+            marriage: st === 'marriage' ? sectionContent : s.marriage.content,
+            health: st === 'health' ? sectionContent : s.health.content,
+            trend: st === 'trend' ? sectionContent : s.trend.content,
           };
           persistHistory({ sections: historySections });
         }
