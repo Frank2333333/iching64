@@ -472,7 +472,7 @@ export default function LifeReport() {
                 <Compass className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h1 className="text-lg font-display font-semibold tracking-[0.14em] text-amber-900 dark:text-amber-50 sm:text-xl">
+                <h1 className="text-lg font-display font-semibold tracking-[0.14em] text-amber-900 dark:text-amber-50 sm:text-xl whitespace-nowrap">
                   人生报告
                 </h1>
               </div>
