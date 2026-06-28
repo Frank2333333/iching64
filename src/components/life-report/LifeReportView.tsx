@@ -347,6 +347,20 @@ export default function LifeReportView({
     setActiveView(idx);
   }, []);
 
+  // 手机模式挂载时：把 swipe 容器滚动定位到初始 activeView（报告），避免「tab显示报告但停在命盘」不同步
+  useEffect(() => {
+    if (layoutMode !== 'mobile') return;
+    const el = swipeRef.current;
+    if (!el) return;
+    // 用 rAF 等布局完成后再定位（容器宽度此时已稳定）
+    const raf = requestAnimationFrame(() => {
+      el.scrollTo({ left: activeView * el.clientWidth });
+    });
+    return () => cancelAnimationFrame(raf);
+    // 仅在切入手机模式时执行一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutMode]);
+
   // 中右栏可拖动分隔：右栏宽度
   const [rightWidth, setRightWidth] = useState(340);
   const draggingRef = useRef(false);
