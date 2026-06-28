@@ -140,7 +140,7 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix, hideThemeT
       </div>
 
       {isMenuOpen && (
-        <div className="border-t border-[#E8D7CA]/80 bg-[#FFF8F3]/92 px-4 py-4 backdrop-blur-xl animate-slideInRight dark:border-white/10 dark:bg-neutral-950/92 md:hidden">
+        <div className="w-full border-t border-[#E8D7CA]/80 bg-[#FFF8F3]/92 px-4 py-4 backdrop-blur-xl animate-slideInRight dark:border-white/10 dark:bg-neutral-950/92 md:hidden">
           {mobilePrefix}
           <div className="flex flex-row flex-wrap gap-2">
             {navItems.map((item) => (

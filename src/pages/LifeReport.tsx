@@ -477,7 +477,7 @@ export default function LifeReport() {
                 </h1>
               </div>
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {step === 'result'
                 ? <SettingsToggle layoutMode={layoutMode} onToggleLayout={toggleLayoutMode} />
                 : null}
