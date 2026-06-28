@@ -7,6 +7,8 @@ import GlobalUserMenu from './GlobalUserMenu';
 interface MainHeaderTabsProps {
   desktopPrefix?: ReactNode;
   mobilePrefix?: ReactNode;
+  /** 隐藏移动端自带的明暗切换键（当外层用独立设置键接管主题时用） */
+  hideThemeToggle?: boolean;
 }
 
 interface NavItem {
@@ -68,7 +70,7 @@ const inactiveTabClass =
 const activeTabClass =
   'inline-flex items-center gap-2 rounded-full border border-[#E1C8B2] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,244,237,0.95))] px-4 py-2.5 text-sm font-medium text-[#B56F62] shadow-[0_16px_30px_-24px_rgba(201,124,109,0.45)] backdrop-blur-sm transition-all duration-300 dark:border-yellow-500/20 dark:bg-[linear-gradient(135deg,rgba(234,179,8,0.12),rgba(23,23,23,0.76))] dark:text-yellow-100 dark:shadow-none';
 
-export default function MainHeaderTabs({ desktopPrefix, mobilePrefix }: MainHeaderTabsProps) {
+export default function MainHeaderTabs({ desktopPrefix, mobilePrefix, hideThemeToggle }: MainHeaderTabsProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
   const { pathname } = useLocation();
@@ -118,12 +120,12 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix }: MainHead
         </div>
 
         <GlobalUserMenu />
-        <ThemeToggle />
+        {!hideThemeToggle && <ThemeToggle />}
       </div>
 
       <div className="flex items-center gap-2 md:hidden">
         <GlobalUserMenu />
-        <ThemeToggle />
+        {!hideThemeToggle && <ThemeToggle />}
         <button
           onClick={() => setIsMenuOpen((prev) => !prev)}
           className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#E7D6C8]
