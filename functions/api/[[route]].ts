@@ -759,13 +759,13 @@ app.post('/api/life-history', authMiddleware, async (c) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(newId, userId, now, name ?? null, birthStr, overview ?? null, sectionsStr, chatsStr, activeIdx).run();
 
-    // 淘汰：保留最近10条，删除最旧
+    // 淘汰：保留最近2条，删除最旧
     const { results: all } = await c.env.DB.prepare(
       'SELECT id FROM life_history WHERE user_id = ? ORDER BY created_at DESC'
     ).bind(userId).all();
     const ids = (all || []).map((r: Record<string, unknown>) => r.id as string);
-    if (ids.length > 10) {
-      const toDelete = ids.slice(10); // 超出10条的最旧部分
+    if (ids.length > 2) {
+      const toDelete = ids.slice(2); // 超出2条的最旧部分
       for (const oldId of toDelete) {
         await c.env.DB.prepare('DELETE FROM life_history WHERE id = ? AND user_id = ?').bind(oldId, userId).run();
       }
