@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { Compass, Save, Loader2, History, Trash2, Clock, Pencil } from 'lucide-react';
 import MainHeaderTabs from '../components/MainHeaderTabs';
+import LayoutToggle from '../components/LayoutToggle';
 import LifeReportForm from '../components/life-report/LifeReportForm';
 import LifeReportView from '../components/life-report/LifeReportView';
 import { calculateBaziChart, type BaziChart } from '../lib/bazi-calculator';
@@ -87,6 +88,21 @@ export default function LifeReport() {
   const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+
+  // 布局模式：电脑(三栏) / 手机(swipe 3视图)。首次按屏宽自动选，用户切换后 localStorage 记住
+  const [layoutMode, setLayoutMode] = useState<'desktop' | 'mobile'>(() => {
+    if (typeof window === 'undefined') return 'desktop';
+    const saved = localStorage.getItem('iching_layout_mode');
+    if (saved === 'desktop' || saved === 'mobile') return saved;
+    return window.matchMedia('(max-width: 1023px)').matches ? 'mobile' : 'desktop';
+  });
+  const toggleLayoutMode = useCallback(() => {
+    setLayoutMode((prev) => {
+      const next = prev === 'desktop' ? 'mobile' : 'desktop';
+      try { localStorage.setItem('iching_layout_mode', next); } catch { /* 忽略隐私模式 */ }
+      return next;
+    });
+  }, []);
 
   // 登录后拉取云端历史
   useEffect(() => {
@@ -454,7 +470,10 @@ export default function LifeReport() {
                 </h1>
               </div>
             </button>
-            <MainHeaderTabs />
+            <div className="flex items-center gap-2">
+              {step === 'result' && <LayoutToggle mode={layoutMode} onToggle={toggleLayoutMode} />}
+              <MainHeaderTabs />
+            </div>
           </div>
         </div>
       </header>
@@ -484,7 +503,7 @@ export default function LifeReport() {
                 <div className="mt-6">
                   <h3 className="flex items-center gap-2 text-sm font-bold text-amber-800 dark:text-amber-300 mb-3">
                     <History className="w-4 h-4" />最近报告
-                    <span className="text-xs font-normal text-amber-500/70 dark:text-amber-400/70">（保留最近10份）</span>
+                    <span className="text-xs font-normal text-amber-500/70 dark:text-amber-400/70">（保留最近2份）</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {history.map((entry) => {
@@ -550,6 +569,7 @@ export default function LifeReport() {
 
         {step === 'result' && reportInput && (
           <LifeReportView
+            layoutMode={layoutMode}
             input={reportInput}
             baziChart={baziChart}
             ziweiChart={ziweiChart}

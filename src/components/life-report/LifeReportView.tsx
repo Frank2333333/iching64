@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Loader2, User, Compass, ChevronRight, Star, Crown, ArrowRight, Plus } from 'lucide-react';
+import { Sparkles, Loader2, User, Compass, ChevronRight, ChevronDown, Star, Crown, ArrowRight, Plus } from 'lucide-react';
 import MarkdownRenderer from '../MarkdownRenderer';
 import LifeTimeline from './LifeTimeline';
 import ZiweiPalaceGrid from '../ziwei/ZiweiPalaceGrid';
@@ -17,6 +17,7 @@ interface SectionState {
 }
 
 interface LifeReportViewProps {
+  layoutMode: 'desktop' | 'mobile';
   input: LifeReportInput;
   baziChart: BaziChart | null;
   ziweiChart: ZiweiChart | null;
@@ -96,19 +97,33 @@ function ChartPanel({ baziChart, ziweiChart }: { baziChart: BaziChart | null; zi
   );
 }
 
-/** 中栏章节块（懒加载：点击才生成） */
+/** 中栏章节块（懒加载：点击才生成；手机模式可手风琴折叠） */
 function SectionBlock({
   title, icon, hint, state, onGenerate, overviewReady,
+  collapsible, open, onToggle,
 }: {
   title: string; icon: string; hint: string; state: SectionState;
   onGenerate: () => void; overviewReady: boolean;
+  collapsible?: boolean; open?: boolean; onToggle?: () => void;
 }) {
   const idle = !state.loading && !state.content && !state.error;
+  const hasContent = !!state.content;
+  const expanded = !collapsible || open; // 非手风琴始终展开
+  const canToggle = collapsible && hasContent && !!onToggle;
   return (
     <section className="bg-white dark:bg-neutral-800 rounded-2xl p-5 shadow-card border border-amber-200 dark:border-amber-900/30">
-      <h2 className="flex items-center gap-2 text-lg font-display font-bold text-amber-900 dark:text-amber-100 mb-1">
-        <span>{icon}</span>{title}
-      </h2>
+      {canToggle ? (
+        <button onClick={onToggle} className="flex items-center w-full text-left mb-1">
+          <h2 className="flex items-center gap-2 text-lg font-display font-bold text-amber-900 dark:text-amber-100 flex-1">
+            <span>{icon}</span>{title}
+          </h2>
+          <ChevronDown className={`w-4 h-4 text-amber-500 transition-transform duration-300 ${open ? '' : '-rotate-90'}`} />
+        </button>
+      ) : (
+        <h2 className="flex items-center gap-2 text-lg font-display font-bold text-amber-900 dark:text-amber-100 mb-1">
+          <span>{icon}</span>{title}
+        </h2>
+      )}
       <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mb-3">{hint}</p>
       {idle && (
         <button onClick={onGenerate} disabled={!overviewReady}
@@ -126,7 +141,7 @@ function SectionBlock({
           <button onClick={onGenerate} className="ml-2 underline">重试</button>
         </div>
       )}
-      {state.content && <MarkdownRenderer content={state.content} className="text-sm md:text-base" />}
+      {expanded && state.content && <MarkdownRenderer content={state.content} className="text-sm md:text-base" />}
     </section>
   );
 }
@@ -233,8 +248,75 @@ function ChatPanel({
   );
 }
 
+/** 报告正文（标题+总览+章节+引导+返回）。accordion=true 时章节手风琴折叠（手机模式） */
+function ReportBody({
+  input, genderText, overview, sections, overviewReady, onGenerateSection, onBackToInput,
+  accordion, openSection, onToggleSection,
+}: {
+  input: LifeReportInput; genderText: string; overview: SectionState;
+  sections: Record<SectionType, SectionState>; overviewReady: boolean;
+  onGenerateSection: (st: SectionType) => void; onBackToInput: () => void;
+  accordion: boolean; openSection: SectionType | null; onToggleSection: (st: SectionType) => void;
+}) {
+  return (
+    <div className="space-y-4 pb-6">
+      <div className="text-center mb-2">
+        <h1 className="text-2xl font-display font-bold text-amber-900 dark:text-amber-100 flex items-center justify-center gap-2">
+          <Compass className="w-6 h-6" />你的人生发展报告
+        </h1>
+        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+          {input.year}年{input.month}月{input.day}日 · {genderText} · {input.birthplace || '出生地未填'}
+        </p>
+      </div>
+
+      <section className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 rounded-2xl p-6 shadow-card border border-amber-200 dark:border-amber-900/30">
+        <h2 className="flex items-center gap-2 text-xl font-display font-bold text-amber-900 dark:text-amber-100 mb-3">
+          <User className="w-5 h-5" />本命总览
+        </h2>
+        {overview.loading && (
+          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm py-4">
+            <Loader2 className="w-5 h-5 animate-spin" />正在读懂你，请稍候...
+          </div>
+        )}
+        {overview.error && <div className="text-sm text-red-600 py-2">{overview.error}</div>}
+        {overview.content && <MarkdownRenderer content={overview.content} className="text-sm md:text-base" />}
+      </section>
+
+      {SECTION_ORDER.map((key) => (
+        <SectionBlock key={key} title={SECTION_TITLES[key]} icon={SECTION_ICONS[key]} hint={SECTION_HINTS[key]}
+          state={sections[key]} onGenerate={() => onGenerateSection(key)} overviewReady={overviewReady}
+          collapsible={accordion} open={openSection === key} onToggle={() => onToggleSection(key)} />
+      ))}
+
+      {/* 引导：深入单盘分析 */}
+      <div className="bg-amber-50/60 dark:bg-amber-900/10 rounded-2xl p-4 border border-amber-200/60 dark:border-amber-900/30">
+        <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 text-center">
+          想看完整命盘的深度分析？前往单盘工具
+        </p>
+        <div className="flex flex-wrap gap-2 justify-center">
+          <Link to="/bazi"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:border-amber-400 dark:hover:border-amber-600 transition-colors">
+            <Star className="w-4 h-4" />八字排盘<ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+          <Link to="/ziwei"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:border-amber-400 dark:hover:border-amber-600 transition-colors">
+            <Crown className="w-4 h-4" />紫微斗数<ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+
+      <div className="text-center pb-2">
+        <button onClick={onBackToInput}
+          className="px-6 py-2.5 rounded-full border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+          重新生成 / 换个生辰
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function LifeReportView({
-  input, baziChart, ziweiChart, overview, sections,
+  layoutMode, input, baziChart, ziweiChart, overview, sections,
   chatMessages, chats, activeChatIndex, chatLoading, chatError, chatInput,
   onChatInputChange, onSendChat, onChatKeyDown,
   onNewChat, onSwitchChat, onDeleteChat,
@@ -242,6 +324,28 @@ export default function LifeReportView({
 }: LifeReportViewProps) {
   const genderText = input.gender === 'male' ? '男' : '女';
   const overviewReady = !!overview.content;
+
+  // 手机模式：手风琴展开的章节（单开）
+  const [openSection, setOpenSection] = useState<SectionType | null>(null);
+  const toggleSection = useCallback((st: SectionType) => {
+    setOpenSection((prev) => (prev === st ? null : st));
+  }, []);
+
+  // 手机模式：swipe 视图索引（0命盘 1报告 2对话）+ 滚动联动
+  const [activeView, setActiveView] = useState(1); // 默认停在报告
+  const swipeRef = useRef<HTMLDivElement>(null);
+  const onSwipeScroll = useCallback(() => {
+    const el = swipeRef.current;
+    if (!el) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    setActiveView(idx);
+  }, []);
+  const goToView = useCallback((idx: number) => {
+    const el = swipeRef.current;
+    if (!el) return;
+    el.scrollTo({ left: idx * el.clientWidth, behavior: 'smooth' });
+    setActiveView(idx);
+  }, []);
 
   // 中右栏可拖动分隔：右栏宽度
   const [rightWidth, setRightWidth] = useState(340);
@@ -261,11 +365,58 @@ export default function LifeReportView({
     return () => window.removeEventListener('mouseup', up);
   }, []);
 
+  // ==================== 手机模式：swipe 3 视图（命盘/报告/对话）====================
+  if (layoutMode === 'mobile') {
+    const tabs = ['命盘', '报告', '继续聊聊'];
+    return (
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {/* 顶部 tab 指示器 */}
+        <div className="flex-none flex items-center justify-center gap-1 p-2 border-b border-amber-200/70 dark:border-amber-900/30">
+          {tabs.map((t, i) => (
+            <button key={t} onClick={() => goToView(i)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                activeView === i
+                  ? 'bg-amber-500 text-white dark:bg-amber-600'
+                  : 'text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/20'
+              }`}>
+              {t}
+            </button>
+          ))}
+        </div>
+        {/* swipe 容器 */}
+        <div ref={swipeRef} onScroll={onSwipeScroll}
+          className="flex-1 flex overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth">
+          {/* 视图1：命盘 */}
+          <div className="snap-center shrink-0 w-full h-full overflow-y-auto p-3 space-y-3">
+            <ChartPanel baziChart={baziChart} ziweiChart={ziweiChart} />
+            <LifeTimeline baziChart={baziChart} ziweiChart={ziweiChart} />
+          </div>
+          {/* 视图2：报告（章节手风琴） */}
+          <div className="snap-center shrink-0 w-full h-full overflow-y-auto p-3">
+            <ReportBody
+              input={input} genderText={genderText} overview={overview} sections={sections}
+              overviewReady={overviewReady} onGenerateSection={onGenerateSection} onBackToInput={onBackToInput}
+              accordion openSection={openSection} onToggleSection={toggleSection} />
+          </div>
+          {/* 视图3：对话 */}
+          <div className="snap-center shrink-0 w-full h-full p-3">
+            <ChatPanel chatMessages={chatMessages} chats={chats} activeChatIndex={activeChatIndex}
+              chatLoading={chatLoading} chatError={chatError} chatInput={chatInput}
+              onChatInputChange={onChatInputChange} onSendChat={onSendChat} onChatKeyDown={onChatKeyDown}
+              onNewChat={onNewChat} onSwitchChat={onSwitchChat} onDeleteChat={onDeleteChat}
+              overviewLoading={overview.loading} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==================== 电脑模式：三栏（命盘+时间轴 / 报告 / 对话）====================
   return (
     <div className="flex-1 overflow-hidden p-3 sm:p-4" onMouseMove={onMouseMove} onMouseUp={onMouseUp}>
       <div className="h-full max-w-[1600px] mx-auto flex gap-0">
-        {/* 左栏：八字卡片 + 紫微命盘（完整交互） + 运势时间轴，宽度刚好容下命盘 */}
-        <aside className="hidden lg:flex flex-col min-h-0 overflow-y-auto pr-2" style={{ flex: '0 0 512px' }}>
+        {/* 左栏：八字卡片 + 紫微命盘 + 运势时间轴 */}
+        <aside className="flex flex-col min-h-0 overflow-y-auto pr-2" style={{ flex: '0 0 512px' }}>
           <ChartPanel baziChart={baziChart} ziweiChart={ziweiChart} />
           <div className="mt-3">
             <LifeTimeline baziChart={baziChart} ziweiChart={ziweiChart} />
@@ -274,85 +425,24 @@ export default function LifeReportView({
 
         {/* 中栏：报告 */}
         <main className="overflow-y-auto min-h-0 px-3" style={{ flex: '1 1 0', minWidth: 0 }}>
-          <div className="space-y-4 pb-6">
-            <div className="text-center mb-2">
-              <h1 className="text-2xl font-display font-bold text-amber-900 dark:text-amber-100 flex items-center justify-center gap-2">
-                <Compass className="w-6 h-6" />你的人生发展报告
-              </h1>
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                {input.year}年{input.month}月{input.day}日 · {genderText} · {input.birthplace || '出生地未填'}
-              </p>
-            </div>
-
-            <section className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/10 rounded-2xl p-6 shadow-card border border-amber-200 dark:border-amber-900/30">
-              <h2 className="flex items-center gap-2 text-xl font-display font-bold text-amber-900 dark:text-amber-100 mb-3">
-                <User className="w-5 h-5" />本命总览
-              </h2>
-              {overview.loading && (
-                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-sm py-4">
-                  <Loader2 className="w-5 h-5 animate-spin" />正在读懂你，请稍候...
-                </div>
-              )}
-              {overview.error && <div className="text-sm text-red-600 py-2">{overview.error}</div>}
-              {overview.content && <MarkdownRenderer content={overview.content} className="text-sm md:text-base" />}
-            </section>
-
-            {SECTION_ORDER.map((key) => (
-              <SectionBlock key={key} title={SECTION_TITLES[key]} icon={SECTION_ICONS[key]} hint={SECTION_HINTS[key]}
-                state={sections[key]} onGenerate={() => onGenerateSection(key)} overviewReady={overviewReady} />
-            ))}
-
-            {/* 移动端命盘 */}
-            <div className="lg:hidden">
-              <ChartPanel baziChart={baziChart} ziweiChart={ziweiChart} />
-            </div>
-
-            {/* 引导：深入单盘分析 */}
-            <div className="bg-amber-50/60 dark:bg-amber-900/10 rounded-2xl p-4 border border-amber-200/60 dark:border-amber-900/30">
-              <p className="text-sm text-amber-800 dark:text-amber-200 mb-3 text-center">
-                想看完整命盘的深度分析？前往单盘工具
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Link to="/bazi"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:border-amber-400 dark:hover:border-amber-600 transition-colors">
-                  <Star className="w-4 h-4" />八字排盘<ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-                <Link to="/ziwei"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:border-amber-400 dark:hover:border-amber-600 transition-colors">
-                  <Crown className="w-4 h-4" />紫微斗数<ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-
-            <div className="text-center pb-2">
-              <button onClick={onBackToInput}
-                className="px-6 py-2.5 rounded-full border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
-                重新生成 / 换个生辰
-              </button>
-            </div>
-          </div>
+          <ReportBody
+            input={input} genderText={genderText} overview={overview} sections={sections}
+            overviewReady={overviewReady} onGenerateSection={onGenerateSection} onBackToInput={onBackToInput}
+            accordion={false} openSection={null} onToggleSection={toggleSection} />
         </main>
 
         {/* 中右拖动分隔条 */}
-        <div className="hidden lg:block w-1.5 cursor-col-resize hover:bg-amber-300/50 dark:hover:bg-amber-600/40 transition-colors flex-none self-stretch"
+        <div className="w-1.5 cursor-col-resize hover:bg-amber-300/50 dark:hover:bg-amber-600/40 transition-colors flex-none self-stretch"
           onMouseDown={onDividerDown} title="拖动调整对话栏宽度" />
 
         {/* 右栏：对话 */}
-        <aside className="hidden lg:flex flex-col min-h-0 overflow-hidden flex-none" style={{ width: rightWidth }}>
+        <aside className="flex flex-col min-h-0 overflow-hidden flex-none" style={{ width: rightWidth }}>
           <ChatPanel chatMessages={chatMessages} chats={chats} activeChatIndex={activeChatIndex}
             chatLoading={chatLoading} chatError={chatError} chatInput={chatInput}
             onChatInputChange={onChatInputChange} onSendChat={onSendChat} onChatKeyDown={onChatKeyDown}
             onNewChat={onNewChat} onSwitchChat={onSwitchChat} onDeleteChat={onDeleteChat}
             overviewLoading={overview.loading} />
         </aside>
-
-        <div className="lg:hidden h-[400px] mt-3">
-          <ChatPanel chatMessages={chatMessages} chats={chats} activeChatIndex={activeChatIndex}
-            chatLoading={chatLoading} chatError={chatError} chatInput={chatInput}
-            onChatInputChange={onChatInputChange} onSendChat={onSendChat} onChatKeyDown={onChatKeyDown}
-            onNewChat={onNewChat} onSwitchChat={onSwitchChat} onDeleteChat={onDeleteChat}
-            overviewLoading={overview.loading} />
-        </div>
       </div>
     </div>
   );
