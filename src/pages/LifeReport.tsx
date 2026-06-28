@@ -463,7 +463,7 @@ export default function LifeReport() {
                        dark:border-amber-900/30 dark:bg-neutral-950/80 dark:text-amber-50
                        dark:shadow-[0_18px_48px_-36px_rgba(251,191,36,0.12)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 py-4">
             <button type="button" onClick={handleGoHome}
               className="flex items-center gap-3 rounded-full transition-opacity duration-300 hover:opacity-85">
               <div className="flex h-11 w-11 items-center justify-center rounded-full border border-amber-200/70 bg-white/76
@@ -477,7 +477,7 @@ export default function LifeReport() {
                 </h1>
               </div>
             </button>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:justify-end">
               {step === 'result' && <LayoutToggle mode={layoutMode} onToggle={toggleLayoutMode} />}
               <MainHeaderTabs />
             </div>
