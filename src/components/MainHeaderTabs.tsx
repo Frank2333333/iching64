@@ -147,7 +147,7 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix, hideThemeT
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={getTabClassName(item)}
+                className={getTabClassName(item) + ' w-full'}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.icon}
@@ -158,7 +158,7 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix, hideThemeT
             {/* 知识库折叠分组 */}
             <button
               onClick={() => setKnowledgeOpen((prev) => !prev)}
-              className={knowledgeActive ? activeTabClass + ' justify-between' : inactiveTabClass + ' justify-between'}
+              className={(knowledgeActive ? activeTabClass : inactiveTabClass) + ' w-full justify-between'}
             >
               <span className="inline-flex items-center gap-2">
                 <Library className="h-4 w-4" />
@@ -172,7 +172,7 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix, hideThemeT
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    className={getTabClassName(item)}
+                    className={getTabClassName(item) + ' w-full'}
                     onClick={() => { setIsMenuOpen(false); setKnowledgeOpen(false); }}
                   >
                     {item.icon}

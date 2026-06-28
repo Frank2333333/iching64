@@ -150,7 +150,7 @@ function SectionBlock({
 function ChatPanel({
   chatMessages, chats, activeChatIndex, chatLoading, chatError, chatInput,
   onChatInputChange, onSendChat, onChatKeyDown,
-  onNewChat, onSwitchChat, onDeleteChat, overviewLoading,
+  onNewChat, onSwitchChat, onDeleteChat, overviewLoading, isActive = true,
 }: {
   chatMessages: ChatMessage[]; chats: ChatMessage[][]; activeChatIndex: number;
   chatLoading: boolean; chatError: string | null;
@@ -158,7 +158,16 @@ function ChatPanel({
   onChatKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onNewChat: () => void; onSwitchChat: (idx: number) => void; onDeleteChat: (idx: number) => void;
   overviewLoading: boolean;
+  /** 该面板是否处于激活可见状态（手机模式切到对话视图时 true）；激活/有新消息时滚到底部展示最新 */
+  isActive?: boolean;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // 激活切换、新消息、切换聊天时，滚动到底部展示最新消息
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [isActive, chatMessages.length, activeChatIndex, chatLoading]);
   return (
     <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-card border border-amber-200 dark:border-amber-900/30 flex flex-col overflow-hidden h-full">
       <div className="px-4 py-3 border-b border-amber-100 dark:border-amber-900/30 flex-none">
@@ -205,7 +214,7 @@ function ChatPanel({
         )}
         <p className="text-[11px] text-amber-600/70 dark:text-amber-400/70 mt-1.5">对报告有疑问，随时问（保留最近5个聊天）</p>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
         {chatMessages.length === 0 && !chatLoading && (
           <div className="text-center text-xs text-amber-500/60 dark:text-amber-400/60 py-8">报告生成后，可以在这里追问细节</div>
         )}
@@ -418,7 +427,7 @@ export default function LifeReportView({
               chatLoading={chatLoading} chatError={chatError} chatInput={chatInput}
               onChatInputChange={onChatInputChange} onSendChat={onSendChat} onChatKeyDown={onChatKeyDown}
               onNewChat={onNewChat} onSwitchChat={onSwitchChat} onDeleteChat={onDeleteChat}
-              overviewLoading={overview.loading} />
+              overviewLoading={overview.loading} isActive={activeView === 2} />
           </div>
         </div>
       </div>
