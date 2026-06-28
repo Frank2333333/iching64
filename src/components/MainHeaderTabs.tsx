@@ -142,12 +142,12 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix, hideThemeT
       {isMenuOpen && (
         <div className="border-t border-[#E8D7CA]/80 bg-[#FFF8F3]/92 px-4 py-4 backdrop-blur-xl animate-slideInRight dark:border-white/10 dark:bg-neutral-950/92 md:hidden">
           {mobilePrefix}
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-row flex-wrap gap-2">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={getTabClassName(item) + ' w-full'}
+                className={getTabClassName(item)}
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.icon}
@@ -158,7 +158,7 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix, hideThemeT
             {/* 知识库折叠分组 */}
             <button
               onClick={() => setKnowledgeOpen((prev) => !prev)}
-              className={(knowledgeActive ? activeTabClass : inactiveTabClass) + ' w-full justify-between'}
+              className={knowledgeActive ? activeTabClass : inactiveTabClass}
             >
               <span className="inline-flex items-center gap-2">
                 <Library className="h-4 w-4" />
@@ -167,12 +167,12 @@ export default function MainHeaderTabs({ desktopPrefix, mobilePrefix, hideThemeT
               <ChevronDown className={`h-3 w-3 opacity-70 transition-transform duration-300 ${knowledgeOpen ? 'rotate-180' : ''}`} />
             </button>
             {knowledgeOpen && (
-              <div className="ml-4 flex flex-col gap-2 border-l border-amber-200/60 pl-3 dark:border-amber-900/30">
+              <div className="w-full ml-4 flex flex-col gap-2 border-l border-amber-200/60 pl-3 dark:border-amber-900/30">
                 {knowledgeItems.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    className={getTabClassName(item) + ' w-full'}
+                    className={getTabClassName(item)}
                     onClick={() => { setIsMenuOpen(false); setKnowledgeOpen(false); }}
                   >
                     {item.icon}
