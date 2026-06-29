@@ -75,6 +75,7 @@ export interface LifeReportInput {
   birthplace?: string;
   useSolarTime?: boolean;
   focus?: string; // 用户关注点（选填）
+  mbti?: string; // 用户自填 MBTI（选填，注入分析）
   baziChart?: BaziChart;
   ziweiChart?: ZiweiChart;
 }
@@ -143,7 +144,14 @@ function buildSystemPrompt(): string {
 3. 不要罗列命盘数据（四柱、十二宫清单），用户看不懂；命理依据融进叙事里
 4. 涉及健康只说体质倾向与养护方向，以医学检查为准
 5. 涉及重大决策（投资/婚恋/职业）末尾加一句轻免责：命理是参考，最终选择权在你
-6. 给人方向感和掌控感，而不是宿命感${skillRules}${refs}`;
+6. 给人方向感和掌控感，而不是宿命感${skillRules}${refs}
+
+=== MBTI 融合规则（仅在用户自填 MBTI 时生效）===
+- 把用户自填的 MBTI 作为"现代心理学人格视角"的补充维度，与命理结论相互印证、互相翻译
+- 找到命理（日主/命宫主星/格局）与 MBTI 人格的共振点与张力点，让用户感到"东西方两套语言说的是同一个我"
+- 命理数据优先：当 MBTI 与命理明显冲突时，以命理盘为准，并温和地点出这种差异（而非强行对齐）
+- 不要长篇科普 MBTI 理论，自然融进叙事，1-2 处点睛即可，别让报告变成 MBTI 测评
+- 追问中若用户问及性格/人际/职业倾向，可主动调用 MBTI 视角辅助回答`;
 }
 
 // ==================== 双盘格式化（给 AI 看的完整数据）====================
@@ -206,6 +214,7 @@ function formatInputHeader(input: LifeReportInput): string {
   if (input.birthplace) lines.push(`出生地：${input.birthplace}`);
   if (input.useSolarTime) lines.push('已启用真太阳时修正');
   if (input.focus) lines.push(`用户关注点：${input.focus}`);
+  if (input.mbti) lines.push(`用户MBTI（自填）：${input.mbti}`);
   return lines.join('\n');
 }
 
@@ -389,4 +398,71 @@ export async function chatWithLifeReport(data: ChatData, env: Env): Promise<stri
     max_tokens: 2000,
   });
   return response.choices[0].message.content || '';
+}
+
+// ==================== 今日运势卡（围绕人生报告双盘）====================
+
+/** 前端本地算好的流日干支与十神主调 */
+export interface DailyFortuneContext {
+  date: string; // YYYY-MM-DD
+  yearGan: string; yearZhi: string;
+  monthGan: string; monthZhi: string;
+  dayGan: string; dayZhi: string;
+  dayToneLabel: string; // 如 "印绶日"
+  dayToneHint: string;
+}
+
+export interface DailyFortuneData {
+  level: number; // 1-5
+  tip: string; // 一句话点拨
+  yi: string[]; // 宜
+  ji: string[]; // 忌
+  comment: string; // 2-3 句简评
+}
+
+/** JSON 模式：今日运势（短、轻、低成本） */
+export async function getDailyFortune(
+  input: LifeReportInput,
+  ctx: DailyFortuneContext,
+  env: Env,
+): Promise<DailyFortuneData> {
+  const openai = createClient(env);
+  const model = env.OPENAI_MODEL || 'gpt-4o-mini';
+  const sys = `你是一位温暖、点拨式的人生规划师。基于用户的本命盘（八字日主+紫微命宫主星）与今日流日干支、十神主调，给出一份"今日运势"。
+要求：轻松笃定、不宿命、给具体可执行的小建议。严格输出 JSON，字段：level(1-5整数,5最佳), tip(一句话点拨,20字内), yi(宜,2-3条短词), ji(忌,1-2条短词), comment(2-3句简评,结合日主与今日主调)。
+不得输出 JSON 以外的任何文字。`;
+  const user = `${formatInputHeader(input)}
+${input.baziChart ? `\n=== 八字要点 ===\n日主：${input.baziChart.dayMaster}（${input.baziChart.dayMasterElement}），${input.baziChart.dayMasterStrength}，格局${input.baziChart.pattern}` : ''}
+${input.ziweiChart ? `\n=== 紫微要点 ===\n${formatZiweiChart(input.ziweiChart)}` : ''}
+
+=== 今日流日 ===
+日期：${ctx.date}
+流日干支：${ctx.dayGan}${ctx.dayZhi}（年 ${ctx.yearGan}${ctx.yearZhi} 月 ${ctx.monthGan}${ctx.monthZhi}）
+今日主调：${ctx.dayToneLabel}（${ctx.dayToneHint}）
+
+请输出 JSON。`;
+  console.log(`[LifeReport] 调用 daily，模型: ${model}`);
+  const response = await openai.chat.completions.create({
+    model,
+    messages: [
+      { role: 'system', content: sys },
+      { role: 'user', content: user },
+    ],
+    temperature: 0.4,
+    max_tokens: 500,
+    response_format: { type: 'json_object' },
+  });
+  const raw = response.choices[0].message.content || '{}';
+  try {
+    const obj = JSON.parse(raw) as Partial<DailyFortuneData>;
+    return {
+      level: Math.min(5, Math.max(1, Math.round(Number(obj.level) || 3))),
+      tip: String(obj.tip || '').slice(0, 60),
+      yi: Array.isArray(obj.yi) ? obj.yi.map(String).slice(0, 4) : [],
+      ji: Array.isArray(obj.ji) ? obj.ji.map(String).slice(0, 3) : [],
+      comment: String(obj.comment || ''),
+    };
+  } catch {
+    return { level: 3, tip: '稳住节奏，顺势而为', yi: [], ji: [], comment: raw.slice(0, 200) };
+  }
 }

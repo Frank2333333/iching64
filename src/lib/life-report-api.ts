@@ -19,6 +19,7 @@ export interface LifeReportInput {
   birthplace?: string;
   useSolarTime?: boolean;
   focus?: string;
+  mbti?: string;
   baziChart?: BaziChart;
   ziweiChart?: ZiweiChart;
 }
@@ -46,6 +47,27 @@ interface SectionResponse extends BaseResponse {
 
 interface ChatResponse extends BaseResponse {
   data?: { message: string; model: string; timestamp: number };
+}
+
+export interface DailyFortuneContext {
+  date: string;
+  yearGan: string; yearZhi: string;
+  monthGan: string; monthZhi: string;
+  dayGan: string; dayZhi: string;
+  dayToneLabel: string;
+  dayToneHint: string;
+}
+
+export interface DailyFortuneData {
+  level: number;
+  tip: string;
+  yi: string[];
+  ji: string[];
+  comment: string;
+}
+
+interface DailyResponse extends BaseResponse {
+  data?: DailyFortuneData & { model: string; timestamp: number };
 }
 
 async function postJSON(url: string, body: unknown): Promise<{ ok: boolean; json: any | null; text: string }> {
@@ -113,5 +135,16 @@ export async function lifeReportChat(
   });
   if (!json) return { success: false, error: '服务器返回空响应' };
   if (!ok) return { success: false, error: json.error || '对话失败' };
+  return json;
+}
+
+/** 今日运势卡（围绕人生报告双盘 + 流日） */
+export async function getDailyFortune(
+  input: LifeReportInput,
+  ctx: DailyFortuneContext,
+): Promise<DailyResponse> {
+  const { ok, json } = await postJSON(`${API_BASE_URL}/life-report/daily`, { input, ctx });
+  if (!json) return { success: false, error: '服务器返回空响应' };
+  if (!ok) return { success: false, error: json.error || '生成失败' };
   return json;
 }

@@ -1,18 +1,24 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Compass, Save, Loader2, History, Trash2, Clock, Pencil } from 'lucide-react';
+import { Compass, Save, Loader2, History, Trash2, Clock, Pencil, Sparkles, Download, Copy, Check, RefreshCw } from 'lucide-react';
 import MainHeaderTabs from '../components/MainHeaderTabs';
 import SettingsToggle from '../components/SettingsToggle';
 import LifeReportForm from '../components/life-report/LifeReportForm';
 import LifeReportView from '../components/life-report/LifeReportView';
+import DailyFortuneCard from '../components/life-report/DailyFortuneCard';
 import { calculateBaziChart, type BaziChart } from '../lib/bazi-calculator';
 import { calculateZiweiChart, type ZiweiChart } from '../lib/ziwei-calculator';
+import { getTodayGanZhi, getDayTone, type TodayGanZhi, type DayTone } from '../lib/daily-fortune';
+import { getPersonalityProfile, type PersonalityProfile } from '../data/personality-mapping';
+import { downloadSvgAsPng, copySvgAsPng } from '../lib/svg-to-png';
 import {
   getLifeReportOverview,
   getLifeReportSection,
   lifeReportChat,
+  getDailyFortune,
   type LifeReportInput,
   type SectionType,
   type ChatMessage,
+  type DailyFortuneData,
 } from '../lib/life-report-api';
 import { useProfile } from '../context/ProfileContext';
 import type { ProfileInput } from '../lib/profile-api';
@@ -35,7 +41,10 @@ import { Label } from '../components/ui/label';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 
-type Step = 'input' | 'result';
+type Step = 'input' | 'result' | 'daily';
+
+const LAST_REPORT_KEY = 'iching_last_report';
+const dailyCacheKey = (date: string) => `iching_daily_${date}`;
 
 interface SectionState {
   loading: boolean;
@@ -89,6 +98,18 @@ export default function LifeReport() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
+  // 今日运势卡（围绕已缓存的人生报告生辰）
+  const [dailyData, setDailyData] = useState<DailyFortuneData | null>(null);
+  const [dailyLoading, setDailyLoading] = useState(false);
+  const [dailyError, setDailyError] = useState<string | null>(null);
+  const [dailyToday, setDailyToday] = useState<TodayGanZhi | null>(null);
+  const [dailyTone, setDailyTone] = useState<DayTone | null>(null);
+  const [dailyProfile, setDailyProfile] = useState<PersonalityProfile | null>(null);
+  const [dailyCopied, setDailyCopied] = useState(false);
+  const dailySvgRef = useRef<SVGSVGElement | null>(null);
+  // 输入页快捷入口：是否有缓存生辰
+  const [hasCachedReport, setHasCachedReport] = useState(false);
+
   // 布局模式：电脑(三栏) / 手机(swipe 3视图)。按设备类型分键记忆偏好，避免跨设备冲突
   // （手机读 iching_layout_mobile，桌面读 iching_layout_desktop，互不干扰；首次按屏宽自动选）
   const [layoutMode, setLayoutMode] = useState<'desktop' | 'mobile'>(() => {
@@ -119,6 +140,13 @@ export default function LifeReport() {
     });
   }, [token]);
 
+  // 检查是否有缓存的生辰（输入页快捷入口可见性）
+  useEffect(() => {
+    try {
+      setHasCachedReport(!!localStorage.getItem(LAST_REPORT_KEY));
+    } catch { /* 隐私模式 */ }
+  }, [step]);
+
   // 当前档案预填
   const initialFormData = useMemo<LifeReportInput | undefined>(() => {
     if (!currentProfile || currentProfile.inputMode !== 'birthdate') return undefined;
@@ -133,6 +161,12 @@ export default function LifeReport() {
       useSolarTime: currentProfile.useSolarTime ?? false,
     };
   }, [currentProfile]);
+
+  // 命格翻译（用户自填MBTI/星座/日主性格）— 纯本地，结果页顶部展示
+  const personality = useMemo<PersonalityProfile | null>(
+    () => getPersonalityProfile(baziChart, ziweiChart, reportInput?.mbti),
+    [baziChart, ziweiChart, reportInput],
+  );
 
   const resetReport = () => {
     setReportInput(null);
@@ -160,6 +194,80 @@ export default function LifeReport() {
     setCurrentHistoryId(null);
   };
 
+  // 从缓存生辰开启今日运势卡
+  const openDaily = useCallback(async (forceRefresh = false) => {
+    let raw: string | null = null;
+    try { raw = localStorage.getItem(LAST_REPORT_KEY); } catch { /* ignore */ }
+    if (!raw) return;
+    const data = JSON.parse(raw) as LifeReportInput;
+    if (!data.year || !data.month || !data.day || data.hour == null) return;
+
+    const bazi = calculateBaziChart({
+      year: data.year, month: data.month, day: data.day,
+      hour: data.hour, minute: data.minute || 0,
+      gender: data.gender, birthplace: data.birthplace, useSolarTime: data.useSolarTime,
+    });
+    const ziwei = calculateZiweiChart({
+      year: data.year, month: data.month, day: data.day,
+      hour: data.hour, minute: data.minute || 0,
+      gender: data.gender, birthplace: data.birthplace, useSolarTime: data.useSolarTime,
+    });
+    const today = getTodayGanZhi();
+    const tone = getDayTone(bazi.dayMaster, today);
+    const profile = getPersonalityProfile(bazi, ziwei);
+    setDailyToday(today);
+    setDailyTone(tone);
+    setDailyProfile(profile);
+    setDailyError(null);
+    setStep('daily');
+
+    // 同日缓存命中则直接用（省 AI 额度）
+    if (!forceRefresh) {
+      try {
+        const cached = localStorage.getItem(dailyCacheKey(today.date));
+        if (cached) { setDailyData(JSON.parse(cached)); return; }
+      } catch { /* ignore */ }
+    }
+
+    setDailyData(null);
+    setDailyLoading(true);
+    const input: LifeReportInput = { ...data, baziChart: bazi, ziweiChart: ziwei };
+    const ctx = {
+      date: today.date,
+      yearGan: today.yearGan, yearZhi: today.yearZhi,
+      monthGan: today.monthGan, monthZhi: today.monthZhi,
+      dayGan: today.dayGan, dayZhi: today.dayZhi,
+      dayToneLabel: tone.label, dayToneHint: tone.hint,
+    };
+    try {
+      const res = await getDailyFortune(input, ctx);
+      if (res.success && res.data) {
+        const d = res.data;
+        const fortune: DailyFortuneData = { level: d.level, tip: d.tip, yi: d.yi, ji: d.ji, comment: d.comment };
+        setDailyData(fortune);
+        try { localStorage.setItem(dailyCacheKey(today.date), JSON.stringify(fortune)); } catch { /* ignore */ }
+      } else {
+        setDailyError(res.error || '生成失败');
+      }
+    } catch {
+      setDailyError('网络错误');
+    } finally {
+      setDailyLoading(false);
+    }
+  }, []);
+
+  const handleDailyShare = useCallback(async () => {
+    if (!dailySvgRef.current) return;
+    try { await downloadSvgAsPng(dailySvgRef.current, `今日运势-${dailyToday?.date || ''}.png`, 2); } catch { alert('生成图片失败'); }
+  }, [dailyToday]);
+
+  const handleDailyCopy = useCallback(async () => {
+    if (!dailySvgRef.current) return;
+    const ok = await copySvgAsPng(dailySvgRef.current, 2);
+    if (ok) { setDailyCopied(true); setTimeout(() => setDailyCopied(false), 2000); }
+    else { await handleDailyShare(); }
+  }, [handleDailyShare]);
+
   // 提交：前端排双盘 → 调 overview → overview 回来后并行调 5 sections
   const handleSubmit = async (data: LifeReportInput) => {
     resetReport();
@@ -181,6 +289,15 @@ export default function LifeReport() {
     const input: LifeReportInput = { ...data, baziChart: bazi, ziweiChart: ziwei };
     setReportInput(input);
     setStep('result');
+    // 缓存生辰（仅生辰字段），供输入页"今日运势"快捷入口复用
+    try {
+      localStorage.setItem(LAST_REPORT_KEY, JSON.stringify({
+        year: data.year, month: data.month, day: data.day,
+        hour: data.hour, minute: data.minute, gender: data.gender,
+        birthplace: data.birthplace, useSolarTime: data.useSolarTime, focus: data.focus, mbti: data.mbti,
+      }));
+      setHasCachedReport(true);
+    } catch { /* 隐私模式 */ }
 
     // 1. 先调总览
     setOverview({ loading: true, error: null, content: null });
@@ -193,7 +310,7 @@ export default function LifeReport() {
       const birth: LifeHistoryBirth = {
         year: data.year, month: data.month, day: data.day,
         hour: data.hour, minute: data.minute, gender: data.gender,
-        birthplace: data.birthplace, useSolarTime: data.useSolarTime, focus: data.focus,
+        birthplace: data.birthplace, useSolarTime: data.useSolarTime, focus: data.focus, mbti: data.mbti,
       };
       if (token) {
         const res = await saveLifeHistory(token, {
@@ -229,7 +346,7 @@ export default function LifeReport() {
       const birth: LifeHistoryBirth = {
         year: reportInput.year, month: reportInput.month, day: reportInput.day,
         hour: reportInput.hour, minute: reportInput.minute, gender: reportInput.gender,
-        birthplace: reportInput.birthplace, useSolarTime: reportInput.useSolarTime, focus: reportInput.focus,
+        birthplace: reportInput.birthplace, useSolarTime: reportInput.useSolarTime, focus: reportInput.focus, mbti: reportInput.mbti,
       };
       const fullEntry: Partial<LifeHistoryEntry> & { birth: LifeHistoryBirth; id: string } = {
         id: hid,
@@ -303,7 +420,7 @@ export default function LifeReport() {
     });
     setBaziChart(bazi);
     setZiweiChart(ziwei);
-    const input: LifeReportInput = { ...b, baziChart: bazi, ziweiChart: ziwei };
+    const input: LifeReportInput = { ...b, baziChart: bazi, ziweiChart: ziwei, mbti: b.mbti };
     setReportInput(input);
     overviewRef.current = entry.overview || '';
     setOverview(entry.overview ? { loading: false, error: null, content: entry.overview } : emptySection);
@@ -500,16 +617,27 @@ export default function LifeReport() {
                   八字与紫微双盘合参，AI 为你写一份专属的人生发展报告
                 </p>
               </div>
-              <LifeReportForm
-                onSubmit={handleSubmit}
-                loading={false}
-                initialData={initialFormData}
-                onSave={(data) => { setPendingSaveData(data); setSaveDialogOpen(true); }}
-              />
+              {/* 今日运势快捷入口（有缓存生辰才显示）—— 每日回流抓手，置顶 */}
+              {hasCachedReport && (
+                <div className="mb-6 rounded-2xl p-5 bg-gradient-to-br from-amber-600 to-orange-700 text-white shadow-card flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <h3 className="flex items-center gap-2 text-base font-display font-bold">
+                      <Sparkles className="w-4 h-4" />今日运势卡
+                    </h3>
+                    <p className="text-xs text-amber-100/90 mt-1">基于你上次的人生报告生辰，一键生成今日运势 · 可分享长图</p>
+                  </div>
+                  <button
+                    onClick={() => openDaily(false)}
+                    className="flex-none px-4 py-2 rounded-xl bg-white/95 text-amber-700 text-sm font-bold hover:bg-white transition-colors whitespace-nowrap"
+                  >
+                    查看今日运势
+                  </button>
+                </div>
+              )}
 
-              {/* 历史会话 */}
+              {/* 历史会话（最近报告）—— 置顶 */}
               {isLoggedIn && history.length > 0 && (
-                <div className="mt-6">
+                <div className="mb-6">
                   <h3 className="flex items-center gap-2 text-sm font-bold text-amber-800 dark:text-amber-300 mb-3">
                     <History className="w-4 h-4" />最近报告
                     <span className="text-xs font-normal text-amber-500/70 dark:text-amber-400/70">（保留最近2份）</span>
@@ -572,6 +700,13 @@ export default function LifeReport() {
                   </div>
                 </div>
               )}
+
+              <LifeReportForm
+                onSubmit={handleSubmit}
+                loading={false}
+                initialData={initialFormData}
+                onSave={(data) => { setPendingSaveData(data); setSaveDialogOpen(true); }}
+              />
             </div>
           </div>
         )}
@@ -582,6 +717,7 @@ export default function LifeReport() {
             input={reportInput}
             baziChart={baziChart}
             ziweiChart={ziweiChart}
+            personality={personality}
             overview={overview}
             sections={sections}
             chatMessages={activeChatMessages}
@@ -599,6 +735,70 @@ export default function LifeReport() {
             onBackToInput={handleBackToInput}
             onGenerateSection={handleGenerateSection}
           />
+        )}
+
+        {step === 'daily' && dailyToday && dailyTone && (
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="max-w-[440px] mx-auto">
+              <div className="text-center mb-4">
+                <h2 className="flex items-center justify-center gap-2 text-xl font-display font-bold text-amber-900 dark:text-amber-100">
+                  <Sparkles className="w-5 h-5" />今日运势卡
+                </h2>
+                <p className="text-xs text-amber-600/70 dark:text-amber-400/70 mt-1">
+                  {dailyToday.date} · 双盘合参 · 流日{dailyToday.dayGan}{dailyToday.dayZhi} · {dailyTone.label}
+                </p>
+              </div>
+
+              <div className="rounded-2xl overflow-hidden shadow-card border border-amber-200 dark:border-amber-900/30">
+                <DailyFortuneCard
+                  ref={dailySvgRef}
+                  profile={dailyProfile}
+                  today={dailyToday}
+                  tone={dailyTone}
+                  data={dailyData}
+                  loading={dailyLoading}
+                />
+              </div>
+
+              {dailyError && (
+                <p className="text-sm text-red-600 text-center mt-3">{dailyError}</p>
+              )}
+
+              {/* 操作按钮 */}
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+                <button
+                  onClick={handleDailyCopy}
+                  disabled={dailyLoading || !dailyData}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors disabled:opacity-40"
+                >
+                  {dailyCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {dailyCopied ? '已复制' : '复制图片'}
+                </button>
+                <button
+                  onClick={handleDailyShare}
+                  disabled={dailyLoading || !dailyData}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors disabled:opacity-40"
+                >
+                  <Download className="w-4 h-4" />保存长图
+                </button>
+                <button
+                  onClick={() => openDaily(true)}
+                  disabled={dailyLoading}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors disabled:opacity-40"
+                  title="重新测算（消耗一次额度）"
+                >
+                  <RefreshCw className={`w-4 h-4 ${dailyLoading ? 'animate-spin' : ''}`} />刷新
+                </button>
+              </div>
+
+              <div className="text-center mt-4">
+                <button onClick={handleGoHome}
+                  className="px-6 py-2.5 rounded-full border border-amber-200 dark:border-amber-800/30 text-amber-700 dark:text-amber-300 text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+                  返回
+                </button>
+              </div>
+            </div>
+          </div>
         )}
       </main>
 

@@ -17,6 +17,7 @@ export interface LifeHistoryBirth {
   birthplace?: string;
   useSolarTime?: boolean;
   focus?: string;
+  mbti?: string;
 }
 
 export interface LifeHistoryEntry {

@@ -9,7 +9,7 @@ import { getAIDivination, chatWithAI } from '../../server-workers/services/divin
 import { getBaziFortune, chatWithBazi } from '../../server-workers/services/bazi-ai';
 import { getZiweiFortune, chatWithZiwei } from '../../server-workers/services/ziwei-ai';
 import { interpretParagraph } from '../../server-workers/services/classics-ai';
-import { getLifeReportOverview, getLifeReportSection, chatWithLifeReport, type SectionType } from '../../server-workers/services/life-report-ai';
+import { getLifeReportOverview, getLifeReportSection, chatWithLifeReport, getDailyFortune, type SectionType } from '../../server-workers/services/life-report-ai';
 
 // ==================== 类型定义 ====================
 
@@ -61,6 +61,7 @@ const authMiddleware = async (c: any, next: () => Promise<void>) => {
 const QUOTA = {
   free:   { profiles: 3, reportPerDay: 1, chatPerDay: 10 },
   member: { profiles: 5, reportPerDay: 3, chatPerDay: 30 },
+  admin:  { profiles: Infinity, reportPerDay: Infinity, chatPerDay: Infinity }, // 站长/内部账号，无限制
 };
 // 会员价格（分，后台可调）
 const PLAN_PRICE: Record<string, number> = { monthly: 1900, yearly: 12800 };
@@ -75,8 +76,9 @@ function getTodayDay(): string {
   return `${y}-${m}-${d}`;
 }
 
-/** 判定用户当前有效等级：member 且未过期 → member，否则 free（过期自动降级，不删字段） */
-function effectivePlan(user: { plan?: string; member_expires_at?: number | null }): 'free' | 'member' {
+/** 判定用户当前有效等级：admin 永久无限制；member 且未过期 → member；否则 free（过期自动降级，不删字段） */
+function effectivePlan(user: { plan?: string; member_expires_at?: number | null }): 'free' | 'member' | 'admin' {
+  if (user?.plan === 'admin') return 'admin';
   if (user?.plan === 'member' && user?.member_expires_at && user.member_expires_at > Date.now()) {
     return 'member';
   }
@@ -813,6 +815,29 @@ app.post('/api/life-report/chat', authMiddleware, quotaMiddleware('chat'), async
   } catch (error: unknown) {
     console.error('人生报告对话失败:', error);
     return c.json({ success: false, error: (error as Error).message || '对话失败' }, 500);
+  }
+});
+
+// ==================== 今日运势卡（围绕人生报告双盘）====================
+
+app.post('/api/life-report/daily', authMiddleware, quotaMiddleware('chat'), async (c) => {
+  try {
+    const { input, ctx } = await c.req.json();
+    if (!input || !input.baziChart || !input.ziweiChart) {
+      return c.json({ success: false, error: '排盘数据不完整' }, 400);
+    }
+    if (!ctx || !ctx.date || !ctx.dayGan) {
+      return c.json({ success: false, error: '流日数据不完整' }, 400);
+    }
+    if (!c.env.OPENAI_API_KEY || c.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return c.json({ success: false, error: 'AI 服务未配置' }, 503);
+    }
+    const result = await getDailyFortune(input, ctx, c.env);
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
+    return c.json({ success: true, data: { ...result, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() } });
+  } catch (error: unknown) {
+    console.error('今日运势失败:', error);
+    return c.json({ success: false, error: (error as Error).message || '生成失败' }, 500);
   }
 });
 

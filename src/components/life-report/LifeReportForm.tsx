@@ -41,6 +41,7 @@ export default function LifeReportForm({ onSubmit, loading, initialData, onSave 
   const [birthplace, setBirthplace] = useState('');
   const [useSolarTime, setUseSolarTime] = useState(false);
   const [focus, setFocus] = useState('整体了解');
+  const [mbti, setMbti] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // 载入档案预填
@@ -54,6 +55,7 @@ export default function LifeReportForm({ onSubmit, loading, initialData, onSave 
     if (initialData.gender) setGender(initialData.gender);
     if (initialData.birthplace !== undefined) setBirthplace(initialData.birthplace);
     if (initialData.useSolarTime !== undefined) setUseSolarTime(initialData.useSolarTime);
+    if (initialData.mbti !== undefined) setMbti(initialData.mbti);
   }, [initialData]);
 
   const inputClass = `w-full px-4 py-3 border border-amber-200 dark:border-amber-700/50
@@ -99,6 +101,7 @@ export default function LifeReportForm({ onSubmit, loading, initialData, onSave 
       birthplace: birthplace.trim() || undefined,
       useSolarTime,
       focus,
+      mbti: mbti || undefined,
     });
   };
 
@@ -116,7 +119,7 @@ export default function LifeReportForm({ onSubmit, loading, initialData, onSave 
     }
     onSave({
       year: y, month: m, day: d, hour: h, minute: min, gender,
-      birthplace: birthplace.trim() || undefined, useSolarTime, focus,
+      birthplace: birthplace.trim() || undefined, useSolarTime, focus, mbti: mbti || undefined,
     });
   };
 
@@ -227,6 +230,41 @@ export default function LifeReportForm({ onSubmit, loading, initialData, onSave 
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* MBTI（选填，用户自填，注入报告分析） */}
+          <div>
+            <label className="block text-sm font-medium text-amber-800 dark:text-amber-400 mb-2">
+              <Sparkles className="w-4 h-4 inline mr-1" />你的 MBTI（选填，填了报告会结合人格分析）
+            </label>
+            <select value={mbti} onChange={(e) => setMbti(e.target.value)} className={inputClass}>
+              <option value="">不确定 / 不填</option>
+              <optgroup label="分析家 NT">
+                <option value="INTJ">INTJ · 建筑师</option>
+                <option value="INTP">INTP · 逻辑学家</option>
+                <option value="ENTJ">ENTJ · 指挥官</option>
+                <option value="ENTP">ENTP · 辩论家</option>
+              </optgroup>
+              <optgroup label="外交官 NF">
+                <option value="INFJ">INFJ · 提倡者</option>
+                <option value="INFP">INFP · 调停者</option>
+                <option value="ENFJ">ENFJ · 主人公</option>
+                <option value="ENFP">ENFP · 竞选者</option>
+              </optgroup>
+              <optgroup label="守护者 SJ">
+                <option value="ISTJ">ISTJ · 物流师</option>
+                <option value="ISFJ">ISFJ · 守卫者</option>
+                <option value="ESTJ">ESTJ · 总经理</option>
+                <option value="ESFJ">ESFJ · 执政官</option>
+              </optgroup>
+              <optgroup label="探险家 SP">
+                <option value="ISTP">ISTP · 鉴赏家</option>
+                <option value="ISFP">ISFP · 探险家</option>
+                <option value="ESTP">ESTP · 企业家</option>
+                <option value="ESFP">ESFP · 表演者</option>
+              </optgroup>
+            </select>
+            <p className="text-xs text-amber-500/70 dark:text-amber-400/70 mt-1.5">由你自填（自动推算不准）。报告与追问会把它作为现代心理学视角，与命理相互印证。</p>
           </div>
 
           {/* 保存为档案 */}
