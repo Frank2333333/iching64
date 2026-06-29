@@ -12,14 +12,15 @@ IChing64 — 易经六十四卦学习平台，部署于 https://iching64.fun/。
 ## 常用命令
 
 ```bash
-# 开发（Wrangler 代理 Vite 前端 + Pages Functions 后端）
-npm run dev
-
-# 仅启动 Vite 前端
+# 仅启动 Vite 前端（纯前端调试，无后端 API）
 npm run dev:client
 
 # 旧版开发（Express 后端，已弃用）
 npm run dev:legacy
+
+# ⚠️ `npm run dev`（wrangler pages dev -- npx vite）在 wrangler 4.x 报错
+#    "Cannot specify both a directory and a proxy command"，目前不可用。
+#    需前后端联调时改用：wrangler pages dev ./dist -- npx vite 或降级 wrangler。
 
 # 构建（先打包技能内容 → TypeScript 编译 → Vite 构建）
 npm run build
@@ -27,12 +28,13 @@ npm run build
 # 构建后本地预览
 npm run preview
 
-# 部署到 Cloudflare Pages（Production）
+# 部署到 Cloudflare Pages（direct upload 到 cloudflare 生产分支，不依赖 git push）
 npm run deploy
 
 # D1 数据库迁移
 npm run db:migrate:local   # 本地
-npm run db:migrate         # 远程
+# ⚠️ `npm run db:migrate` 脚本默认操作【本地】（未带 --remote），与下方"远程"不符。
+#    远程迁移必须显式：npx wrangler d1 migrations apply iching64-db --remote
 
 # 密钥管理
 npx wrangler pages secret put <KEY_NAME>        # 设置密钥
@@ -55,16 +57,18 @@ npm run lint
 ### 前端（HashRouter）
 
 路由定义见 `src/App.tsx`（**lazy import** 代码分割）：
-- `/life-report` → `LifeReport`（人生发展报告，双盘合参，核心入口）
-- `/` → `QuestionDivination`（问事解卦，默认页）
+- `/` → `LifeReport`（人生发展报告，双盘合参，核心入口/默认页）
+- `/life-report` → `LifeReport`（同上，别名）
+- `/question` → `QuestionDivination`（问事解卦）
 - `/hexagrams` → `GuaList`（六十四卦浏览）
-- `/divination` → `Divination`（数字起卦）
 - `/transformer` → `GuaTransformer`（变卦推演）
 - `/bazi` → `BaziDivination`（八字排盘）
 - `/ziwei` → `ZiweiDivination`（紫微斗数）
 - `/classics` → `ClassicsPage`（经典查阅）
 - `/ziwei-knowledge` → `ZiweiKnowledge`（星曜图鉴）
 - `/admin/feedback` → `FeedbackAdmin`（反馈管理后台）
+
+> 旧的 `/divination` → `Divination`（数字起卦）页已移除（`src/pages/Divination.tsx` 及 `divinationValidation.*` 已删除），起卦入口改为 `/question`。
 
 导航栏组件在 `src/components/MainHeaderTabs.tsx`。
 
@@ -94,6 +98,8 @@ API 路由（与原 Express 完全对应，响应格式 `{ success, data?, error
 - `/api/classics/ai` — 经典文献 AI 解读
 - `/api/life-report/overview` + `/api/life-report/section` + `/api/life-report/chat` — 人生发展报告（双盘合参，分章节流式生成）
 - `/api/bazi/profiles` — 八字档案 CRUD（JWT 认证，D1 持久化，同名覆盖用 `INSERT OR REPLACE`）
+- `/api/profiles` — 通用档案 CRUD（JWT 认证，D1 持久化，`profiles` 表，前端实际使用）
+- `/api/life-history` — 人生报告历史会话（GET 列表 / POST upsert / DELETE，JWT 认证，D1 `life_history` 表，保留最近 10 条）
 - `/api/auth/send-code` + `/api/auth/verify-code` + `/api/auth/me` — 邮箱验证码登录，验证码存 KV（TTL 600s），JWT 认证
 - `/api/health` — 服务健康检查
 
@@ -106,7 +112,7 @@ API 路由（与原 Express 完全对应，响应格式 `{ success, data?, error
 | 浏览器 localStorage | 未登录用户的本地档案 + 当前选中档案 + 登录 token | — |
 | 构建时打包 | 玄学技能 SKILL.md + references/*.md | 原 fs.readFileSync 运行时读取 |
 
-D1 表结构见 `migrations/0001_initial.sql`（users/feedback/bazi_profiles）与 `migrations/0002_profiles.sql`（通用 profiles 表 + 从 bazi_profiles 迁移）。
+D1 表结构见 `migrations/0001_initial.sql`（users/feedback/bazi_profiles）、`migrations/0002_profiles.sql`（通用 profiles 表 + 从 bazi_profiles 迁移）、`migrations/0003_life_history.sql`（人生报告历史会话表 `life_history`，登录用户跨设备同步）。
 
 ### 通用档案系统（全平台共用）
 
@@ -176,6 +182,7 @@ D1 表结构见 `migrations/0001_initial.sql`（users/feedback/bazi_profiles）�
 - **呈现**：`LifeReportView` 渐进渲染 6 个章节位（loading 占位→markdown）+ `LifeTimeline`（纯本地双盘数据，八字大运↔紫微大限按 startAge 对齐，当前段高亮）+ 命盘详情折叠区（自渲染简化八字四柱表+紫微十二宫列表，深度用户可展开，不引入 ZiweiPalaceGrid 避免耦合）+ 追问对话（复用 `BaziChatInput`）
 - **追问**：`/api/life-report/chat`，reportSummary = 总览+各章节内容拼接，保证追问与报告一致
 - **档案复用**：复用通用 profiles 表（inputMode='birthdate'），无需新迁移；`LifeReportForm` 从 `ProfileContext.currentProfile` 预填
+- **云端历史会话**：登录用户的报告存 D1 `life_history` 表（`migrations/0003_life_history.sql`），跨设备同步。前端 `src/lib/life-history.ts` + `src/lib/life-history-api.ts`，后端路由 `/api/life-history`（GET 列表 / POST upsert / DELETE，`authMiddleware` 保护）在 `functions/api/[[route]].ts`。每条历史 = 生辰 + 总览 + 5 章节内容 + 多个追问聊天（保留最近 10 条，POST 时超出删最旧）。总览生成即创建条目，章节/聊天/重命名变化时 upsert 回写。未登录用户不存历史。
 
 ### 结构化经典文献
 
@@ -243,8 +250,8 @@ RESEND_FROM_EMAIL=IChing64 <noreply@iching64.fun>
 npx wrangler d1 create iching64-db        # 把返回的 database_id 填入 wrangler.toml
 npx wrangler kv namespace create AUTH_KV  # 把返回的 id 填入 wrangler.toml
 
-# 2. 远程建表
-npm run db:migrate
+# 2. 远程建表（⚠️ 必须显式 --remote，npm run db:migrate 默认操作本地）
+npx wrangler d1 migrations apply iching64-db --remote
 
 # 3. 设置密钥
 npx wrangler pages secret put OPENAI_API_KEY
