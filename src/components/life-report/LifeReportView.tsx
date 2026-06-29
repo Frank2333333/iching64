@@ -4,13 +4,14 @@ import { Sparkles, Loader2, User, Compass, ChevronRight, ChevronDown, Star, Crow
 import MarkdownRenderer from '../MarkdownRenderer';
 import LifeTimeline from './LifeTimeline';
 import PersonalityCard from './PersonalityCard';
+import RadarCard from './RadarCard';
 import ZiweiPalaceGrid from '../ziwei/ZiweiPalaceGrid';
 import ZiweiTimeNav from '../ziwei/ZiweiTimeNav';
 import { ZiweiPalaceProvider } from '../ziwei/ZiweiPalaceContext';
 import type { BaziChart } from '../../lib/bazi-calculator';
 import type { ZiweiChart } from '../../lib/ziwei-calculator';
 import type { PersonalityProfile } from '../../data/personality-mapping';
-import type { LifeReportInput, SectionType, ChatMessage } from '../../lib/life-report-api';
+import type { LifeReportInput, SectionType, ChatMessage, RadarResult } from '../../lib/life-report-api';
 
 interface SectionState {
   loading: boolean;
@@ -24,6 +25,10 @@ interface LifeReportViewProps {
   baziChart: BaziChart | null;
   ziweiChart: ZiweiChart | null;
   personality: PersonalityProfile | null;
+  radar: RadarResult | null;
+  radarLoading: boolean;
+  radarError: string | null;
+  onRadarRefresh: () => void;
   overview: SectionState;
   sections: Record<SectionType, SectionState>;
   chatMessages: ChatMessage[];
@@ -262,10 +267,12 @@ function ChatPanel({
 
 /** 报告正文（标题+总览+章节+引导+返回）。accordion=true 时章节手风琴折叠（手机模式） */
 function ReportBody({
-  input, genderText, personality, overview, sections, overviewReady, onGenerateSection, onBackToInput,
+  input, genderText, personality, radar, radarLoading, radarError, onRadarRefresh, overview, sections, overviewReady, onGenerateSection, onBackToInput,
   accordion, openSection, onToggleSection,
 }: {
-  input: LifeReportInput; genderText: string; personality: PersonalityProfile | null; overview: SectionState;
+  input: LifeReportInput; genderText: string; personality: PersonalityProfile | null;
+  radar: RadarResult | null; radarLoading: boolean; radarError: string | null; onRadarRefresh: () => void;
+  overview: SectionState;
   sections: Record<SectionType, SectionState>; overviewReady: boolean;
   onGenerateSection: (st: SectionType) => void; onBackToInput: () => void;
   accordion: boolean; openSection: SectionType | null; onToggleSection: (st: SectionType) => void;
@@ -273,6 +280,8 @@ function ReportBody({
   return (
     <div className="space-y-4 pb-6">
       {personality && <PersonalityCard profile={personality} />}
+
+      <RadarCard radar={radar} loading={radarLoading} error={radarError} onRefresh={onRadarRefresh} />
 
       <div className="text-center mb-2">
         <h1 className="text-2xl font-display font-bold text-amber-900 dark:text-amber-100 flex items-center justify-center gap-2">
@@ -330,7 +339,7 @@ function ReportBody({
 }
 
 export default function LifeReportView({
-  layoutMode, input, baziChart, ziweiChart, personality, overview, sections,
+  layoutMode, input, baziChart, ziweiChart, personality, radar, radarLoading, radarError, onRadarRefresh, overview, sections,
   chatMessages, chats, activeChatIndex, chatLoading, chatError, chatInput,
   onChatInputChange, onSendChat, onChatKeyDown,
   onNewChat, onSwitchChat, onDeleteChat,
@@ -422,7 +431,7 @@ export default function LifeReportView({
           {/* 视图2：报告（章节手风琴） */}
           <div className="snap-center shrink-0 w-full h-full overflow-y-auto p-3">
             <ReportBody
-              input={input} genderText={genderText} personality={personality} overview={overview} sections={sections}
+              input={input} genderText={genderText} personality={personality} radar={radar} radarLoading={radarLoading} radarError={radarError} onRadarRefresh={onRadarRefresh} overview={overview} sections={sections}
               overviewReady={overviewReady} onGenerateSection={onGenerateSection} onBackToInput={onBackToInput}
               accordion openSection={openSection} onToggleSection={toggleSection} />
           </div>
@@ -454,7 +463,7 @@ export default function LifeReportView({
         {/* 中栏：报告 */}
         <main className="overflow-y-auto min-h-0 px-3" style={{ flex: '1 1 0', minWidth: 0 }}>
           <ReportBody
-            input={input} genderText={genderText} personality={personality} overview={overview} sections={sections}
+            input={input} genderText={genderText} personality={personality} radar={radar} radarLoading={radarLoading} radarError={radarError} onRadarRefresh={onRadarRefresh} overview={overview} sections={sections}
             overviewReady={overviewReady} onGenerateSection={onGenerateSection} onBackToInput={onBackToInput}
             accordion={false} openSection={null} onToggleSection={toggleSection} />
         </main>

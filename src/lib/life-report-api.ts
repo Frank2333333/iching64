@@ -70,6 +70,17 @@ interface DailyResponse extends BaseResponse {
   data?: DailyFortuneData & { model: string; timestamp: number };
 }
 
+export type RadarAxis = 'drive' | 'wealth' | 'charm' | 'creative' | 'resilience' | 'execution';
+export type RadarScores = Record<RadarAxis, number>;
+export interface RadarResult {
+  scores: RadarScores;
+  comments: Partial<Record<RadarAxis, string>>;
+  baseScores: RadarScores;
+}
+interface RadarResponse extends BaseResponse {
+  data?: RadarResult & { model: string; timestamp: number };
+}
+
 async function postJSON(url: string, body: unknown): Promise<{ ok: boolean; json: any | null; text: string }> {
   const headers = authHeaders();
   if (!headers) {
@@ -144,6 +155,14 @@ export async function getDailyFortune(
   ctx: DailyFortuneContext,
 ): Promise<DailyResponse> {
   const { ok, json } = await postJSON(`${API_BASE_URL}/life-report/daily`, { input, ctx });
+  if (!json) return { success: false, error: '服务器返回空响应' };
+  if (!ok) return { success: false, error: json.error || '生成失败' };
+  return json;
+}
+
+/** 潜能雷达图（bazi+MBTI 本地基础分，紫微 AI 微调） */
+export async function getRadar(input: LifeReportInput): Promise<RadarResponse> {
+  const { ok, json } = await postJSON(`${API_BASE_URL}/life-report/radar`, input);
   if (!json) return { success: false, error: '服务器返回空响应' };
   if (!ok) return { success: false, error: json.error || '生成失败' };
   return json;

@@ -374,7 +374,7 @@ export async function getLifeReportSection(req: SectionRequest, env: Env): Promi
       { role: 'user', content: buildSectionPrompt(req) },
     ],
     temperature: 0.25,
-    max_tokens: 1500,
+    max_tokens: 2500,
   });
   return response.choices[0].message.content || '';
 }
@@ -465,4 +465,115 @@ ${input.ziweiChart ? `\n=== 紫微要点 ===\n${formatZiweiChart(input.ziweiChar
   } catch {
     return { level: 3, tip: '稳住节奏，顺势而为', yi: [], ji: [], comment: raw.slice(0, 200) };
   }
+}
+
+// ==================== 潜能雷达图（bazi+MBTI 本地基础分，紫微 AI 微调）====================
+
+export type RadarAxis = 'drive' | 'wealth' | 'charm' | 'creative' | 'resilience' | 'execution';
+export const RADAR_AXES: RadarAxis[] = ['drive', 'wealth', 'charm', 'creative', 'resilience', 'execution'];
+export const RADAR_AXIS_LABELS: Record<RadarAxis, string> = {
+  drive: '事业魄力', wealth: '财富积累', charm: '人际魅力',
+  creative: '创造思维', resilience: '抗压稳定', execution: '行动执行',
+};
+export type RadarScores = Record<RadarAxis, number>;
+export interface RadarResult {
+  scores: RadarScores;
+  comments: Partial<Record<RadarAxis, string>>;
+  baseScores: RadarScores;
+}
+
+/** 十神归类 */
+function shiShenCategory(s: string): '官杀' | '财星' | '食伤' | '印绶' | '比劫' | null {
+  if (s.includes('官') || s.includes('杀')) return '官杀';
+  if (s.includes('财')) return '财星';
+  if (s.includes('食') || s.includes('伤')) return '食伤';
+  if (s.includes('印')) return '印绶';
+  if (s.includes('比') || s.includes('劫')) return '比劫';
+  return null;
+}
+
+/** 八字 + MBTI 本地确定性基础分（0-95） */
+export function computeRadarBaseScores(c: BaziChart, mbti?: string): RadarScores {
+  const counts: Record<'官杀' | '财星' | '食伤' | '印绶' | '比劫', number> = {
+    官杀: 0, 财星: 0, 食伤: 0, 印绶: 0, 比劫: 0,
+  };
+  for (const p of [c.yearPillar, c.monthPillar, c.dayPillar, c.hourPillar]) {
+    for (const s of p.shiShen) {
+      const cat = shiShenCategory(s);
+      if (cat) counts[cat]++;
+    }
+  }
+  const countAdj = (n: number): number => {
+    if (n <= 0) return -12;
+    if (n === 1) return -3;
+    if (n === 2) return 5;
+    if (n === 3) return 11;
+    return 16;
+  };
+  const strong = c.dayMasterStrength.includes('强');
+  const weak = c.dayMasterStrength.includes('弱');
+  const m = (mbti || '').toUpperCase();
+  const has = (l: string) => m.includes(l);
+  const clamp = (v: number) => Math.min(95, Math.max(5, Math.round(v)));
+
+  const base: RadarScores = {
+    drive: clamp(50 + countAdj(counts.官杀) + (has('T') ? 5 : 0) + (has('J') ? 5 : 0) + (strong ? 6 : weak ? -4 : 0)),
+    wealth: clamp(50 + countAdj(counts.财星) + (has('S') ? 5 : 0) + (has('J') ? 5 : 0) + (strong ? 6 : weak ? -4 : 0)),
+    charm: clamp(50 + countAdj(counts.食伤 + counts.比劫) + (has('F') ? 5 : 0) + (has('E') ? 5 : 0)),
+    creative: clamp(50 + countAdj(counts.食伤) + (has('N') ? 5 : 0) + (has('P') ? 5 : 0)),
+    resilience: clamp(50 + countAdj(counts.印绶) + (has('J') ? 5 : 0) + (has('S') ? 5 : 0) + (strong ? 3 : weak ? -2 : 3)),
+    execution: clamp(50 + countAdj(counts.比劫) + (has('T') ? 5 : 0) + (has('J') ? 5 : 0) + (strong ? 6 : weak ? -4 : 0)),
+  };
+  return base;
+}
+
+/** 紫微 AI 在基础分 ±15 内微调 */
+export async function getRadarScores(input: LifeReportInput, env: Env): Promise<RadarResult> {
+  const base = computeRadarBaseScores(input.baziChart!, input.mbti);
+  const openai = createClient(env);
+  const model = env.OPENAI_MODEL || 'gpt-4o-mini';
+
+  const sys = `你是紫微斗数分析师。给你六维潜能的"基础分"（已由八字+MBTI算出），请结合紫微盘对应宫位的主星/吉煞/四化，在基础分 ±15 范围内微调出最终分（0-100整数），并给每轴一句紫微视角点评（20字内，说明紫微增减理由）。
+六维与紫微宫位对应：事业魄力→官禄宫；财富积累→财帛宫；人际魅力→夫妻宫+桃花星；创造思维→命宫主星性质；抗压稳定→疾厄宫+田宅宫；行动执行→官禄宫+命宫。
+严格输出JSON：{"scores":{"drive":N,"wealth":N,"charm":N,"creative":N,"resilience":N,"execution":N},"comments":{"drive":"...","wealth":"...","charm":"...","creative":"...","resilience":"...","execution":"..."}}。不得输出JSON以外文字。`;
+  const user = `${formatInputHeader(input)}
+
+=== 六维基础分（八字+MBTI 已算出，你只能在 ±15 内调整）===
+${RADAR_AXES.map(a => `${RADAR_AXIS_LABELS[a]}(${a}): ${base[a]}`).join('  ')}
+
+=== 紫微盘 ===
+${input.ziweiChart ? formatZiweiChart(input.ziweiChart) : '（未提供）'}
+
+请结合紫微盘对应宫位微调，输出JSON。`;
+  console.log(`[LifeReport] 调用 radar，模型: ${model}`);
+  const response = await openai.chat.completions.create({
+    model,
+    messages: [
+      { role: 'system', content: sys },
+      { role: 'user', content: user },
+    ],
+    temperature: 0.2,
+    max_tokens: 700,
+    response_format: { type: 'json_object' },
+  });
+  const raw = response.choices[0].message.content || '{}';
+  const scores: RadarScores = { ...base };
+  const comments: Partial<Record<RadarAxis, string>> = {};
+  try {
+    const obj = JSON.parse(raw) as { scores?: Partial<RadarScores>; comments?: Record<string, string> };
+    for (const a of RADAR_AXES) {
+      const v = Number(obj.scores?.[a]);
+      if (!isNaN(v)) {
+        // 硬性约束 ±15 区间，防止 AI 漂移
+        scores[a] = Math.min(100, Math.max(0, Math.round(Math.min(base[a] + 15, Math.max(base[a] - 15, v)))));
+      }
+    }
+    if (obj.comments) {
+      for (const a of RADAR_AXES) {
+        const t = obj.comments[a];
+        if (typeof t === 'string') comments[a] = t.slice(0, 60);
+      }
+    }
+  } catch { /* 用基础分兜底 */ }
+  return { scores, comments, baseScores: base };
 }

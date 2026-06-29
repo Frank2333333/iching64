@@ -15,10 +15,12 @@ import {
   getLifeReportSection,
   lifeReportChat,
   getDailyFortune,
+  getRadar,
   type LifeReportInput,
   type SectionType,
   type ChatMessage,
   type DailyFortuneData,
+  type RadarResult,
 } from '../lib/life-report-api';
 import { useProfile } from '../context/ProfileContext';
 import type { ProfileInput } from '../lib/profile-api';
@@ -45,6 +47,8 @@ type Step = 'input' | 'result' | 'daily';
 
 const LAST_REPORT_KEY = 'iching_last_report';
 const dailyCacheKey = (date: string) => `iching_daily_${date}`;
+const radarCacheKey = (inp: LifeReportInput) =>
+  `iching_radar_${inp.year}-${inp.month}-${inp.day}-${inp.hour}-${inp.gender}-${inp.mbti || '-'}`;
 
 interface SectionState {
   loading: boolean;
@@ -107,6 +111,11 @@ export default function LifeReport() {
   const [dailyProfile, setDailyProfile] = useState<PersonalityProfile | null>(null);
   const [dailyCopied, setDailyCopied] = useState(false);
   const dailySvgRef = useRef<SVGSVGElement | null>(null);
+
+  // 潜能雷达图（bazi+MBTI本地基础分，紫微AI微调）
+  const [radar, setRadar] = useState<RadarResult | null>(null);
+  const [radarLoading, setRadarLoading] = useState(false);
+  const [radarError, setRadarError] = useState<string | null>(null);
   // 输入页快捷入口：是否有缓存生辰
   const [hasCachedReport, setHasCachedReport] = useState(false);
 
@@ -185,6 +194,8 @@ export default function LifeReport() {
     setActiveChatIndex(0);
     setChatInput('');
     setChatError(null);
+    setRadar(null);
+    setRadarError(null);
   };
 
   // 点击左上角标题回首页（人生报告即首页，重置回输入页）
@@ -267,6 +278,45 @@ export default function LifeReport() {
     if (ok) { setDailyCopied(true); setTimeout(() => setDailyCopied(false), 2000); }
     else { await handleDailyShare(); }
   }, [handleDailyShare]);
+
+  // 潜能雷达：缓存命中则直接用，否则调 AI（紫微微调）
+  const fetchRadar = useCallback(async (inp: LifeReportInput, force: boolean) => {
+    const key = radarCacheKey(inp);
+    if (!force) {
+      try {
+        const cached = localStorage.getItem(key);
+        if (cached) { setRadar(JSON.parse(cached)); setRadarError(null); return; }
+      } catch { /* ignore */ }
+    }
+    setRadar(null);
+    setRadarLoading(true);
+    setRadarError(null);
+    try {
+      const res = await getRadar(inp);
+      if (res.success && res.data) {
+        const d = res.data;
+        const r: RadarResult = { scores: d.scores, comments: d.comments, baseScores: d.baseScores };
+        setRadar(r);
+        try { localStorage.setItem(key, JSON.stringify(r)); } catch { /* ignore */ }
+      } else {
+        setRadarError(res.error || '生成失败');
+      }
+    } catch {
+      setRadarError('网络错误');
+    } finally {
+      setRadarLoading(false);
+    }
+  }, []);
+
+  // 进入结果页且有双盘时拉取雷达（缓存优先）
+  useEffect(() => {
+    if (step !== 'result' || !reportInput || !baziChart || !ziweiChart) return;
+    fetchRadar(reportInput, false);
+  }, [step, reportInput, baziChart, ziweiChart, fetchRadar]);
+
+  const handleRadarRefresh = useCallback(() => {
+    if (reportInput) fetchRadar(reportInput, true);
+  }, [reportInput, fetchRadar]);
 
   // 提交：前端排双盘 → 调 overview → overview 回来后并行调 5 sections
   const handleSubmit = async (data: LifeReportInput) => {
@@ -718,6 +768,10 @@ export default function LifeReport() {
             baziChart={baziChart}
             ziweiChart={ziweiChart}
             personality={personality}
+            radar={radar}
+            radarLoading={radarLoading}
+            radarError={radarError}
+            onRadarRefresh={handleRadarRefresh}
             overview={overview}
             sections={sections}
             chatMessages={activeChatMessages}

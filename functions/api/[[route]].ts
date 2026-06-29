@@ -9,7 +9,7 @@ import { getAIDivination, chatWithAI } from '../../server-workers/services/divin
 import { getBaziFortune, chatWithBazi } from '../../server-workers/services/bazi-ai';
 import { getZiweiFortune, chatWithZiwei } from '../../server-workers/services/ziwei-ai';
 import { interpretParagraph } from '../../server-workers/services/classics-ai';
-import { getLifeReportOverview, getLifeReportSection, chatWithLifeReport, getDailyFortune, type SectionType } from '../../server-workers/services/life-report-ai';
+import { getLifeReportOverview, getLifeReportSection, chatWithLifeReport, getDailyFortune, getRadarScores, type SectionType } from '../../server-workers/services/life-report-ai';
 
 // ==================== 类型定义 ====================
 
@@ -837,6 +837,26 @@ app.post('/api/life-report/daily', authMiddleware, quotaMiddleware('chat'), asyn
     return c.json({ success: true, data: { ...result, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() } });
   } catch (error: unknown) {
     console.error('今日运势失败:', error);
+    return c.json({ success: false, error: (error as Error).message || '生成失败' }, 500);
+  }
+});
+
+// ==================== 潜能雷达图（bazi+MBTI本地基础分，紫微AI微调）====================
+
+app.post('/api/life-report/radar', authMiddleware, quotaMiddleware('chat'), async (c) => {
+  try {
+    const input = await c.req.json();
+    if (!input || !input.baziChart || !input.ziweiChart) {
+      return c.json({ success: false, error: '排盘数据不完整' }, 400);
+    }
+    if (!c.env.OPENAI_API_KEY || c.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+      return c.json({ success: false, error: 'AI 服务未配置' }, 503);
+    }
+    const result = await getRadarScores(input, c.env);
+    await incrUsage(c.env.DB, c.get('userId'), 'chat');
+    return c.json({ success: true, data: { ...result, model: c.env.OPENAI_MODEL || 'gpt-4o-mini', timestamp: Date.now() } });
+  } catch (error: unknown) {
+    console.error('雷达图失败:', error);
     return c.json({ success: false, error: (error as Error).message || '生成失败' }, 500);
   }
 });
