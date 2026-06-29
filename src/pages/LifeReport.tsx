@@ -48,7 +48,7 @@ type Step = 'input' | 'result' | 'daily';
 const LAST_REPORT_KEY = 'iching_last_report';
 const dailyCacheKey = (date: string) => `iching_daily_${date}`;
 const radarCacheKey = (inp: LifeReportInput) =>
-  `iching_radar_${inp.year}-${inp.month}-${inp.day}-${inp.hour}-${inp.gender}-${inp.mbti || '-'}`;
+  `iching_radar_v2_${inp.year}-${inp.month}-${inp.day}-${inp.hour}-${inp.gender}-${inp.mbti || '-'}`;
 
 interface SectionState {
   loading: boolean;

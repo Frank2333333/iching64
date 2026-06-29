@@ -492,8 +492,29 @@ function shiShenCategory(s: string): '官杀' | '财星' | '食伤' | '印绶' |
   return null;
 }
 
-/** 八字 + MBTI 本地确定性基础分（0-95） */
+// 五行生克（用于把"十神类别"换算成五行，再对照用神喜忌）
+const WUXING_SHENG: Record<string, string> = { '木': '火', '火': '土', '土': '金', '金': '水', '水': '木' };
+const WUXING_KE: Record<string, string> = { '木': '土', '火': '金', '土': '水', '金': '木', '水': '火' };
+const shengMe = (el: string) => Object.keys(WUXING_SHENG).find(k => WUXING_SHENG[k] === el) || el; // 生我之五行
+const keMe = (el: string) => Object.keys(WUXING_KE).find(k => WUXING_KE[k] === el) || el;         // 克我之五行
+
+/** 格局 → 主导轴 */
+function patternAxis(pattern: string): RadarAxis | null {
+  if (pattern.includes('官') || pattern.includes('杀')) return 'drive';
+  if (pattern.includes('财')) return 'wealth';
+  if (pattern.includes('食') || pattern.includes('伤')) return 'creative';
+  if (pattern.includes('印')) return 'resilience';
+  return null; // 其他格（建禄/月刃等比劫类）→ execution
+}
+
+/** 各轴对应的十神类别 */
+/**
+ * 八字 + MBTI 本地确定性基础分
+ * 设计：以格局为主导(+12)、用神/喜神得力加分、忌神减分、藏干十神微调(中性)、日主强弱、MBTI。
+ * 基线 55，避免"全盘低分"的压抑感；格局所在轴自然走高，形成合理分化。
+ */
 export function computeRadarBaseScores(c: BaziChart, mbti?: string): RadarScores {
+  // 藏干十神计数（辅助信号，非主导）
   const counts: Record<'官杀' | '财星' | '食伤' | '印绶' | '比劫', number> = {
     官杀: 0, 财星: 0, 食伤: 0, 印绶: 0, 比劫: 0,
   };
@@ -503,26 +524,48 @@ export function computeRadarBaseScores(c: BaziChart, mbti?: string): RadarScores
       if (cat) counts[cat]++;
     }
   }
-  const countAdj = (n: number): number => {
-    if (n <= 0) return -12;
-    if (n === 1) return -3;
-    if (n === 2) return 5;
-    if (n === 3) return 11;
-    return 16;
+  // 藏干计数：中性基线（不因缺失而惩罚），有则小幅加分
+  const countAdj = (n: number): number => (n <= 0 ? 0 : n === 1 ? 3 : n === 2 ? 6 : 9);
+
+  // 各十神类别对应的五行（用于对照用神/喜神/忌神）
+  const dayEl = c.dayMasterElement;
+  const catElement: Record<'官杀' | '财星' | '食伤' | '印绶' | '比劫', string> = {
+    官杀: keMe(dayEl),   // 克我
+    财星: WUXING_KE[dayEl] || dayEl, // 我克
+    食伤: WUXING_SHENG[dayEl] || dayEl, // 我生
+    印绶: shengMe(dayEl), // 生我
+    比劫: dayEl,          // 同我
   };
+  // 用神得力 +8 / 喜神 +4 / 忌神 -8
+  const yongAdj = (cat: '官杀' | '财星' | '食伤' | '印绶' | '比劫'): number => {
+    const el = catElement[cat];
+    if (c.yongShen && el === c.yongShen) return 8;
+    if (c.xiShen && el === c.xiShen) return 4;
+    if (c.jiShen && el === c.jiShen) return -8;
+    return 0;
+  };
+
   const strong = c.dayMasterStrength.includes('强');
   const weak = c.dayMasterStrength.includes('弱');
   const m = (mbti || '').toUpperCase();
   const has = (l: string) => m.includes(l);
-  const clamp = (v: number) => Math.min(95, Math.max(5, Math.round(v)));
+  const clamp = (v: number) => Math.min(92, Math.max(12, Math.round(v)));
+
+  const patternAx = patternAxis(c.pattern);
+  // 格局主导轴 +12；其他格(比劫类)落到 execution
+  const patternBoost = (ax: RadarAxis): number => {
+    if (patternAx && ax === patternAx) return 12;
+    if (!patternAx && ax === 'execution') return 12;
+    return 0;
+  };
 
   const base: RadarScores = {
-    drive: clamp(50 + countAdj(counts.官杀) + (has('T') ? 5 : 0) + (has('J') ? 5 : 0) + (strong ? 6 : weak ? -4 : 0)),
-    wealth: clamp(50 + countAdj(counts.财星) + (has('S') ? 5 : 0) + (has('J') ? 5 : 0) + (strong ? 6 : weak ? -4 : 0)),
-    charm: clamp(50 + countAdj(counts.食伤 + counts.比劫) + (has('F') ? 5 : 0) + (has('E') ? 5 : 0)),
-    creative: clamp(50 + countAdj(counts.食伤) + (has('N') ? 5 : 0) + (has('P') ? 5 : 0)),
-    resilience: clamp(50 + countAdj(counts.印绶) + (has('J') ? 5 : 0) + (has('S') ? 5 : 0) + (strong ? 3 : weak ? -2 : 3)),
-    execution: clamp(50 + countAdj(counts.比劫) + (has('T') ? 5 : 0) + (has('J') ? 5 : 0) + (strong ? 6 : weak ? -4 : 0)),
+    drive: clamp(55 + patternBoost('drive') + yongAdj('官杀') + countAdj(counts.官杀) + (has('T') ? 5 : 0) + (has('J') ? 5 : 0) + (strong ? 6 : weak ? -3 : 0)),
+    wealth: clamp(55 + patternBoost('wealth') + yongAdj('财星') + countAdj(counts.财星) + (has('S') ? 5 : 0) + (has('J') ? 5 : 0) + (strong ? 6 : weak ? -3 : 0)),
+    charm: clamp(55 + patternBoost('charm') + yongAdj('食伤') + countAdj(counts.食伤) + (has('F') ? 5 : 0) + (has('E') ? 5 : 0)),
+    creative: clamp(55 + patternBoost('creative') + yongAdj('食伤') + countAdj(counts.食伤) + (has('N') ? 5 : 0) + (has('P') ? 5 : 0)),
+    resilience: clamp(55 + patternBoost('resilience') + yongAdj('印绶') + countAdj(counts.印绶) + (has('J') ? 5 : 0) + (has('S') ? 5 : 0) + (strong ? 2 : weak ? 5 : 3)),
+    execution: clamp(55 + patternBoost('execution') + yongAdj('比劫') + countAdj(counts.比劫) + (has('T') ? 5 : 0) + (has('J') ? 5 : 0) + (strong ? 6 : weak ? -3 : 0)),
   };
   return base;
 }
