@@ -197,16 +197,20 @@ export default function LifeReportForm({ onSubmit, loading, initialData, onSave 
           {/* 出生地点 */}
           <div>
             <label className="block text-sm font-medium text-amber-800 dark:text-amber-400 mb-2">
-              <MapPin className="w-4 h-4 inline mr-1" />出生地点（选填）
+              <MapPin className="w-4 h-4 inline mr-1" />出生地点（选填，但填了更准）
             </label>
-            <input type="text" value={birthplace} onChange={(e) => setBirthplace(e.target.value)} placeholder="例如：北京市" className={inputClass} />
+            <input type="text" value={birthplace} onChange={(e) => {
+              setBirthplace(e.target.value);
+              if (e.target.value.trim()) setUseSolarTime(true);
+            }} placeholder="例如：北京市" className={inputClass} />
+            <p className="text-xs text-amber-500/70 dark:text-amber-400/70 mt-1.5">出生地决定真太阳时校正。中国统一用北京时间，西部出生者实际太阳时可能差 1-2 小时，不校正会算错时柱。</p>
           </div>
 
           {/* 真太阳时 */}
           <div className="flex items-center gap-3">
             <input type="checkbox" id="report-solar" checked={useSolarTime} onChange={(e) => setUseSolarTime(e.target.checked)}
               className="w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500 dark:focus:ring-amber-600 dark:border-amber-700" />
-            <label htmlFor="report-solar" className="text-sm text-amber-700 dark:text-amber-400 cursor-pointer">使用真太阳时（根据经度校正）</label>
+            <label htmlFor="report-solar" className="text-sm text-amber-700 dark:text-amber-400 cursor-pointer">使用真太阳时（按出生地经度校正，填了出生地会自动开启）</label>
           </div>
 
           {/* 关注点 */}

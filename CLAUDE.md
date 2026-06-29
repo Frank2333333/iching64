@@ -178,10 +178,13 @@ D1 表结构见 `migrations/0001_initial.sql`（users/feedback/bazi_profiles）�
 - **分章节流式生成**（前端编排）：用户提交 → 前端同时排双盘（`calculateBaziChart` + `calculateZiweiChart`，输入参数一致）→ 调 `/api/life-report/overview` 出"本命总览"（首屏 3-5s）→ 总览回来后**并行**调 5 个 `/api/life-report/section`（career/wealth/marriage/health/trend，各带 overview 保证一致性）→ 每个回来就渲染。各请求独立 30s 互不影响
 - **AI 调性**：`life-report-ai.ts` 的 system prompt 是"资深人生规划师"，温暖笃定不宿命，命理术语转大白话，markdown 叙事输出（非铁口直断六段式）。目标：解释权/决策信心/情绪安慰/身份认同
 - **一致性约束**：总览确定的核心结论（日主特质/用神朝向/命宫格局/四化落点）通过 overview 注入各 section prompt + chat 的 reportSummary，禁止自相矛盾
+- **结构化锚定结论**：`life-report-ai.ts` 的 `buildAnchorConclusions()` 从排盘数据抽取硬结论（日主/格局/用神喜忌/命宫主星/命主身主/五行局/生年四化；命宫按 `earthlyBranch===soulPalace` 定位取主星）成带"禁止改写"强约束的独立块，注入 overview/section prompt 头部。与 system prompt 的"命理数据铁律"互补（铁律=规则层禁推导，锚定块=数据层照写），防止 overview 判错被各章节当锚点固化。chat 已有"命理数据对照"段，不重复注入
+- **温度设置**：overview/section `temperature=0.25`（与八字/紫微首次解读 0.15 同理——硬结论照盘说、不发挥，与结构化锚定结论配合稳定核心结论不被抖动改写）；chat 追问 `0.6`（保持灵活）。低于八字/紫微的 0.15 是因人生报告偏叙事，留少量温度避免死板
 - **数据结构**：`LifeReportInput` = 生辰 + `baziChart` + `ziweiChart` + `focus?`（用户关注点，影响侧重）；`SectionType` = career/wealth/marriage/health/trend
 - **呈现**：`LifeReportView` 渐进渲染 6 个章节位（loading 占位→markdown）+ `LifeTimeline`（纯本地双盘数据，八字大运↔紫微大限按 startAge 对齐，当前段高亮）+ 命盘详情折叠区（自渲染简化八字四柱表+紫微十二宫列表，深度用户可展开，不引入 ZiweiPalaceGrid 避免耦合）+ 追问对话（复用 `BaziChatInput`）
 - **追问**：`/api/life-report/chat`，reportSummary = 总览+各章节内容拼接，保证追问与报告一致
 - **档案复用**：复用通用 profiles 表（inputMode='birthdate'），无需新迁移；`LifeReportForm` 从 `ProfileContext.currentProfile` 预填
+- **输入与排盘准确度**：`LifeReportForm` 填出生地时自动勾选真太阳时（`useSolarTime && birthplace` 同时成立才修正，两个 calculator 修正后均按 `correctedHour` 重判时柱/时辰）。中国统一北京时间，西部出生者真太阳时差可达 1-2 小时，不校正会算错时柱——故默认引导填出生地
 - **云端历史会话**：登录用户的报告存 D1 `life_history` 表（`migrations/0003_life_history.sql`），跨设备同步。前端 `src/lib/life-history.ts` + `src/lib/life-history-api.ts`，后端路由 `/api/life-history`（GET 列表 / POST upsert / DELETE，`authMiddleware` 保护）在 `functions/api/[[route]].ts`。每条历史 = 生辰 + 总览 + 5 章节内容 + 多个追问聊天（保留最近 10 条，POST 时超出删最旧）。总览生成即创建条目，章节/聊天/重命名变化时 upsert 回写。未登录用户不存历史。
 
 ### 结构化经典文献

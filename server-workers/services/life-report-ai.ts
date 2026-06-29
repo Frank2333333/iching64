@@ -211,11 +211,45 @@ function formatInputHeader(input: LifeReportInput): string {
 
 // ==================== Prompt 构造 ====================
 
+/**
+ * 结构化锚定结论：从排盘数据抽取最易被 AI 重述时说错的硬结论（日主/格局/用神喜忌/
+ * 命宫主星/命主身主/五行局/生年四化），组成带"禁止改写"强约束的独立块。
+ * 与 system prompt 的"命理数据铁律"互补：铁律是规则层（禁止自行推导），
+ * 锚定块是数据层（把结论直接摆出来照写），防止 overview 判错后被各章节当锚点固化。
+ */
+function buildAnchorConclusions(input: LifeReportInput): string {
+  const c = input.baziChart;
+  const z = input.ziweiChart;
+  if (!c && !z) return '';
+  const lines: string[] = ['=== 排盘引擎已确定的核心结论（锚定块·禁止改写·全报告必须与此逐字一致）==='];
+  if (c) {
+    lines.push('【八字】');
+    lines.push(`- 日主：${c.dayMaster}（${c.dayMasterElement}），${c.dayMasterStrength}`);
+    lines.push(`- 格局：${c.pattern}`);
+    lines.push(`- 用神：${c.yongShen} / 喜神：${c.xiShen} / 忌神：${c.jiShen}`);
+  }
+  if (z) {
+    lines.push('【紫微】');
+    // soulPalace 存的是命宫地支名（earthlyBranchOfSoulPalace），按地支定位命宫取主星
+    const mingGong = z.palaces.find(p => p.earthlyBranch === z.soulPalace);
+    const majorStarNames = mingGong && mingGong.majorStars.length
+      ? mingGong.majorStars.map(s => s.name + (s.mutagen ? `[化${s.mutagen}]` : '')).join('、')
+      : '（空宫）';
+    lines.push(`- 命宫（地支${z.soulPalace}）主星：${majorStarNames}`);
+    lines.push(`- 命主：${z.soul} / 身主：${z.body} / 五行局：${z.fiveElementsClass}`);
+    lines.push(`- 生年四化：${z.birthSiHua.lu}化禄、${z.birthSiHua.quan}化权、${z.birthSiHua.ke}化科、${z.birthSiHua.ji}化忌`);
+  }
+  lines.push('以上为确定性结论。叙事中提及时必须逐字一致，不得改写、自创或张冠李戴；未列于此的推论须标注为"进一步推断"。');
+  return lines.join('\n');
+}
+
 function buildOverviewPrompt(input: LifeReportInput): string {
   let prompt = `请为以下命主生成"人生发展报告"的开篇——本命总览。\n\n`;
   prompt += `${formatInputHeader(input)}\n\n`;
   prompt += `=== 八字盘 ===\n${input.baziChart ? formatBaziChart(input.baziChart) : '（未提供）'}\n\n`;
   prompt += `=== 紫微盘 ===\n${input.ziweiChart ? formatZiweiChart(input.ziweiChart) : '（未提供）'}\n\n`;
+  const anchor = buildAnchorConclusions(input);
+  if (anchor) prompt += `${anchor}\n\n`;
 
   prompt += `【本命总览要求】
 这是整份报告的开篇，要让用户读完立刻感到"被看见"。用 markdown，约 500-700 字，包含：
@@ -238,6 +272,8 @@ function buildSectionPrompt(req: SectionRequest): string {
   prompt += `${formatInputHeader(req)}\n\n`;
   prompt += `=== 八字盘 ===\n${req.baziChart ? formatBaziChart(req.baziChart) : '（未提供）'}\n\n`;
   prompt += `=== 紫微盘 ===\n${req.ziweiChart ? formatZiweiChart(req.ziweiChart) : '（未提供）'}\n\n`;
+  const anchor = buildAnchorConclusions(req);
+  if (anchor) prompt += `${anchor}\n\n`;
   prompt += `=== 本命总览（已生成，请保持一致）===\n${req.overview}\n\n`;
 
   const focusMap: Record<SectionType, string> = {
@@ -312,7 +348,7 @@ export async function getLifeReportOverview(input: LifeReportInput, env: Env): P
       { role: 'system', content: buildSystemPrompt() },
       { role: 'user', content: buildOverviewPrompt(input) },
     ],
-    temperature: 0.4,
+    temperature: 0.25,
     max_tokens: 2000,
   });
   return response.choices[0].message.content || '';
@@ -328,7 +364,7 @@ export async function getLifeReportSection(req: SectionRequest, env: Env): Promi
       { role: 'system', content: buildSystemPrompt() },
       { role: 'user', content: buildSectionPrompt(req) },
     ],
-    temperature: 0.4,
+    temperature: 0.25,
     max_tokens: 1500,
   });
   return response.choices[0].message.content || '';
